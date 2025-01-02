@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Manual extends Model
 {
     use HasFactory;
-    protected $fillable = ['manual_types_id', 'manual_name', 'manual_phases_id', 'code', 'observations'];
+    protected $fillable = ['manual_types_id', 'manual_name', 'manual_phases_id', 'code', 'observations', 'publication_year', 'is_published'];
 
     public function manualType()
     {

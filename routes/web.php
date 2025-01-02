@@ -44,7 +44,7 @@ Route::prefix('google-auth')->group(function () {
 // RUTA PROTEGIDA PARA EL DASHBOARD
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
-        return view('welcome');
+        return view('dashboard');
     })->name('dashboard');
 
 

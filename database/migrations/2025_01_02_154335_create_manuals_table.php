@@ -18,7 +18,10 @@ return new class extends Migration
             $table->unsignedBigInteger('manual_phases_id');
             $table->string('code', 20)->nullable();
             $table->string('observations', 255)->nullable();
+            $table->date('publication_year')->nullable();
+            $table->boolean('is_published')->default(false);
             $table->timestamps();
+
 
             // Foreign keys
             $table->foreign('manual_types_id')->references('id')->on('manual_types')->onDelete('cascade');

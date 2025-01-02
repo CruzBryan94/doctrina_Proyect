@@ -17,5 +17,6 @@ class DatabaseSeeder extends Seeder
         $this->call(MilitaryUnitsSeeder::class);
         $this->call(ManualPhasesSeeder::class);
         $this->call(CatalogSubphasesSeeder::class);
+        $this->call(ManualTypesSeeder::class);
     }
 }
