@@ -13,5 +13,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(Grade_Seeder::class);
+        $this->call(CommitteeTypeSeeder::class);
+        $this->call(MilitaryUnitsSeeder::class);
     }
 }

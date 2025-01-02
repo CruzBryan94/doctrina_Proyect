@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('committee_type', function (Blueprint $table) {
             $table->id();
             $table->integer('code')->unique();
-            $table->string('name', 150);
+            $table->string('name', 250);
             $table->timestamps();
         });
     }
