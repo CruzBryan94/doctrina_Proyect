@@ -16,7 +16,7 @@ class MilitaryUnitsSeeder extends Seeder
         $militaryUnits = [
             ['unit_name' => 'Batallón de Infantería N1 Constitución', 'unit_acronym' => 'BC1'],
             ['unit_name' => 'Grupo de Caballería Blindada N4 Febres Cordero', 'unit_acronym' => 'GCB4'],
-            ['unit_name' => 'Escuela de Fuerzas Especiales', 'unit_acronym' => 'EF9'],
+            ['unit_name' => 'Escuela de Fuerzas Especiales', 'unit_acronym' => 'EFE9'],
         ];
 
         DB::table('military_units')->insert($militaryUnits);

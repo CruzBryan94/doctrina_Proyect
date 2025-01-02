@@ -15,6 +15,22 @@ class CatalogSubphasesSeeder extends Seeder
     public function run(): void
     {
         $subphases = [
+           // Subfases de Investigación
+           ['suphase_name' => 'CONFORMAR LOS COMITES DE INVESTIGACIÓN', 'manual_phases_id' => 1],
+           ['suphase_name' => 'INDUCCIÓN Y LINEAMIENTOS', 'manual_phases_id' => 1],
+           ['suphase_name' => 'ENTREGA DEL PERFIL DEL PROYECTO Y CRONOGRAMA', 'manual_phases_id' => 1],
+           ['suphase_name' => 'PRIMER AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
+           ['suphase_name' => 'SEGUNDO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
+           ['suphase_name' => 'TERCER AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
+           ['suphase_name' => 'CUARTO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
+           ['suphase_name' => 'QUINTO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
+           ['suphase_name' => 'SEXTO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
+           ['suphase_name' => 'SEPTIMO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
+           ['suphase_name' => 'OCTAVO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
+           ['suphase_name' => 'ENTREGA DE LA CARPETA DE INVESTIGACIÓN', 'manual_phases_id' => 1],
+           ['suphase_name' => 'VALIDACIÓN DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
+           ['suphase_name' => 'ENTREGA DEL PROYECTO DOCTRINARIO CON TODAS LAS OBSERVACIONES', 'manual_phases_id' => 1],
+
             // Subfases de Experimentación
             ['suphase_name' => 'DISPONER LA EXPERIMENTACIÓN', 'manual_phases_id' => 2],
             ['suphase_name' => 'INDUCCIÓN Y LINEAMIENTOS AL COMITÉ DE EXPERIMENTACIÓN', 'manual_phases_id' => 2],
@@ -30,21 +46,7 @@ class CatalogSubphasesSeeder extends Seeder
             ['suphase_name' => 'VALIDACIÓN DE LA EXPERIMENTACIÓN DEL PROYECTO DOCTRINARIO', 'manual_phases_id' => 2],
             ['suphase_name' => 'ENTREGA DEL PROYECTO DOCTRINARIO CON TODAS LAS OBSERVACIONES', 'manual_phases_id' => 2],
 
-            // Subfases de Investigación
-            ['suphase_name' => 'CONFORMAR LOS COMITES DE INVESTIGACIÓN', 'manual_phases_id' => 1],
-            ['suphase_name' => 'INDUCCIÓN Y LINEAMIENTOS', 'manual_phases_id' => 1],
-            ['suphase_name' => 'ENTREGA DEL PERFIL DEL PROYECTO Y CRONOGRAMA', 'manual_phases_id' => 1],
-            ['suphase_name' => 'PRIMER AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-            ['suphase_name' => 'SEGUNDO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-            ['suphase_name' => 'TERCER AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-            ['suphase_name' => 'CUARTO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-            ['suphase_name' => 'QUINTO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-            ['suphase_name' => 'SEXTO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-            ['suphase_name' => 'SEPTIMO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-            ['suphase_name' => 'OCTAVO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-            ['suphase_name' => 'ENTREGA DE LA CARPETA DE INVESTIGACIÓN', 'manual_phases_id' => 1],
-            ['suphase_name' => 'VALIDACIÓN DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-            ['suphase_name' => 'ENTREGA DEL PROYECTO DOCTRINARIO CON TODAS LAS OBSERVACIONES', 'manual_phases_id' => 1],
+
 
             // Subfases de Edición
             ['suphase_name' => 'CORRECCIÓN IDIOMATICA', 'manual_phases_id' => 3],
