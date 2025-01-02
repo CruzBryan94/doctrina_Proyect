@@ -6,12 +6,15 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::create('grades', function (Blueprint $table) {
+        Schema::create('military_units', function (Blueprint $table) {
             $table->id();
-            $table->string('grade_name');
-            $table->integer('code');
+            $table->string('unit_name', 50);
+            $table->string('unit_acronym', 10);
             $table->timestamps();
         });
     }
@@ -21,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('grades');
+        Schema::dropIfExists('military_units');
     }
 };
