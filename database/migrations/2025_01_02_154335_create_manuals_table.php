@@ -14,12 +14,13 @@ return new class extends Migration
         Schema::create('manuals', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('manual_types_id');
-            $table->string('manual_name', 50);
+            $table->string('manual_name', 100);
             $table->unsignedBigInteger('manual_phases_id');
             $table->string('code', 20)->nullable();
             $table->string('observations', 255)->nullable();
             $table->date('publication_year')->nullable();
             $table->boolean('is_published')->default(false);
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
 
 

@@ -43,9 +43,16 @@ Route::prefix('google-auth')->group(function () {
 
 // RUTA PROTEGIDA PARA EL DASHBOARD
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+
+    //RUTAS PARA MANUALES
+    Route::get('/manuals', [App\Http\Controllers\ManualController::class, 'index'])->name('manuals.index');
+    Route::get('/manuals/newManual', [App\Http\Controllers\ManualController::class, 'newManual'])->name('manuals.newManual');
+    Route::post('/manuals/store', [App\Http\Controllers\ManualController::class, 'store'])->name('manuals.store');
+    Route::get('/manuals/editManual/{id}', [App\Http\Controllers\ManualController::class, 'editManual'])->name('manuals.editManual');
+    Route::put('/manuals/update/{id}', [App\Http\Controllers\ManualController::class, 'update'])->name('manuals.update');
+
+
 
 
     Route::get('/', function () {
@@ -57,8 +64,6 @@ Route::middleware('auth')->group(function () {
         Auth::logout();
         return redirect('/login'); // Redirige a la página de login después de cerrar sesión
     })->name('logout');
-
-
 });
 
 

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Manual extends Model
 {
     use HasFactory;
-    protected $fillable = ['manual_types_id', 'manual_name', 'manual_phases_id', 'code', 'observations', 'publication_year', 'is_published'];
+    protected $fillable = ['manual_types_id', 'manual_name', 'manual_phases_id', 'code', 'observations', 'publication_year', 'is_published', 'is_active'];
 
     public function manualType()
     {
@@ -33,5 +33,12 @@ class Manual extends Model
     public function manualPhaseSuphases()
     {
         return $this->hasMany(ManualPhaseSuphase::class, 'manuals_id');
+    }
+
+    // Relación con MilitaryUnits (conexión directa)
+    public function militaryUnits()
+    {
+        return $this->belongsToMany(MilitaryUnit::class, 'manual_military_units', 'manuals_id', 'military_units_id')
+                    ->withTimestamps();
     }
 }

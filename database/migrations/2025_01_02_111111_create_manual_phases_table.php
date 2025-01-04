@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->integer('code')->unique();
             $table->string('phase_name', 150);
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }
