@@ -15,6 +15,7 @@ use App\Models\ManualType;
 
 class ManualController extends Controller
 {
+
     public function index()
     {
         // Obtenemos todos los manuales con sus relaciones necesarias
@@ -26,11 +27,16 @@ class ManualController extends Controller
 
         // Formateamos los datos para la vista
         $data = $manuals->map(function ($manual) {
+            $progress = $this->calculateProgress($manual->id, $manual->manual_phases_id);
+            $currentActivity = $this->calculateActivityProgress($manual->id);
+
             return [
                 'type_code' => $manual->manualType->code,
                 'manual_name' => $manual->manual_name,
                 'phase_name' => $manual->manualPhase->phase_name,
                 'observations' => $manual->observations,
+                'progress' => $progress, // Porcentaje de progreso
+                'current_activity' => $currentActivity, // Actividad actual
                 'id' => $manual->id,
             ];
         });
@@ -38,9 +44,9 @@ class ManualController extends Controller
         return view('manuals.index', compact('data'));
     }
 
+
     public function newManual()
     {
-
         $manualTypes = \App\Models\ManualType::all(['id', 'code', 'type_name']);
         $militaryUnits = \App\Models\MilitaryUnit::all(['id', 'unit_acronym', 'unit_name']);
 
@@ -61,7 +67,6 @@ class ManualController extends Controller
 
     public function store(Request $request)
     {
-
         // Validar los datos
         $validatedData = $request->validate([
             'manual_name' => 'required|string|max:100',
@@ -69,7 +74,7 @@ class ManualController extends Controller
             'committee_validation_members' => 'required|json',
             'military_units' => 'required|json',
             'observations' => 'nullable|string',
-            'manual_type_id' => 'required|integer'
+            'manual_type_id' => 'required|integer',
         ]);
 
         // Crear el manual
@@ -122,46 +127,96 @@ class ManualController extends Controller
             ]);
         }
 
+        // Obtener todas las subfases del manual_phases_id = 1
+        $subphases = CatalogSubphase::where('manual_phases_id', 1)->get();
+
+        foreach ($subphases as $index => $subphase) {
+            ManualPhaseSuphase::create([
+                'manuals_id' => $manualId,
+                'catalog_subphases_id' => $subphase->id,
+                'is_completed' => $index === 0 ? 1 : 0, // Solo marcar completada la primera subfase
+                'completation_date' => $index === 0 ? now() : null, // Solo agregar fecha a la primera subfase
+                'manual_phases_id' => 1,
+            ]);
+        }
+
         return redirect()->route('manuals.index')->with('success', 'Manual creado correctamente.');
     }
 
+
     public function editManual($id)
     {
-
         $manual = Manual::find($id);
+
+        // Obtener los miembros del comité de investigación
+        $researchCommitteeMembers = ManualCommitteeMember::where('manuals_id', $id)
+            ->where('committee_type_id', 1)
+            ->with('committeeMember.grade') // Relación con la tabla de miembros y grados
+            ->get();
+
+        // Obtener los miembros del comité de validación
+        $validationCommitteeMembers = ManualCommitteeMember::where('manuals_id', $id)
+            ->where('committee_type_id', 2)
+            ->with('committeeMember.grade') // Relación con la tabla de miembros y grados
+            ->get();
+
+        // Obtener las unidades militares asociadas al manual
+        $militaryUnits = ManualMilitaryUnit::where('manuals_id', $id)
+            ->where('committee_type_id', 1) // Validar que sea del tipo 1
+            ->with('militaryUnit') // Relación con la tabla MilitaryUnit
+            ->get();
 
         // Obtenemos las subfases para cada fase con sus estados de cumplimiento y fechas
         $researchPhases = CatalogSubphase::where('manual_phases_id', 1)
-            ->with(['manualPhaseSuphases' => function ($query) use ($id) {
-                $query->where('manuals_id', $id);
-            }])
+            ->with([
+                'manualPhaseSuphases' => function ($query) use ($id) {
+                    $query->where('manuals_id', $id);
+                }
+            ])
             ->get();
 
         $experimentationPhases = CatalogSubphase::where('manual_phases_id', 2)
-            ->with(['manualPhaseSuphases' => function ($query) use ($id) {
-                $query->where('manuals_id', $id);
-            }])
+            ->with([
+                'manualPhaseSuphases' => function ($query) use ($id) {
+                    $query->where('manuals_id', $id);
+                }
+            ])
             ->get();
 
         $editionPhases = CatalogSubphase::where('manual_phases_id', 3)
-            ->with(['manualPhaseSuphases' => function ($query) use ($id) {
-                $query->where('manuals_id', $id);
-            }])
+            ->with([
+                'manualPhaseSuphases' => function ($query) use ($id) {
+                    $query->where('manuals_id', $id);
+                }
+            ])
             ->get();
 
-        return view('manuals.editManual', compact('manual', 'researchPhases', 'experimentationPhases', 'editionPhases'));
+        $researchProgress = $this->calculateProgress($id, 1);
+        $researchActivity = $this->calculateActivityProgress($id, 1);
+
+        return view('manuals.editManual', compact(
+            'manual',
+            'researchPhases',
+            'experimentationPhases',
+            'editionPhases',
+            'researchCommitteeMembers',
+            'validationCommitteeMembers',
+            'militaryUnits',
+            'researchProgress',
+            'researchActivity',
+        ));
     }
 
     public function update(Request $request, $id)
     {
-        $validatedData = $request->validate([
-            'phases.*.is_completed' => 'nullable|boolean',
-            'phases.*.completation_date' => 'nullable|date',
-        ]);
-
         $manual = Manual::find($id);
 
-        foreach ($request->phases as $phaseId => $data) {
+        // Obtener todas las subfases relacionadas con la fase
+        $allPhases = CatalogSubphase::where('manual_phases_id', 1)->pluck('id')->toArray();
+
+        foreach ($allPhases as $phaseId) {
+            $data = $request->phases[$phaseId] ?? null;
+
             ManualPhaseSuphase::updateOrCreate(
                 ['manuals_id' => $manual->id, 'catalog_subphases_id' => $phaseId],
                 [
@@ -173,6 +228,41 @@ class ManualController extends Controller
         }
 
         return redirect()->route('manuals.index')->with('success', 'Subfases actualizadas correctamente.');
+
+    }
+
+
+    function calculateProgress($manualId, $idPhase)
+    {
+        $subphases = ManualPhaseSuphase::where('manuals_id', $manualId)
+            ->where('manual_phases_id', $idPhase)
+            ->get();
+
+        $countSubphases = $subphases->count();
+
+        if ($countSubphases === 0) {
+            return 0; //
+        }
+
+        $subphasesCompleted = $subphases->where('is_completed', 1)->count();
+
+        $totalProgress = (($subphasesCompleted / $countSubphases) * 100);
+
+        return number_format($totalProgress, 2);
+    }
+
+    function calculateActivityProgress($manualId)
+    {
+        $subphase = ManualPhaseSuphase::where('manuals_id', $manualId)
+            ->where('is_Completed', 1)
+            ->with('catalogSubphase')
+            ->get()->last();
+
+        if (!$subphase) {
+            return 'No se ha realizado ninguna actividad';
+        }
+
+        return $subphase->catalogSubphase->suphase_name;
     }
 
 

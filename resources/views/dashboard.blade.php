@@ -14,14 +14,15 @@
         @php
             $icons = ['fas fa-search', 'fas fa-flask', 'fas fa-edit', 'fas fa-file-alt' , 'fas fa-tasks'];
             $colors = ['bg-primary', 'bg-success', 'bg-warning', 'bg-info' , 'bg-danger'];
+            $ord = 1;
         @endphp
 
         @foreach ($data as $index => $item)
             <div class="col">
                 <div class="info-box">
                     <!-- Ícono con color dinámico -->
-                    <span class="info-box-icon {{ $colors[$index % count($colors)] }}">
-                        <i class="{{ $icons[$index % count($icons)] }}"></i>
+                    <span class="info-box-icon {{ $colors[$index % count($colors)] }} fs-1">
+                        <i class="{{ $icons[$index % count($icons)] }} "></i>
                     </span>
 
                     <!-- Contenido de la tarjeta -->
@@ -56,51 +57,14 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @php
-                        $tableData = [
-                            [
-                                'Ord' => 1,
-                                'Fase' => 'Investigación',
-                                'Tipo' => 'Manual',
-                                'Manuales' => 'Manual de Operaciones',
-                                'Actividad' => 'En revisión',
-                                'Porcentaje' => '60%',
-                            ],
-                            [
-                                'Ord' => 2,
-                                'Fase' => 'Experimentación',
-                                'Tipo' => 'Reglamento',
-                                'Manuales' => 'Reglamento de Seguridad',
-                                'Actividad' => 'Aprobación pendiente',
-                                'Porcentaje' => '80%',
-                            ],
-                            [
-                                'Ord' => 3,
-                                'Fase' => 'Edición',
-                                'Tipo' => 'Manual',
-                                'Manuales' => 'Manual Técnico',
-                                'Actividad' => 'Finalizado',
-                                'Porcentaje' => '100%',
-                            ],
-                            [
-                                'Ord' => 4,
-                                'Fase' => 'Total',
-                                'Tipo' => 'Resumen',
-                                'Manuales' => 'Todos los Documentos',
-                                'Actividad' => 'Consolidado',
-                                'Porcentaje' => '100%',
-                            ],
-                        ];
-                    @endphp
-
-                    @foreach ($tableData as $row)
+                    @foreach ($manualData as $row)
                         <tr>
-                            <td>{{ $row['Ord'] }}</td>
-                            <td>{{ $row['Fase'] }}</td>
-                            <td>{{ $row['Tipo'] }}</td>
-                            <td>{{ $row['Manuales'] }}</td>
-                            <td>{{ $row['Actividad'] }}</td>
-                            <td>{{ $row['Porcentaje'] }}</td>
+                            <td>{{ $ord++ }}</td>
+                            <td>{{ $row['phase_name'] }}</td>
+                            <td class="text-center">{{ $row['type_code'] }}</td>
+                            <td>{{ $row['manual_name'] }}</td>
+                            <td>{{ $row['current_activity'] }}</td>
+                            <td class="text-center">{{ $row['progress'] }}%</td>
                         </tr>
                     @endforeach
                 </tbody>

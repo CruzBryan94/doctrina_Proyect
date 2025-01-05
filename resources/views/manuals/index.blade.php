@@ -15,35 +15,40 @@
 
     <!-- Tabla DataTable -->
     <div class="card mt-1">
-        <div class="card-body">
+        <div class="card-body p-2">
             <!-- Botón para crear un nuevo manual -->
-            <div class="d-flex justify-content-center mb-4">
-                <a href="{{ route('manuals.newManual') }}" class="btn btn-info btn-lg shadow-sm px-4 py-2">
+            <div class="d-flex justify-content-center mb-3">
+                <a href="{{ route('manuals.newManual') }}" class="btn btn-info btn-sm shadow-sm px-3 py-1">
                     <i class="fas fa-plus-circle"></i> Crear Nuevo Manual
                 </a>
             </div>
 
             <table id="manualsTable" class="table table-bordered table-hover table-sm">
-                <thead>
+                <thead class="thead-light">
                     <tr>
-                        <th>Ord</th>
-                        <th>Fase</th>
-                        <th>Tipo</th>
-                        <th>Manuales y Reglamento</th>
-                        <th>Observaciones</th>
-                        <th>Acciones</th>
+                        <th class="text-center" style="font-size: 0.85rem;">Ord</th>
+                        <th style="font-size: 0.85rem;">Fase</th>
+                        <th class="text-center" style="font-size: 0.85rem;">Tipo</th>
+                        <th style="font-size: 0.85rem;">Manuales y Reglamento</th>
+                        <th style="font-size: 0.85rem;">Observaciones</th>
+                        <th style="font-size: 0.85rem;">Actividad Actual</th>
+                        <th class="text-center" style="font-size: 0.85rem;">Progreso</th>
+                        <th class="text-center" style="font-size: 0.85rem;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($data as $row)
-                        <tr>
+                        <tr style="font-size: 0.8rem; height: 30px;">
                             <td class="text-center">{{ $ord++ }}</td>
                             <td>{{ $row['phase_name'] }}</td>
                             <td class="text-center">{{ $row['type_code'] }}</td>
                             <td>{{ $row['manual_name'] }}</td>
                             <td>{{ $row['observations'] }}</td>
+                            <td>{{ $row['current_activity'] }}</td>
+                            <td class="text-center">{{ $row['progress'] }}%</td>
                             <td class="text-center">
-                                <a href="{{ route('manuals.editManual', $row['id']) }}" class="btn btn-secondary btn-sm shadow-sm px-4 py-2">
+                                <a href="{{ route('manuals.editManual', $row['id']) }}"
+                                    class="btn btn-secondary btn-sm px-2 py-1">
                                     <i class="fas fa-edit"></i> Editar
                                 </a>
                             </td>
@@ -53,6 +58,7 @@
             </table>
         </div>
     </div>
+
 
 @stop
 
