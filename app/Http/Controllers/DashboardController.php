@@ -21,9 +21,15 @@ class DashboardController extends Controller
 
         $publishedCount = Manual::all()->where('is_published', true)->count();
 
+        $secretaryCount = Manual::whereHas('manualPhaseSuphases', function ($query) {
+            $query->whereHas('catalogSubphase', function ($subQuery) {
+                $subQuery->where('suphase_name', 'ENVIADO GRUPO ASESOR');
+            })->where('is_completed', 1);
+        })->where('is_published',0)->count();
+
         $edicionCount = Manual::whereHas('manualPhase', function ($query) {
             $query->where('phase_name', 'EDICIÓN');
-        })->count() - $publishedCount;
+        })->count() - $publishedCount -$secretaryCount;
 
         $totalCount = Manual::count();
         // FIN DE SEGMENTO PARA CONTAR LOS MANUALES
@@ -58,6 +64,7 @@ class DashboardController extends Controller
             ['title' => 'INVESTIGACIÓN', 'count' => $investigacionCount],
             ['title' => 'EXPERIMENTACIÓN', 'count' => $experimentacionCount],
             ['title' => 'EDICIÓN', 'count' => $edicionCount],
+            ['title' => 'GRUPO ASESOR', 'count' => $secretaryCount],
             ['title' => 'PUBLICADOS', 'count' => $publishedCount],
             ['title' => 'TOTAL', 'count' => $totalCount],
         ];

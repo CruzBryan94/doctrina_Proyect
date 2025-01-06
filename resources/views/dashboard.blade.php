@@ -12,8 +12,8 @@
 
     <div class="row">
         @php
-            $icons = ['fas fa-search', 'fas fa-flask', 'fas fa-edit', 'fas fa-file-alt' , 'fas fa-tasks'];
-            $colors = ['bg-primary', 'bg-success', 'bg-warning', 'bg-info' , 'bg-danger'];
+            $icons = ['fas fa-search', 'fas fa-flask', 'fas fa-edit', 'fas fa-search-location', 'fas fa-tasks'];
+            $colors = ['bg-primary', 'bg-success', 'bg-warning', 'bg-info','bg-secondary', 'bg-danger'];
             $ord = 1;
         @endphp
 
@@ -59,12 +59,33 @@
                 <tbody>
                     @foreach ($manualData as $row)
                         <tr>
+                            <!-- Columna de Número -->
                             <td>{{ $ord++ }}</td>
-                            <td>{{ $row['phase_name'] }}</td>
+
+                            <!-- Columna de Fase -->
+                            <td
+                                @if ($row['phase_name'] === 'Investigación') style="background-color: rgba(0, 123, 255, 0.3);"
+                                @elseif ($row['phase_name'] === 'Experimentación')
+                                    style="background-color: rgba(40, 167, 69, 0.3);"
+                                @elseif ($row['phase_name'] === 'Edición')
+                                    style="background-color: rgba(255, 193, 7, 0.3);" @endif>
+                                {{ $row['phase_name'] }}
+                            </td>
+
+                            <!-- Columna de Tipo -->
                             <td class="text-center">{{ $row['type_code'] }}</td>
+
+                            <!-- Columna de Manuales -->
                             <td>{{ $row['manual_name'] }}</td>
+
+                            <!-- Columna de Actividad -->
                             <td>{{ $row['current_activity'] }}</td>
-                            <td class="text-center">{{ $row['progress'] }}%</td>
+
+                            <!-- Columna de Porcentaje -->
+                            <td class="text-center"
+                                @if ($row['progress'] == 100) style="background-color: rgba(40, 167, 69, 0.1);" @endif>
+                                {{ $row['progress'] }}%
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>

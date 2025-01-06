@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class CatalogSubphasesSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
+
     public function run(): void
     {
         $subphases = [
@@ -53,6 +51,7 @@ class CatalogSubphasesSeeder extends Seeder
             ['suphase_name' => 'CORRECCIÓN GRAFICA', 'manual_phases_id' => 3],
             ['suphase_name' => 'CORRECCIONES FINALES ARTE DISEÑO EDITORIAL', 'manual_phases_id' => 3],
             ['suphase_name' => 'TRÁMITE DE LEGALIZACION', 'manual_phases_id' => 3],
+            ['suphase_name' => 'ENVIADO GRUPO ASESOR', 'manual_phases_id' => 3],
             ['suphase_name' => 'PUBLICACIÓN EL EL SIFTE', 'manual_phases_id' => 3],
         ];
 

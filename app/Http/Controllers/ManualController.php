@@ -210,26 +210,60 @@ class ManualController extends Controller
     public function update(Request $request, $id)
     {
         $manual = Manual::find($id);
+        $phasesId = $manual->manual_phases_id;
 
-        // Obtener todas las subfases relacionadas con la fase
-        $allPhases = CatalogSubphase::where('manual_phases_id', 1)->pluck('id')->toArray();
+        // Obtener todas las subfases relacionadas con la fase actual
+        $allPhases = CatalogSubphase::where('manual_phases_id', $phasesId)->pluck('id')->toArray();
+
+        $allCompleted = true; // Variable para verificar si todas las subfases están completadas
+        $anyIncomplete = false; // Variable para verificar si hay subfases incompletas
 
         foreach ($allPhases as $phaseId) {
-            $data = $request->phases[$phaseId] ?? null;
+            // Obtén los datos de la fase actual, o usa un array vacío si no existen
+            $data = $request->phases[$phaseId] ?? [];
+
+            $isCompleted = $data['is_completed'] ?? 0;
+            $completionDate = $isCompleted ? ($data['completation_date'] ?? null) : null;
 
             ManualPhaseSuphase::updateOrCreate(
                 ['manuals_id' => $manual->id, 'catalog_subphases_id' => $phaseId],
                 [
-                    'is_completed' => $data['is_completed'] ?? 0,
-                    'completation_date' => $data['completation_date'] ?? null,
-                    'manual_phases_id' => 1,
+                    'is_completed' => $isCompleted,
+                    'completation_date' => $completionDate,
+                    'manual_phases_id' => $phasesId,
                 ]
             );
+
+            // Actualizamos las variables de control
+            if ($isCompleted) {
+                $anyIncomplete = true; // Hay al menos una subfase completada
+            } else {
+                $allCompleted = false; // No todas las subfases están completadas
+            }
         }
 
-        return redirect()->route('manuals.index')->with('success', 'Subfases actualizadas correctamente.');
+        // Lógica para avanzar, retroceder de fase o publicar
+        if ($phasesId === 3) {
+            // Verificar si todas las subfases de la fase 3 están completadas
+            if ($allCompleted) {
+                $manual->is_published = true; // Publicar manual
+            } else {
+                $manual->is_published = false; // Despublicar manual
+            }
+        } elseif ($allCompleted && $phasesId < 3) {
+            // Avanzar de fase si todas las subfases están completadas y no es la última fase
+            $manual->manual_phases_id = $phasesId + 1;
+        } elseif (!$anyIncomplete && $phasesId > 1) {
+            // Retroceder de fase si todas las subfases de la fase actual están incompletas
+            $manual->manual_phases_id = $phasesId - 1;
+        }
 
+        $manual->save();
+
+        return redirect()->route('manuals.index')->with('success', 'Subfases actualizadas correctamente.');
     }
+
+
 
 
     function calculateProgress($manualId, $idPhase)
