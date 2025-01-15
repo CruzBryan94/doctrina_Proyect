@@ -14,10 +14,33 @@ class ManualTypesSeeder extends Seeder
     public function run(): void
     {
         $manualTypes = [
-            ['code' => 'MTE', 'type_name' => 'Manual de Técnicas del Ejército'],
-            ['code' => 'MCE', 'type_name' => 'Manual de Campaña del Ejército'],
+            ['code' => 'MFE', 'type_name' => 'MANUALES FUNDAMENTALES DEL EJÉRCITO'],
+            ['code' => 'MFRE', 'type_name' => 'MANUALES FUNDAMENTALES DE REFERENCIA DEL EJÉRCITO'],
+            ['code' => 'MCE', 'type_name' => 'MANUALES DE CAMPAÑA DEL EJÉRCITO'],
+            ['code' => 'MTE', 'type_name' => 'MANUALES DE TÉCNICAS DEL EJÉRCITO'],
+            ['code' => 'MEM', 'type_name' => 'EDUCACIÓN MILITAR'],
+            ['code' => 'MME', 'type_name' => 'MANTENIMIENTO'],
+            ['code' => 'MSI', 'type_name' => 'SEGURIDAD INTEGRADA'],
+            ['code' => 'MAF', 'type_name' => 'ADMINISTRATIVO FUNCIONAL'],
+            ['code' => 'RAE', 'type_name' => 'REGLAMENTOS ADMINISTRATIVOS'],
+            ['code' => 'CTE', 'type_name' => 'CATÁLOGOS'],
         ];
 
         DB::table('manual_types')->insert($manualTypes);
     }
+
+
+    :
+:
+:
+:
+
+:  (MEM)
+:  (MME)
+:  (MSI)
+:  (MAF)
+RAE:
+CTE:  (CTE)
+
+
 }

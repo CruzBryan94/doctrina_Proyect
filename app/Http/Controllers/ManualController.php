@@ -72,7 +72,11 @@ class ManualController extends Controller
             'manual_name' => 'required|string|max:100',
             'committee_research_members' => 'required|json',
             'committee_validation_members' => 'required|json',
-            'military_units' => 'required|json',
+            'committee_experiment_members' => 'required|json',
+            'committee_experiment_validation_members' => 'required|json',
+            'military_units_investigation' => 'required|json',
+            'military_units_experiment' => 'required|json',
+            'military_units_experiment_validation' => 'required|json',
             'observations' => 'nullable|string',
             'manual_type_id' => 'required|integer',
         ]);
@@ -81,7 +85,7 @@ class ManualController extends Controller
         $manual = new Manual();
         $manual->manual_name = $validatedData['manual_name'];
         $manual->observations = $validatedData['observations'] ?? null;
-        $manual->manual_phases_id = 1; // ID de la fase inicial
+        $manual->manual_phases_id = 1; // Fase inicial
         $manual->manual_types_id = $validatedData['manual_type_id'];
         $manual->is_published = false;
         $manual->is_active = true;
@@ -93,33 +97,60 @@ class ManualController extends Controller
         // Decodificar los campos JSON
         $researchMembers = json_decode($validatedData['committee_research_members'], true);
         $validationMembers = json_decode($validatedData['committee_validation_members'], true);
-        $militaryUnits = json_decode($validatedData['military_units'], true);
+        $experimentMembers = json_decode($validatedData['committee_experiment_members'], true);
+        $experimentValidationMembers = json_decode($validatedData['committee_experiment_validation_members'], true);
+        $militaryUnitsInvestigation = json_decode($validatedData['military_units_investigation'], true);
+        $militaryUnitsExperiment = json_decode($validatedData['military_units_experiment'], true);
+        $militaryUnitsExperimentValidation = json_decode($validatedData['military_units_experiment_validation'], true);
 
         // Verificar que los datos decodificados sean arrays válidos
-        if (!is_array($researchMembers) || !is_array($validationMembers) || !is_array($militaryUnits)) {
-            return back()->withErrors(['error' => 'Los datos de los miembros del comité o unidades no son válidos.']);
+        if (
+            !is_array($researchMembers) ||
+            !is_array($validationMembers) ||
+            !is_array($experimentMembers) ||
+            !is_array($experimentValidationMembers) ||
+            !is_array($militaryUnitsInvestigation) ||
+            !is_array($militaryUnitsExperiment) ||
+            !is_array($militaryUnitsExperimentValidation)
+        ) {
+            return back()->withErrors(['error' => 'Los datos proporcionados no son válidos.']);
         }
 
-        // Guardar en la tabla manual_committee_members los miembros del comité de investigación
+        // Guardar los miembros de cada comité
         foreach ($researchMembers as $memberId) {
             ManualCommitteeMember::create([
                 'manuals_id' => $manualId,
-                'committee_type_id' => 1, // 1 = Investigación
+                'committee_type_id' => 1, // Investigación
                 'committee_members_id' => $memberId,
             ]);
         }
 
-        // Guardar en la tabla manual_committee_members los miembros del comité de validación
         foreach ($validationMembers as $memberId) {
             ManualCommitteeMember::create([
                 'manuals_id' => $manualId,
-                'committee_type_id' => 2, // 2 = Validación
+                'committee_type_id' => 2, // Validación
                 'committee_members_id' => $memberId,
             ]);
         }
 
-        // Guardar las unidades militares asociadas al manual
-        foreach ($militaryUnits as $unitId) {
+        foreach ($experimentMembers as $memberId) {
+            ManualCommitteeMember::create([
+                'manuals_id' => $manualId,
+                'committee_type_id' => 3, // Experimentación
+                'committee_members_id' => $memberId,
+            ]);
+        }
+
+        foreach ($experimentValidationMembers as $memberId) {
+            ManualCommitteeMember::create([
+                'manuals_id' => $manualId,
+                'committee_type_id' => 4, // Validación de Experimentación
+                'committee_members_id' => $memberId,
+            ]);
+        }
+
+        // Guardar las unidades asociadas a cada comité
+        foreach ($militaryUnitsInvestigation as $unitId) {
             ManualMilitaryUnit::create([
                 'manuals_id' => $manualId,
                 'military_units_id' => $unitId,
@@ -127,21 +158,38 @@ class ManualController extends Controller
             ]);
         }
 
-        // Obtener todas las subfases del manual_phases_id = 1
+        foreach ($militaryUnitsExperiment as $unitId) {
+            ManualMilitaryUnit::create([
+                'manuals_id' => $manualId,
+                'military_units_id' => $unitId,
+                'committee_type_id' => 3,
+            ]);
+        }
+
+        foreach ($militaryUnitsExperimentValidation as $unitId) {
+            ManualMilitaryUnit::create([
+                'manuals_id' => $manualId,
+                'military_units_id' => $unitId,
+                'committee_type_id' => 4,
+            ]);
+        }
+
+        // Crear las subfases de la fase inicial (manual_phases_id = 1)
         $subphases = CatalogSubphase::where('manual_phases_id', 1)->get();
 
         foreach ($subphases as $index => $subphase) {
             ManualPhaseSuphase::create([
                 'manuals_id' => $manualId,
                 'catalog_subphases_id' => $subphase->id,
-                'is_completed' => $index === 0 ? 1 : 0, // Solo marcar completada la primera subfase
-                'completation_date' => $index === 0 ? now() : null, // Solo agregar fecha a la primera subfase
+                'is_completed' => $index === 0 ? 1 : 0, // Completar solo la primera subfase
+                'completation_date' => $index === 0 ? now() : null,
                 'manual_phases_id' => 1,
             ]);
         }
 
         return redirect()->route('manuals.index')->with('success', 'Manual creado correctamente.');
     }
+
 
 
     public function editManual($id)
@@ -160,11 +208,36 @@ class ManualController extends Controller
             ->with('committeeMember.grade') // Relación con la tabla de miembros y grados
             ->get();
 
+        // Obtener los miembros del comité de experimentación
+        $experimentationCommitteeMembers = ManualCommitteeMember::where('manuals_id', $id)
+            ->where('committee_type_id', 3)
+            ->with('committeeMember.grade') // Relación con la tabla de miembros y grados
+            ->get();
+
+        //Obtener los miembros del comité de validación de la experimentación
+        $expValidCommitteeMembers = ManualCommitteeMember::where('manuals_id', $id)
+            ->where('committee_type_id', 4)
+            ->with('committeeMember.grade') // Relación con la tabla de miembros y grados
+            ->get();
+
+
         // Obtener las unidades militares asociadas al manual
         $militaryUnits = ManualMilitaryUnit::where('manuals_id', $id)
             ->where('committee_type_id', 1) // Validar que sea del tipo 1
             ->with('militaryUnit') // Relación con la tabla MilitaryUnit
             ->get();
+
+        // Obtener las unidades militares del comité de experimentación
+        $militaryUnitsExp = ManualMilitaryUnit::where('manuals_id', $id)
+            ->where('committee_type_id', 3) // Validar que sea del tipo 1
+            ->with('militaryUnit') // Relación con la tabla MilitaryUnit
+            ->get();
+
+            // Obtener las unidades militares del comité de validación a la experimentación
+        $militaryUnitsExpVal = ManualMilitaryUnit::where('manuals_id', $id)
+        ->where('committee_type_id', 4) // Validar que sea del tipo 1
+        ->with('militaryUnit') // Relación con la tabla MilitaryUnit
+        ->get();
 
         // Obtenemos las subfases para cada fase con sus estados de cumplimiento y fechas
         $researchPhases = CatalogSubphase::where('manual_phases_id', 1)
@@ -201,7 +274,11 @@ class ManualController extends Controller
             'editionPhases',
             'researchCommitteeMembers',
             'validationCommitteeMembers',
+            'expValidCommitteeMembers',
+            'experimentationCommitteeMembers',
             'militaryUnits',
+            'militaryUnitsExp',
+            'militaryUnitsExpVal',
             'researchProgress',
             'researchActivity',
         ));

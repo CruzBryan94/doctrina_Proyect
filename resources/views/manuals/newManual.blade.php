@@ -22,77 +22,157 @@
                         placeholder="Ingrese el nombre del manual" required>
                 </div>
 
-                <div class="row">
-                    <!-- Miembros del Comité de Investigación -->
-                    <div class="form-group col-md-6 col-sm-12">
-                        <label for="committee_research_members">Miembros del Comité de Investigación</label>
-                        <div class="input-group mb-3">
-                            <input type="text" id="committee_research_search" class="form-control"
-                                placeholder="Buscar por apellido o cédula de identidad">
-                            <div class="input-group-append">
-                                <button type="button" id="add_committee_research_member"
-                                    class="btn btn-info">Añadir</button>
+                <!-- INVESTIGACIÓN -->
+                <div class="investigation-section">
+                    <div class="col-12 text-center">
+                        <h5 class="text-uppercase text-bold">INVESTIGACIÓN</h5>
+                    </div>
+                    <div class="row">
+                        <!-- Miembros del Comité de Investigación -->
+                        <div class="form-group col-md-6 col-sm-12">
+                            <label for="committee_research_search">Miembros del Comité de Investigación</label>
+                            <div class="input-group mb-3">
+                                <input type="text" id="committee_research_search" class="form-control"
+                                    placeholder="Buscar por apellido o cédula de identidad">
+                                <div class="input-group-append">
+                                    <button type="button" id="add_committee_research_member"
+                                        class="btn btn-info">Añadir</button>
+                                </div>
                             </div>
+                            <div class="alert alert-danger d-none" id="no_research_member_alert">No se encontró ningún
+                                miembro con ese criterio de búsqueda.</div>
+                            <ul id="selected_committee_research_members" class="list-group col-11"></ul>
+                            <input type="hidden" name="committee_research_members" id="committee_research_members">
                         </div>
-                        <div class="alert alert-danger d-none" id="no_research_member_alert">No se encontró ningún miembro
-                            con ese criterio de búsqueda.</div>
-                        <ul id="selected_committee_research_members" class="list-group col-11">
-                            <!-- Aquí se mostrarán los miembros seleccionados -->
-                        </ul>
-                        <input type="hidden" name="committee_research_members" id="committee_research_members"
-                            value="">
+
+                        <!-- Miembros del Comité de Validación -->
+                        <div class="form-group col-md-6 col-sm-12">
+                            <label for="committee_validation_search">Miembros del Comité de Validación</label>
+                            <div class="input-group mb-3">
+                                <input type="text" id="committee_validation_search" class="form-control"
+                                    placeholder="Buscar por apellido o cédula de identidad">
+                                <div class="input-group-append">
+                                    <button type="button" id="add_committee_validation_member"
+                                        class="btn btn-info">Añadir</button>
+                                </div>
+                            </div>
+                            <div class="alert alert-danger d-none" id="no_validation_member_alert">No se encontró ningún
+                                miembro con ese criterio de búsqueda.</div>
+                            <ul id="selected_committee_validation_members" class="list-group col-11"></ul>
+                            <input type="hidden" name="committee_validation_members" id="committee_validation_members">
+                        </div>
                     </div>
 
-                    <!-- Miembros del Comité de Validación -->
-                    <div class="form-group col-md-6 col-sm-12">
-                        <label for="committee_validation_members">Miembros del Comité de Validación</label>
-                        <div class="input-group mb-3">
-                            <input type="text" id="committee_validation_search" class="form-control"
-                                placeholder="Buscar por apellido o cédula de identidad">
-                            <div class="input-group-append">
-                                <button type="button" id="add_committee_validation_member"
-                                    class="btn btn-info">Añadir</button>
+                    <div class="row">
+                        <!-- Unidades del Comité de Investigación -->
+                        <div class="form-group col-md-6 col-sm-12">
+                            <label for="unit_search_investigation">Unidades del Comité de Investigación</label>
+                            <div class="input-group mb-3">
+                                <input type="text" id="unit_search_investigation" class="form-control"
+                                    placeholder="Buscar unidad por abreviatura">
+                                <div class="input-group-append">
+                                    <button type="button" id="add_unit_investigation" class="btn btn-info">Añadir
+                                        Unidad</button>
+                                </div>
                             </div>
+                            <div class="alert alert-danger d-none" id="no_unit_alert_investigation">No se encontró ninguna
+                                unidad con ese criterio de búsqueda.</div>
+                            <ul id="selected_units_investigation" class="list-group col-11"></ul>
+                            <input type="hidden" name="military_units_investigation" id="military_units_investigation">
                         </div>
-                        <div class="alert alert-danger d-none" id="no_validation_member_alert">No se encontró ningún miembro
-                            con ese criterio de búsqueda.</div>
-                        <ul id="selected_committee_validation_members" class="list-group col-11">
-                            <!-- Aquí se mostrarán los miembros seleccionados -->
-                        </ul>
-                        <input type="hidden" name="committee_validation_members" id="committee_validation_members"
-                            value="">
+
+                        <!-- Tipo de Manual -->
+                        <div class="form-group col-md-6 col-sm-12">
+                            <label for="manual_type">Tipo de Manual</label>
+                            <select class="form-control" id="manual_type" name="manual_type_id">
+                                <option value="" disabled selected>Seleccione un tipo de manual</option>
+                                @foreach ($manualTypes as $manualType)
+                                    <option value="{{ $manualType->id }}">{{ $manualType->type_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div class="row">
-
-                    <!-- Unidades Seleccionadas -->
-                    <div class="form-group col-md-6 col-sm-12">
-                        <label for="military_units">Unidades Seleccionadas</label>
-                        <div class="input-group mb-3">
-                            <input type="text" id="unit_search" class="form-control"
-                                placeholder="Buscar unidad por su abreviatura">
-                            <div class="input-group-append">
-                                <button type="button" id="add_unit" class="btn btn-info">Añadir</button>
+                <!-- EXPERIMENTACIÓN -->
+                <div class="experiment-section">
+                    <div class="col-12 text-center">
+                        <h5 class="text-uppercase text-bold">EXPERIMENTACIÓN</h5>
+                    </div>
+                    <div class="row">
+                        <!-- Miembros del Comité de Experimentación -->
+                        <div class="form-group col-md-6 col-sm-12">
+                            <label for="committee_experiment_search">Miembros del Comité de Experimentación</label>
+                            <div class="input-group mb-3">
+                                <input type="text" id="committee_experiment_search" class="form-control"
+                                    placeholder="Buscar por apellido o cédula de identidad">
+                                <div class="input-group-append">
+                                    <button type="button" id="add_committee_experiment_member"
+                                        class="btn btn-info">Añadir</button>
+                                </div>
                             </div>
+                            <div class="alert alert-danger d-none" id="no_experiment_member_alert">No se encontró ningún
+                                miembro con ese criterio de búsqueda.</div>
+                            <ul id="selected_committee_experiment_members" class="list-group col-11"></ul>
+                            <input type="hidden" name="committee_experiment_members" id="committee_experiment_members">
                         </div>
-                        <div class="alert alert-danger d-none" id="no_unit_alert">No se encontró ninguna unidad con ese
-                            criterio
-                            de búsqueda.</div>
-                        <ul id="selected_units" class="list-group col-11">
-                            <!-- Aquí se mostrarán las unidades seleccionadas -->
-                        </ul>
-                        <input type="hidden" name="military_units" id="military_units" value="">
+
+                        <!-- Miembros del Comité de Validación de Experimentación -->
+                        <div class="form-group col-md-6 col-sm-12">
+                            <label for="committee_experiment_validation_search">Miembros del Comité de Validación de
+                                Experimentación</label>
+                            <div class="input-group mb-3">
+                                <input type="text" id="committee_experiment_validation_search" class="form-control"
+                                    placeholder="Buscar por apellido o cédula de identidad">
+                                <div class="input-group-append">
+                                    <button type="button" id="add_committee_experiment_validation_member"
+                                        class="btn btn-info">Añadir</button>
+                                </div>
+                            </div>
+                            <div class="alert alert-danger d-none" id="no_experiment_validation_member_alert">No se
+                                encontró ningún miembro con ese criterio de búsqueda.</div>
+                            <ul id="selected_committee_experiment_validation_members" class="list-group col-11"></ul>
+                            <input type="hidden" name="committee_experiment_validation_members"
+                                id="committee_experiment_validation_members">
+                        </div>
                     </div>
 
-                    <div class="form-group col-md-6 col-sm-12">
-                        <label for="manual_type">Tipo de Manual</label>
-                        <select class="form-control" id="manual_type" name="manual_type_id">
-                            <option value="" disabled selected>Seleccione un tipo de manual</option>
-                            @foreach ($manualTypes as $manualType)
-                                <option value="{{ $manualType->id }}">{{ $manualType->type_name }}</option>
-                            @endforeach
-                        </select>
+                    <div class="row">
+                        <!-- Unidades Comité de Experimentación -->
+                        <div class="form-group col-md-6 col-sm-12">
+                            <label for="unit_search_experiment">Unidades del Comité de Experimentación</label>
+                            <div class="input-group mb-3">
+                                <input type="text" id="unit_search_experiment" class="form-control"
+                                    placeholder="Buscar unidad por abreviatura">
+                                <div class="input-group-append">
+                                    <button type="button" id="add_unit_experiment" class="btn btn-info">Añadir
+                                        Unidad</button>
+                                </div>
+                            </div>
+                            <div class="alert alert-danger d-none" id="no_unit_alert_experiment">No se encontró ninguna
+                                unidad con ese criterio de búsqueda.</div>
+                            <ul id="selected_units_experiment" class="list-group col-11"></ul>
+                            <input type="hidden" name="military_units_experiment" id="military_units_experiment">
+                        </div>
+
+                        <!-- Unidades Comité de Validación de Experimentación -->
+                        <div class="form-group col-md-6 col-sm-12">
+                            <label for="unit_search_experiment_validation">Unidades del Comité de Validación de
+                                Experimentación</label>
+                            <div class="input-group mb-3">
+                                <input type="text" id="unit_search_experiment_validation" class="form-control"
+                                    placeholder="Buscar unidad por abreviatura">
+                                <div class="input-group-append">
+                                    <button type="button" id="add_unit_experiment_validation"
+                                        class="btn btn-info">Añadir Unidad</button>
+                                </div>
+                            </div>
+                            <div class="alert alert-danger d-none" id="no_unit_alert_experiment_validation">No se encontró
+                                ninguna unidad con ese criterio de búsqueda.</div>
+                            <ul id="selected_units_experiment_validation" class="list-group col-11"></ul>
+                            <input type="hidden" name="military_units_experiment_validation"
+                                id="military_units_experiment_validation">
+                        </div>
                     </div>
                 </div>
 
@@ -103,17 +183,18 @@
                         placeholder="Ingrese observaciones sobre el manual"></textarea>
                 </div>
 
+                <!-- Botones -->
                 <div class="d-flex justify-content-center mt-4">
-                    <!-- Botón "Cancelar y Regresar" -->
-                    <a href="{{ route('manuals.index') }}" class="btn btn-outline-secondary m-1 btn-md me-3 px-4 py-2 shadow-sm">
+                    <a href="{{ route('manuals.index') }}"
+                        class="btn btn-outline-secondary m-1 btn-md me-3 px-4 py-2 shadow-sm">
                         <i class="fas fa-arrow-left"></i> Cancelar y Regresar
                     </a>
-                    <!-- Botón "Guardar Manual" -->
                     <button type="submit" class="btn btn-info m-1 btn-md px-4 py-2 shadow-sm">
                         <i class="fas fa-save"></i> Guardar Manual
                     </button>
                 </div>
             </form>
+
         </div>
     </div>
 @stop
@@ -148,32 +229,55 @@
             margin: 10px auto 0;
             border-radius: 2px;
         }
+
+        .investigation-section {
+            background-color: rgba(0, 123, 255, 0.1);
+            padding: 8px;
+            border-radius: 5px;
+        }
+
+        .experiment-section {
+            margin-top: 7px;
+            border-bottom: 1px solid #e5e5e5;
+            background-color: rgba(40, 167, 69, 0.15);
+            padding: 8px;
+            border-radius: 5px;
+        }
     </style>
 @stop
 
 @section('js')
     <script>
         $(document).ready(function() {
+            // Variables iniciales
             const committeeMembers = @json($committeeMembers);
             const militaryUnits = @json($militaryUnits);
 
-            let selectedCommitteeMembersResearch = [];
-            let selectedCommitteeMembersValidation = [];
-            let selectedUnits = [];
+            // Arrays para almacenar miembros y unidades seleccionadas
+            let selectedResearchCommitteeMembers = []; // Comité de Investigación
+            let selectedValidationCommitteeMembers = []; // Comité de Validación
+            let selectedExperimentCommitteeMembers = []; // Comité de Experimentación
+            let selectedExperimentValidationCommitteeMembers = []; // Comité de Validación de Experimentación
+            let selectedInvestigationUnits = []; // Unidades de Investigación
+            let selectedExperimentUnits = []; // Unidades de Experimentación
+            let selectedExperimentValidationUnits = []; // Unidades de Validación de Experimentación
 
-            // Función genérica para añadir miembros
+            // Función genérica para añadir miembros a un comité
             function addCommitteeMember(searchValue, selectedMembers, listSelector, hiddenInput, alertSelector) {
-                const member = committeeMembers.find(m => m.full_name.toLowerCase().includes(searchValue) || m
-                    .identification.includes(searchValue));
+                const member = committeeMembers.find(
+                    (m) =>
+                    m.full_name.toLowerCase().includes(searchValue) ||
+                    m.identification.includes(searchValue)
+                );
 
-                if (member && !selectedMembers.some(m => m.id === member.id)) {
+                if (member && !selectedMembers.some((m) => m.id === member.id)) {
                     selectedMembers.push(member);
                     $(listSelector).append(`
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        ${member.grade} ${member.full_name} (${member.identification})
-                        <button type="button" class="btn btn-danger btn-sm remove-member" data-id="${member.id}">Eliminar</button>
-                    </li>
-                `);
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    ${member.grade} ${member.full_name} (${member.identification})
+                    <button type="button" class="btn btn-danger btn-sm remove-member" data-id="${member.id}">Eliminar</button>
+                </li>
+            `);
                     updateHiddenInput(selectedMembers, hiddenInput);
                     $(alertSelector).addClass('d-none');
                 } else {
@@ -181,18 +285,18 @@
                 }
             }
 
-            // Función genérica para actualizar el campo oculto
-            function updateHiddenInput(selectedMembers, hiddenInput) {
-                const memberIds = selectedMembers.map(m => m.id);
-                $(hiddenInput).val(JSON.stringify(memberIds));
+            // Función genérica para actualizar el valor del input oculto
+            function updateHiddenInput(selectedItems, hiddenInput) {
+                const itemIds = selectedItems.map((item) => item.id);
+                $(hiddenInput).val(JSON.stringify(itemIds));
             }
 
-            // Miembros del Comité de Investigación
+            // Eventos para añadir miembros a los diferentes comités
             $('#add_committee_research_member').on('click', function() {
                 const searchValue = $('#committee_research_search').val().toLowerCase();
                 addCommitteeMember(
                     searchValue,
-                    selectedCommitteeMembersResearch,
+                    selectedResearchCommitteeMembers,
                     '#selected_committee_research_members',
                     '#committee_research_members',
                     '#no_research_member_alert'
@@ -200,12 +304,11 @@
                 $('#committee_research_search').val('');
             });
 
-            // Miembros del Comité de Validación
             $('#add_committee_validation_member').on('click', function() {
                 const searchValue = $('#committee_validation_search').val().toLowerCase();
                 addCommitteeMember(
                     searchValue,
-                    selectedCommitteeMembersValidation,
+                    selectedValidationCommitteeMembers,
                     '#selected_committee_validation_members',
                     '#committee_validation_members',
                     '#no_validation_member_alert'
@@ -213,81 +316,152 @@
                 $('#committee_validation_search').val('');
             });
 
-            // Eliminar Miembro
+            $('#add_committee_experiment_member').on('click', function() {
+                const searchValue = $('#committee_experiment_search').val().toLowerCase();
+                addCommitteeMember(
+                    searchValue,
+                    selectedExperimentCommitteeMembers,
+                    '#selected_committee_experiment_members',
+                    '#committee_experiment_members',
+                    '#no_experiment_member_alert'
+                );
+                $('#committee_experiment_search').val('');
+            });
+
+            $('#add_committee_experiment_validation_member').on('click', function() {
+                const searchValue = $('#committee_experiment_validation_search').val().toLowerCase();
+                addCommitteeMember(
+                    searchValue,
+                    selectedExperimentValidationCommitteeMembers,
+                    '#selected_committee_experiment_validation_members',
+                    '#committee_experiment_validation_members',
+                    '#no_experiment_validation_member_alert'
+                );
+                $('#committee_experiment_validation_search').val('');
+            });
+
+            // Evento para eliminar miembros de cualquier lista
             $(document).on('click', '.remove-member', function() {
                 const memberId = $(this).data('id');
-                selectedCommitteeMembersResearch = selectedCommitteeMembersResearch.filter(m => m.id !==
+                selectedResearchCommitteeMembers = selectedResearchCommitteeMembers.filter((m) => m.id !==
                     memberId);
-                selectedCommitteeMembersValidation = selectedCommitteeMembersValidation.filter(m => m.id !==
-                    memberId);
+                selectedValidationCommitteeMembers = selectedValidationCommitteeMembers.filter((m) => m
+                    .id !== memberId);
+                selectedExperimentCommitteeMembers = selectedExperimentCommitteeMembers.filter((m) => m
+                    .id !== memberId);
+                selectedExperimentValidationCommitteeMembers = selectedExperimentValidationCommitteeMembers
+                    .filter((m) => m.id !== memberId);
                 $(this).parent().remove();
-                updateHiddenInput(selectedCommitteeMembersResearch, '#committee_research_members');
-                updateHiddenInput(selectedCommitteeMembersValidation, '#committee_validation_members');
             });
 
-            // Unidades
-            $('#add_unit').on('click', function() {
-                const searchValue = $('#unit_search').val().toLowerCase();
-                const unit = militaryUnits.find(u => u.unit_acronym.toLowerCase().includes(searchValue));
+            // Función genérica para añadir unidades
+            function addUnit(searchValue, selectedUnits, listSelector, hiddenInput, alertSelector) {
+                const unit = militaryUnits.find((u) =>
+                    u.unit_acronym.toLowerCase().includes(searchValue)
+                );
 
-                if (unit && !selectedUnits.some(u => u.id === unit.id)) {
+                if (unit && !selectedUnits.some((u) => u.id === unit.id)) {
                     selectedUnits.push(unit);
-                    $('#selected_units').append(`
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        ${unit.unit_acronym} - ${unit.unit_name}
-                        <button type="button" class="btn btn-danger btn-sm remove-unit" data-id="${unit.id}">Eliminar</button>
-                    </li>
-                `);
-                    updateHiddenInput(selectedUnits, '#military_units');
-                    $('#no_unit_alert').addClass('d-none');
+                    $(listSelector).append(`
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    ${unit.unit_acronym} - ${unit.unit_name}
+                    <button type="button" class="btn btn-danger btn-sm remove-unit" data-id="${unit.id}">Eliminar</button>
+                </li>
+            `);
+                    updateHiddenInput(selectedUnits, hiddenInput);
+                    $(alertSelector).addClass('d-none');
                 } else {
-                    $('#no_unit_alert').removeClass('d-none');
+                    $(alertSelector).removeClass('d-none');
                 }
-                $('#unit_search').val('');
+            }
+
+            // Eventos para añadir unidades a las diferentes categorías
+            $('#add_unit_investigation').on('click', function() {
+                const searchValue = $('#unit_search_investigation').val().toLowerCase();
+                addUnit(
+                    searchValue,
+                    selectedInvestigationUnits,
+                    '#selected_units_investigation',
+                    '#military_units_investigation',
+                    '#no_unit_alert_investigation'
+                );
+                $('#unit_search_investigation').val('');
             });
 
+            $('#add_unit_experiment').on('click', function() {
+                const searchValue = $('#unit_search_experiment').val().toLowerCase();
+                addUnit(
+                    searchValue,
+                    selectedExperimentUnits,
+                    '#selected_units_experiment',
+                    '#military_units_experiment',
+                    '#no_unit_alert_experiment'
+                );
+                $('#unit_search_experiment').val('');
+            });
+
+            $('#add_unit_experiment_validation').on('click', function() {
+                const searchValue = $('#unit_search_experiment_validation').val().toLowerCase();
+                addUnit(
+                    searchValue,
+                    selectedExperimentValidationUnits,
+                    '#selected_units_experiment_validation',
+                    '#military_units_experiment_validation',
+                    '#no_unit_alert_experiment_validation'
+                );
+                $('#unit_search_experiment_validation').val('');
+            });
+
+            // Evento para eliminar unidades
             $(document).on('click', '.remove-unit', function() {
                 const unitId = $(this).data('id');
-                selectedUnits = selectedUnits.filter(u => u.id !== unitId);
+                selectedInvestigationUnits = selectedInvestigationUnits.filter((u) => u.id !== unitId);
+                selectedExperimentUnits = selectedExperimentUnits.filter((u) => u.id !== unitId);
+                selectedExperimentValidationUnits = selectedExperimentValidationUnits.filter((u) => u.id !==
+                    unitId);
                 $(this).parent().remove();
-                updateHiddenInput(selectedUnits, '#military_units');
             });
 
-            // Validar el formulario antes de enviarlo
+            // Validación del formulario antes de enviarlo
             $('form').on('submit', function(e) {
                 let isValid = true;
                 let messages = [];
 
                 // Validar que haya al menos un miembro en cada comité
-                if (selectedCommitteeMembersResearch.length === 0) {
+                if (selectedResearchCommitteeMembers.length === 0) {
                     isValid = false;
-                    messages.push("Debe seleccionar al menos un miembro del Comité de Investigación.");
+                    messages.push('Debe seleccionar al menos un miembro del Comité de Investigación.');
                 }
-
-                if (selectedCommitteeMembersValidation.length === 0) {
+                if (selectedValidationCommitteeMembers.length === 0) {
                     isValid = false;
-                    messages.push("Debe seleccionar al menos un miembro del Comité de Validación.");
+                    messages.push('Debe seleccionar al menos un miembro del Comité de Validación.');
                 }
 
                 // Validar que haya al menos una unidad seleccionada
-                if (selectedUnits.length === 0) {
+                if (
+                    selectedInvestigationUnits.length === 0 &&
+                    selectedExperimentUnits.length === 0 &&
+                    selectedExperimentValidationUnits.length === 0
+                ) {
                     isValid = false;
-                    messages.push("Debe seleccionar al menos una Unidad.");
+                    messages.push('Debe seleccionar al menos una Unidad.');
                 }
 
                 // Validar que se haya seleccionado un tipo de manual
                 const manualType = $('#manual_type').val();
                 if (!manualType) {
                     isValid = false;
-                    messages.push("Debe seleccionar un tipo de Manual.");
+                    messages.push('Debe seleccionar un tipo de Manual.');
                 }
 
                 // Mostrar alertas si no es válido
                 if (!isValid) {
                     e.preventDefault(); // Evitar que el formulario se envíe
-                    alert(messages.join("\n"));
+                    alert(messages.join('\n'));
                 }
             });
         });
     </script>
+
+
 @stop

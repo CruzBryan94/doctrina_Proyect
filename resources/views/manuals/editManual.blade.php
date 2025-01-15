@@ -3,325 +3,333 @@
 @section('title', 'NUEVO MANUAL')
 
 @section('content_header')
-    <div class="title-container">
-        <h1 class="dashboard-title">ADMINISTRACIÓN: {{ $manual->manual_name }}</h1>
+    <div class="title-container mb-0" >
+        <h2 class="dashboard-title " style="font-size: x-large;">ADMINISTRACIÓN: {{ $manual->manual_name }}</h2>
     </div>
 @stop
 
 @section('content')
-    <div class="card">
+    <div class="card mt-0">
 
-        @if($manual->manual_phases_id==1)
+        {{-- PARA MANUALES EN INVESTIGACION --}}
+        @if ($manual->manual_phases_id == 1)
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="text-center text-black text-bold" style="font-size: larger;">
+                            FASE DE INVESTIGACIÓN
+                        </h5>
+                    </div>
 
-
-        <div class="card-body">
-            <div class="row">
-                <div class="col-12">
-                    <h5 class="text-center text-black text-bold">
-                        FASE DE INVESTIGACIÓN
-                    </h5>
-                </div>
-
-                <div class="col-lg-9 col-md-9  col-xs-6">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Actividad
-                            </h5>
-                        </div>
-                        <div class="card-body bg-light p-2">
-                            {{ $researchActivity }}
+                    <div class="col-lg-9 col-md-9 col-xs-6">
+                        <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
+                            <div class="card-header bg-light border-bottom border-secondary p-1 d-flex justify-content-center align-items-center">
+                                <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 0.8rem;">
+                                    Actividad
+                                </h5>
+                            </div>
+                            <div class="card-body bg-light p-1" style="font-size: 0.8rem;">
+                                {{ $researchActivity }}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="col-lg-3 col-md-3  col-xs-6">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Avance
-                            </h5>
-                        </div>
-                        <div class="card-body text-center bg-light p-2">
-                            {{ $researchProgress }}%
+                    <div class="col-lg-3 col-md-3 col-xs-6">
+                        <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
+                            <div class="card-header bg-light border-bottom border-secondary p-1 d-flex justify-content-center align-items-center">
+                                <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 0.8rem;">
+                                    Avance
+                                </h5>
+                            </div>
+                            <div class="card-body text-center bg-light p-1" style="font-size: 0.8rem;">
+                                {{ $researchProgress }}%
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="col-md-4 col-sm-6 col-xs-12">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <!-- Encabezado de la Tarjeta -->
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Comité de Investigación
-                            </h5>
-                        </div>
-
-                        <!-- Cuerpo de la Tarjeta -->
-                        <div class="card-body bg-light p-2">
-                            <ul class="list-group list-group-flush">
-                                @foreach ($researchCommitteeMembers as $member)
-                                    <li class="list-group-item p-1">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <h6 class="mb-0" style="font-size: 0.9rem;">
-                                                    {{ $member->committeeMember->grade->grade_name }}
-                                                    {{ $member->committeeMember->full_name }}
-                                                </h6>
+                    <div class="col-md-4 col-sm-6 col-xs-12">
+                        <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
+                            <div class="card-header bg-light border-bottom border-secondary p-1 d-flex justify-content-center align-items-center">
+                                <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 0.8rem;">
+                                    Comité de Investigación
+                                </h5>
+                            </div>
+                            <div class="card-body bg-light p-1" style="font-size: 0.8rem;">
+                                <ul class="list-group list-group-flush">
+                                    @foreach ($researchCommitteeMembers as $member)
+                                        <li class="list-group-item p-1">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <h6 class="mb-0" style="font-size: 0.7rem;">
+                                                        {{ $member->committeeMember->grade->grade_name }}
+                                                        {{ $member->committeeMember->full_name }}
+                                                    </h6>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-
-                <div class="col-md-4 col-sm-6 col-xs-12">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <!-- Encabezado de la Tarjeta -->
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Comité de Validación
-                            </h5>
-                        </div>
-
-                        <!-- Cuerpo de la Tarjeta -->
-                        <div class="card-body bg-light p-2">
-                            <ul class="list-group list-group-flush">
-                                @foreach ($validationCommitteeMembers as $member)
-                                    <li class="list-group-item p-1">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <h6 class="mb-0" style="font-size: 0.9rem;">
-                                                    {{ $member->committeeMember->grade->grade_name }}
-                                                    {{ $member->committeeMember->full_name }}
-                                                </h6>
+                    <div class="col-md-4 col-sm-6 col-xs-12">
+                        <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
+                            <div class="card-header bg-light border-bottom border-secondary p-1 d-flex justify-content-center align-items-center">
+                                <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 0.8rem;">
+                                    Comité de Validación
+                                </h5>
+                            </div>
+                            <div class="card-body bg-light p-1" style="font-size: 0.8rem;">
+                                <ul class="list-group list-group-flush">
+                                    @foreach ($validationCommitteeMembers as $member)
+                                        <li class="list-group-item p-1">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <h6 class="mb-0" style="font-size: 0.7rem;">
+                                                        {{ $member->committeeMember->grade->grade_name }}
+                                                        {{ $member->committeeMember->full_name }}
+                                                    </h6>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="col-md-4 col-sm-6 col-xs-12">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <!-- Encabezado de la Tarjeta -->
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Unidades Militares
-                            </h5>
-                        </div>
-
-                        <!-- Cuerpo de la Tarjeta -->
-                        <div class="card-body bg-light p-2">
-                            <ul class="list-group list-group-flush">
-                                @foreach ($militaryUnits as $unit)
-                                    <li class="list-group-item p-1">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <h6 class="mb-0" style="font-size: 0.9rem;">
-                                                    {{ $unit->militaryUnit->unit_name }}
-                                                    -
-                                                    {{ $unit->militaryUnit->unit_acronym }}
-                                                </h6>
+                    <div class="col-md-4 col-sm-6 col-xs-12">
+                        <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
+                            <div class="card-header bg-light border-bottom border-secondary p-1 d-flex justify-content-center align-items-center">
+                                <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 0.8rem;">
+                                    Unidades Militares
+                                </h5>
+                            </div>
+                            <div class="card-body bg-light p-1" style="font-size: 0.8rem;">
+                                <ul class="list-group list-group-flush">
+                                    @foreach ($militaryUnits as $unit)
+                                        <li class="list-group-item p-1">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <h6 class="mb-0" style="font-size: 0.7rem;">
+                                                        {{ $unit->militaryUnit->unit_name }}
+                                                        -
+                                                        {{ $unit->militaryUnit->unit_acronym }}
+                                                    </h6>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <form id="manualForm" action="{{ route('manuals.update', $manual->id) }}" method="POST">
-                @csrf
-                @method('PUT')
 
-                <table class="table table-bordered table-sm">
-                    <thead>
-                        <tr>
-                            <th class="text-center">INVESTIGACIÓN</th>
-                            <th class="text-center">CUMPLIDO</th>
-                            <th class="text-center">FECHA</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($researchPhases as $researchPhase)
-                            @php
-                                $subphaseData = $researchPhase->manualPhaseSuphases->first();
-                            @endphp
+                <form id="manualForm" action="{{ route('manuals.update', $manual->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
 
-                            <tr class="text-sm">
-                                <td>{{ $researchPhase->suphase_name }}</td>
-                                <td class="text-center">
-                                    <input type="checkbox" name="phases[{{ $researchPhase->id }}][is_completed]"
-                                        value="1" class="completion-checkbox" data-id="{{ $researchPhase->id }}"
-                                        {{ $subphaseData && $subphaseData->is_completed ? 'checked' : '' }}>
-                                </td>
-                                <td class="text-center">
-                                    <input type="date" name="phases[{{ $researchPhase->id }}][completation_date]"
-                                        class="form-control-sm completion-date text-sm" data-id="{{ $researchPhase->id }}"
-                                        value="{{ $subphaseData ? $subphaseData->completation_date : '' }}"
-                                        {{ $subphaseData && $subphaseData->is_completed ? '' : 'disabled' }}>
-                                    <small class="text-danger d-none" id="error-{{ $researchPhase->id }}">Debe seleccionar
-                                        una fecha si está marcado como cumplido.</small>
-                                </td>
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th class="text-center">INVESTIGACIÓN</th>
+                                <th class="text-center">CUMPLIDO</th>
+                                <th class="text-center">FECHA</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach ($researchPhases as $researchPhase)
+                                @php
+                                    $subphaseData = $researchPhase->manualPhaseSuphases->first();
+                                @endphp
 
-                <div class="d-flex justify-content-between mt-3">
-                    <!-- Botón de Regresar -->
-                    <a href="{{ route('manuals.index') }}" class="btn btn-danger">Regresar sin Guardar</a>
+                                <tr class="text-sm">
+                                    <td>{{ $researchPhase->suphase_name }}</td>
+                                    <td class="text-center">
+                                        <input type="checkbox" name="phases[{{ $researchPhase->id }}][is_completed]"
+                                            value="1" class="completion-checkbox" data-id="{{ $researchPhase->id }}"
+                                            {{ $subphaseData && $subphaseData->is_completed ? 'checked' : '' }}>
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="date" name="phases[{{ $researchPhase->id }}][completation_date]"
+                                            class="form-control-sm completion-date text-sm"
+                                            data-id="{{ $researchPhase->id }}"
+                                            value="{{ $subphaseData ? $subphaseData->completation_date : '' }}"
+                                            {{ $subphaseData && $subphaseData->is_completed ? '' : 'disabled' }}>
+                                        <small class="text-danger d-none" id="error-{{ $researchPhase->id }}">Debe
+                                            seleccionar
+                                            una fecha si está marcado como cumplido.</small>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
 
-                    <!-- Botón de Guardar -->
-                    <button type="submit" class="btn btn-success">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
+                    <div class="d-flex justify-content-between mt-3">
+                        <!-- Botón de Regresar -->
+                        <a href="{{ route('manuals.index') }}" class="btn btn-danger">Regresar sin Guardar</a>
 
-        @elseif($manual->manual_phases_id==2)
+                        <!-- Botón de Guardar -->
+                        <button type="submit" class="btn btn-success">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        @elseif($manual->manual_phases_id == 2)
+            {{-- PARA MANUALES EN EXPERIMENTACION --}}
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="text-center text-black text-bold" style=";">
+                            FASE DE EXPERIMENTACIÓN
+                        </h5>
+                    </div>
 
-        <div class="card-body">
-            <div class="row">
-                <div class="col-12">
-                    <h5 class="text-center text-black text-bold">
-                        FASE DE EXPERIMENTACIÓN
-                    </h5>
-                </div>
-
-                <div class="col-lg-9 col-md-9  col-xs-6">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Actividad
-                            </h5>
-                        </div>
-                        <div class="card-body bg-light p-2">
-                            {{ $researchActivity }}
+                    <div class="col-lg-9 col-md-9 col-xs-6">
+                        <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
+                            <div
+                                class="card-header bg-light border-bottom border-secondary p-1 d-flex justify-content-center align-items-center">
+                                <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 0.8rem;">
+                                    Actividad
+                                </h5>
+                            </div>
+                            <div class="card-body bg-light p-1" style="font-size: 0.8rem;">
+                                {{ $researchActivity }}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="col-lg-3 col-md-3  col-xs-6">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Avance
-                            </h5>
-                        </div>
-                        <div class="card-body text-center bg-light p-2">
-                            {{ $researchProgress }}%
+                    <div class="col-lg-3 col-md-3 col-xs-6">
+                        <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
+                            <div
+                                class="card-header bg-light border-bottom border-secondary p-1 d-flex justify-content-center align-items-center">
+                                <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 0.8rem;">
+                                    Avance
+                                </h5>
+                            </div>
+                            <div class="card-body text-center bg-light p-1" style="font-size: 0.8rem;">
+                                {{ $researchProgress }}%
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="col-md-4 col-sm-6 col-xs-12">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <!-- Encabezado de la Tarjeta -->
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Comité de Investigación
-                            </h5>
-                        </div>
-
-                        <!-- Cuerpo de la Tarjeta -->
-                        <div class="card-body bg-light p-2">
-                            <ul class="list-group list-group-flush">
-                                @foreach ($researchCommitteeMembers as $member)
-                                    <li class="list-group-item p-1">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <h6 class="mb-0" style="font-size: 0.9rem;">
-                                                    {{ $member->committeeMember->grade->grade_name }}
-                                                    {{ $member->committeeMember->full_name }}
-                                                </h6>
+                    {{-- Comité de EXPERIMENTACION --}}
+                    <div class="col-md-3 col-sm-6 col-xs-12">
+                        <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
+                            <div
+                                class="card-header bg-light border-bottom border-secondary p-1 d-flex justify-content-center align-items-center">
+                                <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 0.8rem;">
+                                    Comité de Experimentación
+                                </h5>
+                            </div>
+                            <div class="card-body bg-light p-1" style="font-size: 0.8rem;">
+                                <ul class="list-group list-group-flush">
+                                    @foreach ($experimentationCommitteeMembers as $member)
+                                        <li class="list-group-item p-1">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <h6 class="mb-0" style="font-size: 0.7rem;">
+                                                        {{ $member->committeeMember->grade->grade_name }}
+                                                        {{ $member->committeeMember->full_name }}
+                                                    </h6>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-
-                <div class="col-md-4 col-sm-6 col-xs-12">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <!-- Encabezado de la Tarjeta -->
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Comité de Validación
-                            </h5>
-                        </div>
-
-                        <!-- Cuerpo de la Tarjeta -->
-                        <div class="card-body bg-light p-2">
-                            <ul class="list-group list-group-flush">
-                                @foreach ($validationCommitteeMembers as $member)
-                                    <li class="list-group-item p-1">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <h6 class="mb-0" style="font-size: 0.9rem;">
-                                                    {{ $member->committeeMember->grade->grade_name }}
-                                                    {{ $member->committeeMember->full_name }}
-                                                </h6>
+                    {{-- Comité de VALIDACION de la EXPERIMENTACION --}}
+                    <div class="col-md-3 col-sm-6 col-xs-12">
+                        <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
+                            <div
+                                class="card-header bg-light border-bottom border-secondary p-1 d-flex justify-content-center align-items-center">
+                                <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 0.8rem;">
+                                    Comité de Validación de la Experimentación
+                                </h5>
+                            </div>
+                            <div class="card-body bg-light p-1" style="font-size: 0.8rem;">
+                                <ul class="list-group list-group-flush">
+                                    @foreach ($expValidCommitteeMembers as $member)
+                                        <li class="list-group-item p-1">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <h6 class="mb-0" style="font-size: 0.7rem;">
+                                                        {{ $member->committeeMember->grade->grade_name }}
+                                                        {{ $member->committeeMember->full_name }}
+                                                    </h6>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="col-md-4 col-sm-6 col-xs-12">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <!-- Encabezado de la Tarjeta -->
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Unidades Militares
-                            </h5>
-                        </div>
-
-                        <!-- Cuerpo de la Tarjeta -->
-                        <div class="card-body bg-light p-2">
-                            <ul class="list-group list-group-flush">
-                                @foreach ($militaryUnits as $unit)
-                                    <li class="list-group-item p-1">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <h6 class="mb-0" style="font-size: 0.9rem;">
-                                                    {{ $unit->militaryUnit->unit_name }}
-                                                    -
-                                                    {{ $unit->militaryUnit->unit_acronym }}
-                                                </h6>
+                    {{-- Unidades Militares de experimentación --}}
+                    <div class="col-md-3 col-sm-6 col-xs-12">
+                        <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
+                            <div
+                                class="card-header bg-light border-bottom border-secondary p-1 d-flex justify-content-center align-items-center">
+                                <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 0.8rem;">
+                                    Unidades Militares de Experimentación
+                                </h5>
+                            </div>
+                            <div class="card-body bg-light p-1" style="font-size: 0.8rem;">
+                                <ul class="list-group list-group-flush">
+                                    @foreach ($militaryUnitsExp as $unit)
+                                        <li class="list-group-item p-1">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <h6 class="mb-0" style="font-size: 0.7rem;">
+                                                        {{ $unit->militaryUnit->unit_name }}
+                                                        -
+                                                        {{ $unit->militaryUnit->unit_acronym }}
+                                                    </h6>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Unidades Militares de validación --}}
+                    <div class="col-md-3 col-sm-6 col-xs-12">
+                        <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
+                            <div
+                                class="card-header bg-light border-bottom border-secondary p-1 d-flex justify-content-center align-items-center">
+                                <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 0.8rem;">
+                                    Unidades Militares de Validación
+                                </h5>
+                            </div>
+                            <div class="card-body bg-light p-1" style="font-size: 0.8rem;">
+                                <ul class="list-group list-group-flush">
+                                    @foreach ($militaryUnitsExpVal as $unit)
+                                        <li class="list-group-item p-1">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <h6 class="mb-0" style="font-size: 0.7rem;">
+                                                        {{ $unit->militaryUnit->unit_name }}
+                                                        -
+                                                        {{ $unit->militaryUnit->unit_acronym }}
+                                                    </h6>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
             <form id="manualForm" action="{{ route('manuals.update', $manual->id) }}" method="POST">
                 @csrf
                 @method('PUT')
@@ -349,10 +357,12 @@
                                 </td>
                                 <td class="text-center">
                                     <input type="date" name="phases[{{ $researchPhase->id }}][completation_date]"
-                                        class="form-control-sm completion-date text-sm" data-id="{{ $researchPhase->id }}"
+                                        class="form-control-sm completion-date text-sm"
+                                        data-id="{{ $researchPhase->id }}"
                                         value="{{ $subphaseData ? $subphaseData->completation_date : '' }}"
                                         {{ $subphaseData && $subphaseData->is_completed ? '' : 'disabled' }}>
-                                    <small class="text-danger d-none" id="error-{{ $researchPhase->id }}">Debe seleccionar
+                                    <small class="text-danger d-none" id="error-{{ $researchPhase->id }}">Debe
+                                        seleccionar
                                         una fecha si está marcado como cumplido.</small>
                                 </td>
                             </tr>
@@ -368,185 +378,95 @@
                     <button type="submit" class="btn btn-success">Guardar Cambios</button>
                 </div>
             </form>
-        </div>
-        @else
-        <div class="card-body">
-            <div class="row">
-                <div class="col-12">
-                    <h5 class="text-center text-black text-bold">
-                        FASE DE EDICIÓN
-                    </h5>
-                </div>
+    </div>
+@else
+    {{-- PARA MANUALES EN EDICION --}}
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12">
+                <h5 class="text-center text-black text-bold" style="font-size: larger;">
+                    FASE DE EDICIÓN
+                </h5>
+            </div>
 
-                <div class="col-lg-9 col-md-9  col-xs-6">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Actividad
-                            </h5>
-                        </div>
-                        <div class="card-body bg-light p-2">
-                            {{ $researchActivity }}
-                        </div>
+            <div class="col-lg-9 col-md-9  col-xs-6">
+                <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
+                    <div
+                        class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
+                        <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
+                            Actividad
+                        </h5>
                     </div>
-                </div>
-
-                <div class="col-lg-3 col-md-3  col-xs-6">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Avance
-                            </h5>
-                        </div>
-                        <div class="card-body text-center bg-light p-2">
-                            {{ $researchProgress }}%
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4 col-sm-6 col-xs-12">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <!-- Encabezado de la Tarjeta -->
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Comité de Investigación
-                            </h5>
-                        </div>
-
-                        <!-- Cuerpo de la Tarjeta -->
-                        <div class="card-body bg-light p-2">
-                            <ul class="list-group list-group-flush">
-                                @foreach ($researchCommitteeMembers as $member)
-                                    <li class="list-group-item p-1">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <h6 class="mb-0" style="font-size: 0.9rem;">
-                                                    {{ $member->committeeMember->grade->grade_name }}
-                                                    {{ $member->committeeMember->full_name }}
-                                                </h6>
-                                            </div>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-
-                <div class="col-md-4 col-sm-6 col-xs-12">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <!-- Encabezado de la Tarjeta -->
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Comité de Validación
-                            </h5>
-                        </div>
-
-                        <!-- Cuerpo de la Tarjeta -->
-                        <div class="card-body bg-light p-2">
-                            <ul class="list-group list-group-flush">
-                                @foreach ($validationCommitteeMembers as $member)
-                                    <li class="list-group-item p-1">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <h6 class="mb-0" style="font-size: 0.9rem;">
-                                                    {{ $member->committeeMember->grade->grade_name }}
-                                                    {{ $member->committeeMember->full_name }}
-                                                </h6>
-                                            </div>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4 col-sm-6 col-xs-12">
-                    <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
-                        <!-- Encabezado de la Tarjeta -->
-                        <div
-                            class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
-                            <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
-                                Unidades Militares
-                            </h5>
-                        </div>
-
-                        <!-- Cuerpo de la Tarjeta -->
-                        <div class="card-body bg-light p-2">
-                            <ul class="list-group list-group-flush">
-                                @foreach ($militaryUnits as $unit)
-                                    <li class="list-group-item p-1">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <h6 class="mb-0" style="font-size: 0.9rem;">
-                                                    {{ $unit->militaryUnit->unit_name }}
-                                                    -
-                                                    {{ $unit->militaryUnit->unit_acronym }}
-                                                </h6>
-                                            </div>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
+                    <div class="card-body bg-light p-2">
+                        {{ $researchActivity }}
                     </div>
                 </div>
             </div>
 
-            <form id="manualForm" action="{{ route('manuals.update', $manual->id) }}" method="POST">
-                @csrf
-                @method('PUT')
-
-                <table class="table table-bordered table-sm">
-                    <thead>
-                        <tr>
-                            <th class="text-center">EDICIÓN</th>
-                            <th class="text-center">CUMPLIDO</th>
-                            <th class="text-center">FECHA</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($editionPhases as $researchPhase)
-                            @php
-                                $subphaseData = $researchPhase->manualPhaseSuphases->first();
-                            @endphp
-
-                            <tr class="text-sm">
-                                <td>{{ $researchPhase->suphase_name }}</td>
-                                <td class="text-center">
-                                    <input type="checkbox" name="phases[{{ $researchPhase->id }}][is_completed]"
-                                        value="1" class="completion-checkbox" data-id="{{ $researchPhase->id }}"
-                                        {{ $subphaseData && $subphaseData->is_completed ? 'checked' : '' }}>
-                                </td>
-                                <td class="text-center">
-                                    <input type="date" name="phases[{{ $researchPhase->id }}][completation_date]"
-                                        class="form-control-sm completion-date text-sm" data-id="{{ $researchPhase->id }}"
-                                        value="{{ $subphaseData ? $subphaseData->completation_date : '' }}"
-                                        {{ $subphaseData && $subphaseData->is_completed ? '' : 'disabled' }}>
-                                    <small class="text-danger d-none" id="error-{{ $researchPhase->id }}">Debe seleccionar
-                                        una fecha si está marcado como cumplido.</small>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-
-                <div class="d-flex justify-content-between mt-3">
-                    <!-- Botón de Regresar -->
-                    <a href="{{ route('manuals.index') }}" class="btn btn-danger">Regresar sin Guardar</a>
-
-                    <!-- Botón de Guardar -->
-                    <button type="submit" class="btn btn-success">Guardar Cambios</button>
+            <div class="col-lg-3 col-md-3  col-xs-6">
+                <div class="card bg-light shadow-sm border border-secondary" style="margin-bottom: 5px;">
+                    <div
+                        class="card-header bg-light border-bottom border-secondary p-2 d-flex justify-content-center align-items-center">
+                        <h5 class="card-title mb-0 text-black font-weight-bold" style="font-size: 1rem;">
+                            Avance
+                        </h5>
+                    </div>
+                    <div class="card-body text-center bg-light p-2">
+                        {{ $researchProgress }}%
+                    </div>
                 </div>
-            </form>
+            </div>
+
         </div>
-        @endif
+
+        <form id="manualForm" action="{{ route('manuals.update', $manual->id) }}" method="POST">
+            @csrf
+            @method('PUT')
+
+            <table class="table table-bordered table-sm">
+                <thead>
+                    <tr>
+                        <th class="text-center">EDICIÓN</th>
+                        <th class="text-center">CUMPLIDO</th>
+                        <th class="text-center">FECHA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($editionPhases as $researchPhase)
+                        @php
+                            $subphaseData = $researchPhase->manualPhaseSuphases->first();
+                        @endphp
+
+                        <tr class="text-sm">
+                            <td>{{ $researchPhase->suphase_name }}</td>
+                            <td class="text-center">
+                                <input type="checkbox" name="phases[{{ $researchPhase->id }}][is_completed]"
+                                    value="1" class="completion-checkbox" data-id="{{ $researchPhase->id }}"
+                                    {{ $subphaseData && $subphaseData->is_completed ? 'checked' : '' }}>
+                            </td>
+                            <td class="text-center">
+                                <input type="date" name="phases[{{ $researchPhase->id }}][completation_date]"
+                                    class="form-control-sm completion-date text-sm" data-id="{{ $researchPhase->id }}"
+                                    value="{{ $subphaseData ? $subphaseData->completation_date : '' }}"
+                                    {{ $subphaseData && $subphaseData->is_completed ? '' : 'disabled' }}>
+                                <small class="text-danger d-none" id="error-{{ $researchPhase->id }}">Debe seleccionar
+                                    una fecha si está marcado como cumplido.</small>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+
+            <div class="d-flex justify-content-between mt-3">
+                <!-- Botón de Regresar -->
+                <a href="{{ route('manuals.index') }}" class="btn btn-danger">Regresar sin Guardar</a>
+
+                <!-- Botón de Guardar -->
+                <button type="submit" class="btn btn-success">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+    @endif
     </div>
 @stop
 
@@ -643,7 +563,7 @@
                 if (allUnchecked) {
                     if (!confirm(
                             'Ha desmarcado todas las subfases de esta fase. Esto provocará un retroceso de fase. ¿Desea continuar?'
-                            )) {
+                        )) {
                         e.preventDefault();
                     }
                 }
@@ -651,7 +571,8 @@
                 if (!isValid) {
                     e.preventDefault();
                     alert(
-                        'Por favor, asegúrese de que todas las fases cumplidas tengan una fecha de cumplimiento.');
+                        'Por favor, asegúrese de que todas las fases cumplidas tengan una fecha de cumplimiento.'
+                    );
                 }
             });
         });
