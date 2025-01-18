@@ -21,6 +21,28 @@
 @section('content')
 
 @section('content')
+    <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="warningModalLabel">
+                        <i class="fas fa-exclamation-triangle"></i> Advertencia
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Si desea cambiar los miembros de cada comité o las unidades de cada comité, primero deberá eliminar
+                        todos los usuarios o unidades de cada comité y luego agregar los nuevos miembros o unidades.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="closeModalButton" data-bs-dismiss="modal">Entendido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <div class="card">
         <div class="card-body">
             <form action="{{ route('manuals.updateOneManual', $manual->id) }}" method="POST">
@@ -42,6 +64,18 @@
                     <label for="manual_name">Nombre del Manual o Reglamento</label>
                     <input type="text" name="manual_name" id="manual_name" class="form-control"
                         placeholder="Ingrese el nombre del manual" value="{{ $manual->manual_name }}" required>
+                </div>
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Advertencia</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">
+                            Si desea cambiar los miembros de cada comité o las unidades de cada comité, primero deberá
+                            eliminar
+                            todos los usuarios o unidades de cada comité y luego agregar los nuevos miembros o unidades.
+                        </p>
+                    </div>
                 </div>
 
                 <!-- INVESTIGACIÓN -->
@@ -364,6 +398,14 @@
 @section('js')
     <script>
         $(document).ready(function() {
+            //MUESTRA EL modal DE ADVERTENCIA
+            $('#warningModal').modal('show');
+            // Cerrar el modal al hacer clic en "Entendido"
+            $('#understoodButton, #closeModalButton').on('click', function() {
+                console.log('click');
+                $('#warningModal').modal('hide');
+            });
+
             // Plantillas de datos
             const committeeMembersTemplate = @json($committeeMembersTemplate);
             const militaryUnitsTemplate = @json($militaryUnitsTemplate);
@@ -574,16 +616,7 @@
             $('form').on('submit', function(e) {
 
 
-                console.log('Datos enviados:', {
-                    selectedResearchCommitteeMembers,
-                    selectedValidationCommitteeMembers,
-                    selectedExperimentCommitteeMembers,
-                    selectedExperimentValidationCommitteeMembers,
-                    selectedInvestigationUnits,
-                    selectedExperimentUnits,
-                    selectedExperimentValidationUnits
-                });
-                let validationMessages = [];
+                                let validationMessages = [];
 
                 // Validar que haya al menos un miembro en cada comité
                 if (selectedResearchCommitteeMembers.length === 0) {
@@ -594,15 +627,7 @@
                     validationMessages.push(
                         'Debe seleccionar al menos un miembro del Comité de Validación.');
                 }
-                if (selectedExperimentCommitteeMembers.length === 0) {
-                    validationMessages.push(
-                        'Debe seleccionar al menos un miembro del Comité de Experimentación.');
-                }
-                if (selectedExperimentValidationCommitteeMembers.length === 0) {
-                    validationMessages.push(
-                        'Debe seleccionar al menos un miembro del Comité de Validación de Experimentación.'
-                    );
-                }
+
 
                 // Validar que haya al menos una unidad seleccionada en cada sección
                 if (selectedInvestigationUnits.length === 0) {
@@ -610,16 +635,7 @@
                         'Debe seleccionar al menos una Unidad para el Comité de Investigación.'
                     );
                 }
-                if (selectedExperimentUnits.length === 0) {
-                    validationMessages.push(
-                        'Debe seleccionar al menos una Unidad para el Comité de Experimentación.'
-                    );
-                }
-                if (selectedExperimentValidationUnits.length === 0) {
-                    validationMessages.push(
-                        'Debe seleccionar al menos una Unidad para el Comité de Validación de Experimentación.'
-                    );
-                }
+              
 
                 // Mostrar mensajes de validación si existen errores
                 if (validationMessages.length > 0) {

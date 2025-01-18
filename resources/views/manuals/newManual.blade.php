@@ -6,7 +6,16 @@
     <div class="title-container">
         <h1 class="dashboard-title">NUEVO MANUAL</h1>
     </div>
-
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+            {{ session('error') }}
+        </div>
+    @endif
 @stop
 
 @section('content')

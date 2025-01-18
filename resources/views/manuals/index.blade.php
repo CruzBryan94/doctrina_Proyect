@@ -6,6 +6,17 @@
     <div class="title-container">
         <h1 class="dashboard-title">Manuales en Proceso de Generación de Doctrina</h1>
     </div>
+
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+            {{ session('error') }}
+        </div>
+    @endif
 @stop
 
 @section('content')
@@ -125,5 +136,10 @@
                 searching: true
             });
         });
+
+        //ELIMINAR MENSAJE DE ERROR
+        setTimeout(function() {
+                $('.alert').alert('close');
+            }, 3000);
     </script>
 @stop

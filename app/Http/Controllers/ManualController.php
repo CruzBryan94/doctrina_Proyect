@@ -67,260 +67,268 @@ class ManualController extends Controller
 
     public function store(Request $request)
     {
-        // Validar los datos
-        $validatedData = $request->validate([
-            'manual_name' => 'required|string|max:100',
-            'committee_research_members' => 'required|json',
-            'committee_validation_members' => 'required|json',
-            'committee_experiment_members' => 'required|json',
-            'committee_experiment_validation_members' => 'required|json',
-            'military_units_investigation' => 'required|json',
-            'military_units_experiment' => 'required|json',
-            'military_units_experiment_validation' => 'required|json',
-            'observations' => 'nullable|string',
-            'manual_type_id' => 'required|integer',
-        ]);
-
-        // Crear el manual
-        $manual = new Manual();
-        $manual->manual_name = $validatedData['manual_name'];
-        $manual->observations = $validatedData['observations'] ?? null;
-        $manual->manual_phases_id = 1; // Fase inicial
-        $manual->manual_types_id = $validatedData['manual_type_id'];
-        $manual->is_published = false;
-        $manual->is_active = true;
-        $manual->save();
-
-        // Capturar el ID del manual recién guardado
-        $manualId = $manual->id;
-
-        // Decodificar los campos JSON
-        $researchMembers = json_decode($validatedData['committee_research_members'], true);
-        $validationMembers = json_decode($validatedData['committee_validation_members'], true);
-        $experimentMembers = json_decode($validatedData['committee_experiment_members'], true);
-        $experimentValidationMembers = json_decode($validatedData['committee_experiment_validation_members'], true);
-        $militaryUnitsInvestigation = json_decode($validatedData['military_units_investigation'], true);
-        $militaryUnitsExperiment = json_decode($validatedData['military_units_experiment'], true);
-        $militaryUnitsExperimentValidation = json_decode($validatedData['military_units_experiment_validation'], true);
-
-        // Verificar que los datos decodificados sean arrays válidos
-        if (
-            !is_array($researchMembers) ||
-            !is_array($validationMembers) ||
-            !is_array($experimentMembers) ||
-            !is_array($experimentValidationMembers) ||
-            !is_array($militaryUnitsInvestigation) ||
-            !is_array($militaryUnitsExperiment) ||
-            !is_array($militaryUnitsExperimentValidation)
-        ) {
-            return back()->withErrors(['error' => 'Los datos proporcionados no son válidos.']);
-        }
-
-        // Guardar los miembros de cada comité
-        foreach ($researchMembers as $memberId) {
-            ManualCommitteeMember::create([
-                'manuals_id' => $manualId,
-                'committee_type_id' => 1, // Investigación
-                'committee_members_id' => $memberId,
+        try {
+            // Validar los datos
+            $validatedData = $request->validate([
+                'manual_name' => 'required|string|max:100',
+                'committee_research_members' => 'required|json',
+                'committee_validation_members' => 'required|json',
+                'committee_experiment_members' => 'nullable|json',
+                'committee_experiment_validation_members' => 'nullable|json',
+                'military_units_investigation' => 'required|json',
+                'military_units_experiment' => 'nullable|json',
+                'military_units_experiment_validation' => 'nullable|json',
+                'observations' => 'nullable|string',
+                'manual_type_id' => 'required|integer',
             ]);
+
+            // Crear el manual
+            $manual = new Manual();
+            $manual->manual_name = $validatedData['manual_name'];
+            $manual->observations = $validatedData['observations'] ?? null;
+            $manual->manual_phases_id = 1; // Fase inicial
+            $manual->manual_types_id = $validatedData['manual_type_id'];
+            $manual->is_published = false;
+            $manual->is_active = true;
+            $manual->save();
+
+            // Capturar el ID del manual recién guardado
+            $manualId = $manual->id;
+
+            // Decodificar los campos JSON
+            $researchMembers = json_decode($validatedData['committee_research_members'], true) ?? [];
+            $validationMembers = json_decode($validatedData['committee_validation_members'], true) ?? [];
+            $experimentMembers = json_decode($validatedData['committee_experiment_members'], true) ?? [];
+            $experimentValidationMembers = json_decode($validatedData['committee_experiment_validation_members'], true) ?? [];
+            $militaryUnitsInvestigation = json_decode($validatedData['military_units_investigation'], true) ?? [];
+            $militaryUnitsExperiment = json_decode($validatedData['military_units_experiment'], true) ?? [];
+            $militaryUnitsExperimentValidation = json_decode($validatedData['military_units_experiment_validation'], true) ?? [];
+
+            // Verificar que los datos decodificados sean arrays válidos
+            if (
+                !is_array($researchMembers) ||
+                !is_array($validationMembers) ||
+                !is_array($experimentMembers) ||
+                !is_array($experimentValidationMembers) ||
+                !is_array($militaryUnitsInvestigation) ||
+                !is_array($militaryUnitsExperiment) ||
+                !is_array($militaryUnitsExperimentValidation)
+            ) {
+                throw new \Exception('Los datos proporcionados no son válidos.');
+            }
+
+            // Guardar los miembros de cada comité
+            foreach ($researchMembers as $memberId) {
+                ManualCommitteeMember::create([
+                    'manuals_id' => $manualId,
+                    'committee_type_id' => 1, // Investigación
+                    'committee_members_id' => $memberId,
+                ]);
+            }
+
+            foreach ($validationMembers as $memberId) {
+                ManualCommitteeMember::create([
+                    'manuals_id' => $manualId,
+                    'committee_type_id' => 2, // Validación
+                    'committee_members_id' => $memberId,
+                ]);
+            }
+
+            foreach ($experimentMembers as $memberId) {
+                ManualCommitteeMember::create([
+                    'manuals_id' => $manualId,
+                    'committee_type_id' => 3, // Experimentación
+                    'committee_members_id' => $memberId,
+                ]);
+            }
+
+            foreach ($experimentValidationMembers as $memberId) {
+                ManualCommitteeMember::create([
+                    'manuals_id' => $manualId,
+                    'committee_type_id' => 4, // Validación de Experimentación
+                    'committee_members_id' => $memberId,
+                ]);
+            }
+
+            // Guardar las unidades asociadas a cada comité
+            foreach ($militaryUnitsInvestigation as $unitId) {
+                ManualMilitaryUnit::create([
+                    'manuals_id' => $manualId,
+                    'military_units_id' => $unitId,
+                    'committee_type_id' => 1,
+                ]);
+            }
+
+            foreach ($militaryUnitsExperiment as $unitId) {
+                ManualMilitaryUnit::create([
+                    'manuals_id' => $manualId,
+                    'military_units_id' => $unitId,
+                    'committee_type_id' => 3,
+                ]);
+            }
+
+            foreach ($militaryUnitsExperimentValidation as $unitId) {
+                ManualMilitaryUnit::create([
+                    'manuals_id' => $manualId,
+                    'military_units_id' => $unitId,
+                    'committee_type_id' => 4,
+                ]);
+            }
+
+            // Crear las subfases de la fase inicial (manual_phases_id = 1)
+            $subphases = CatalogSubphase::where('manual_phases_id', 1)->get();
+
+            foreach ($subphases as $index => $subphase) {
+                ManualPhaseSuphase::create([
+                    'manuals_id' => $manualId,
+                    'catalog_subphases_id' => $subphase->id,
+                    'is_completed' => $index === 0 ? 1 : 0, // Completar solo la primera subfase
+                    'completation_date' => $index === 0 ? now() : null,
+                    'manual_phases_id' => 1,
+                ]);
+            }
+
+            return redirect()->route('manuals.index')->with('success', 'Manual creado correctamente.');
+        } catch (\Exception $e) {
+            // Retornar mensaje de error
+            return back()->withErrors(['error' => 'Error al crear el manual: ' . $e->getMessage()]);
         }
-
-        foreach ($validationMembers as $memberId) {
-            ManualCommitteeMember::create([
-                'manuals_id' => $manualId,
-                'committee_type_id' => 2, // Validación
-                'committee_members_id' => $memberId,
-            ]);
-        }
-
-        foreach ($experimentMembers as $memberId) {
-            ManualCommitteeMember::create([
-                'manuals_id' => $manualId,
-                'committee_type_id' => 3, // Experimentación
-                'committee_members_id' => $memberId,
-            ]);
-        }
-
-        foreach ($experimentValidationMembers as $memberId) {
-            ManualCommitteeMember::create([
-                'manuals_id' => $manualId,
-                'committee_type_id' => 4, // Validación de Experimentación
-                'committee_members_id' => $memberId,
-            ]);
-        }
-
-        // Guardar las unidades asociadas a cada comité
-        foreach ($militaryUnitsInvestigation as $unitId) {
-            ManualMilitaryUnit::create([
-                'manuals_id' => $manualId,
-                'military_units_id' => $unitId,
-                'committee_type_id' => 1,
-            ]);
-        }
-
-        foreach ($militaryUnitsExperiment as $unitId) {
-            ManualMilitaryUnit::create([
-                'manuals_id' => $manualId,
-                'military_units_id' => $unitId,
-                'committee_type_id' => 3,
-            ]);
-        }
-
-        foreach ($militaryUnitsExperimentValidation as $unitId) {
-            ManualMilitaryUnit::create([
-                'manuals_id' => $manualId,
-                'military_units_id' => $unitId,
-                'committee_type_id' => 4,
-            ]);
-        }
-
-        // Crear las subfases de la fase inicial (manual_phases_id = 1)
-        $subphases = CatalogSubphase::where('manual_phases_id', 1)->get();
-
-        foreach ($subphases as $index => $subphase) {
-            ManualPhaseSuphase::create([
-                'manuals_id' => $manualId,
-                'catalog_subphases_id' => $subphase->id,
-                'is_completed' => $index === 0 ? 1 : 0, // Completar solo la primera subfase
-                'completation_date' => $index === 0 ? now() : null,
-                'manual_phases_id' => 1,
-            ]);
-        }
-
-        return redirect()->route('manuals.index')->with('success', 'Manual creado correctamente.');
     }
 
+
     public function updateOneManual(Request $request, $id)
-{
-    try {
-        $manual = Manual::findOrFail($id);
+    {
+        try {
+            $manual = Manual::findOrFail($id);
 
-        // Actualizar datos básicos del manual
-        $manual->manual_name = $request->input('manual_name');
-        $manual->observations = $request->input('observations');
-        $manual->manual_types_id = $request->input('manual_type_id');
-        $manual->is_active = true;
-        $manual->save();
+            // Actualizar datos básicos del manual
+            $manual->manual_name = $request->input('manual_name');
+            $manual->observations = $request->input('observations');
+            $manual->manual_types_id = $request->input('manual_type_id');
+            $manual->is_active = true;
+            $manual->save();
 
-        $manualId = $manual->id;
+            $manualId = $manual->id;
 
-       // dd($request->all());
+            //dd($request->all());
 
-        // Decodificar los datos enviados
-        $committeeResearchMembers = $request->input('committee_research_members', []);
-        $committeeValidationMembers = $request->input('committee_validation_members', []);
-        $committeeExperimentMembers = $request->input('committee_experiment_members', []);
-        $committeeExperimentValidationMembers = $request->input('committee_experiment_validation_members', []);
+            // Decodificar los datos enviados
+            $committeeResearchMembers = $request->input('committee_research_members', []);
+            $committeeValidationMembers = $request->input('committee_validation_members', []);
+            $committeeExperimentMembers = $request->input('committee_experiment_members', []);
+            $committeeExperimentValidationMembers = $request->input('committee_experiment_validation_members', []);
 
-        $investigationUnits = $request->input('military_units_investigation', []);
-        $experimentUnits = $request->input('military_units_experimentation', []);
-        $experimentValidationUnits = $request->input('military_units_experiment_validation', []);
+            $investigationUnits = $request->input('military_units_investigation', []);
+            $experimentUnits = $request->input('military_units_experimentation', []);
+            $experimentValidationUnits = $request->input('military_units_experiment_validation', []);
 
-        // Verificar si los datos son cadenas JSON y decodificarlos
-        if (is_string($investigationUnits)) {
-            $investigationUnits = json_decode($investigationUnits, true);
+
+            // Verificar si los datos son cadenas JSON y decodificarlos
+            if (is_string($investigationUnits)) {
+                $investigationUnits = json_decode($investigationUnits, true);
+            }
+            if (is_string($experimentUnits)) {
+                $experimentUnits = json_decode($experimentUnits, true);
+            }
+            if (is_string($experimentValidationUnits)) {
+                $experimentValidationUnits = json_decode($experimentValidationUnits, true);
+            }
+            if (is_string($committeeResearchMembers)) {
+                $committeeResearchMembers = json_decode($committeeResearchMembers, true);
+            }
+            if (is_string($committeeExperimentValidationMembers)) {
+                $committeeExperimentValidationMembers = json_decode($committeeExperimentValidationMembers, true);
+            }
+            if (is_string($committeeValidationMembers)) {
+                $committeeValidationMembers = json_decode($committeeValidationMembers, true);
+            }
+            if (is_string($committeeExperimentMembers)) {
+                $committeeExperimentMembers = json_decode($committeeExperimentMembers, true);
+            }
+
+
+            // Verificar que los datos decodificados sean válidos
+            if (
+                !is_array($committeeResearchMembers) ||
+                !is_array($committeeValidationMembers) ||
+                !is_array($committeeExperimentMembers) ||
+                !is_array($committeeExperimentValidationMembers) ||
+                !is_array($investigationUnits) ||
+                !is_array($experimentUnits) ||
+                !is_array($experimentValidationUnits)
+            ) {
+                return back()->withErrors(['error' => 'Los datos proporcionados no son válidos.']);
+            }
+
+            // Eliminar los miembros actuales
+            ManualCommitteeMember::where('manuals_id', $id)->delete();
+
+            // Eliminar las unidades actuales
+            ManualMilitaryUnit::where('manuals_id', $id)->delete();
+
+            // Guardar los miembros de cada comité
+            foreach ($committeeResearchMembers as $memberId) {
+                ManualCommitteeMember::create([
+                    'manuals_id' => $manualId,
+                    'committee_type_id' => 1, // Investigación
+                    'committee_members_id' => $memberId,
+                ]);
+            }
+
+            foreach ($committeeValidationMembers as $memberId) {
+                ManualCommitteeMember::create([
+                    'manuals_id' => $manualId,
+                    'committee_type_id' => 2, // Validación
+                    'committee_members_id' => $memberId,
+                ]);
+            }
+
+            foreach ($committeeExperimentMembers as $memberId) {
+                ManualCommitteeMember::create([
+                    'manuals_id' => $manualId,
+                    'committee_type_id' => 3, // Experimentación
+                    'committee_members_id' => $memberId,
+                ]);
+            }
+
+            foreach ($committeeExperimentValidationMembers as $memberId) {
+                ManualCommitteeMember::create([
+                    'manuals_id' => $manualId,
+                    'committee_type_id' => 4, // Validación de Experimentación
+                    'committee_members_id' => $memberId,
+                ]);
+            }
+
+            // Guardar las unidades asociadas a cada comité
+            foreach ($investigationUnits as $unitId) {
+                ManualMilitaryUnit::create([
+                    'manuals_id' => $manualId,
+                    'military_units_id' => $unitId,
+                    'committee_type_id' => 1, // Investigación
+                ]);
+            }
+
+            foreach ($experimentUnits as $unitId) {
+                ManualMilitaryUnit::create([
+                    'manuals_id' => $manualId,
+                    'military_units_id' => $unitId,
+                    'committee_type_id' => 3, // Experimentación
+                ]);
+            }
+
+            foreach ($experimentValidationUnits as $unitId) {
+                ManualMilitaryUnit::create([
+                    'manuals_id' => $manualId,
+                    'military_units_id' => $unitId,
+                    'committee_type_id' => 4, // Validación de Experimentación
+                ]);
+            }
+
+            return redirect()->route('manuals.editOneManual', $id)->with('success', 'Manual actualizado correctamente.');
+        } catch (\Exception $e) {
+            // Capturar errores y retornar un mensaje al usuario
+            return redirect()->route('manuals.editOneManual', $id)->with('error', 'Error al actualizar el manual.');
         }
-        if (is_string($experimentUnits)) {
-            $experimentUnits = json_decode($experimentUnits, true);
-        }
-        if (is_string($experimentValidationUnits)) {
-            $experimentValidationUnits = json_decode($experimentValidationUnits, true);
-        }
-        if (is_string($committeeResearchMembers)) {
-            $committeeResearchMembers = json_decode($committeeResearchMembers, true);
-        }
-        if (is_string($committeeExperimentValidationMembers)) {
-            $committeeExperimentValidationMembers = json_decode($committeeExperimentValidationMembers, true);
-        }
-        if (is_string($committeeValidationMembers)) {
-            $committeeValidationMembers = json_decode($committeeValidationMembers, true);
-        }
-        if (is_string($committeeExperimentMembers)) {
-            $committeeExperimentMembers = json_decode($committeeExperimentMembers, true);
-        }
-
-
-        // Verificar que los datos decodificados sean válidos
-        if (
-            !is_array($committeeResearchMembers) ||
-            !is_array($committeeValidationMembers) ||
-            !is_array($committeeExperimentMembers) ||
-            !is_array($committeeExperimentValidationMembers) ||
-            !is_array($investigationUnits) ||
-            !is_array($experimentUnits) ||
-            !is_array($experimentValidationUnits)
-        ) {
-            return back()->withErrors(['error' => 'Los datos proporcionados no son válidos.']);
-        }
-
-        // Eliminar los miembros actuales
-        ManualCommitteeMember::where('manuals_id', $id)->delete();
-
-        // Eliminar las unidades actuales
-        ManualMilitaryUnit::where('manuals_id', $id)->delete();
-
-        // Guardar los miembros de cada comité
-        foreach ($committeeResearchMembers as $memberId) {
-            ManualCommitteeMember::create([
-                'manuals_id' => $manualId,
-                'committee_type_id' => 1, // Investigación
-                'committee_members_id' => $memberId,
-            ]);
-        }
-
-        foreach ($committeeValidationMembers as $memberId) {
-            ManualCommitteeMember::create([
-                'manuals_id' => $manualId,
-                'committee_type_id' => 2, // Validación
-                'committee_members_id' => $memberId,
-            ]);
-        }
-
-        foreach ($committeeExperimentMembers as $memberId) {
-            ManualCommitteeMember::create([
-                'manuals_id' => $manualId,
-                'committee_type_id' => 3, // Experimentación
-                'committee_members_id' => $memberId,
-            ]);
-        }
-
-        foreach ($committeeExperimentValidationMembers as $memberId) {
-            ManualCommitteeMember::create([
-                'manuals_id' => $manualId,
-                'committee_type_id' => 4, // Validación de Experimentación
-                'committee_members_id' => $memberId,
-            ]);
-        }
-
-        // Guardar las unidades asociadas a cada comité
-        foreach ($investigationUnits as $unitId) {
-            ManualMilitaryUnit::create([
-                'manuals_id' => $manualId,
-                'military_units_id' => $unitId,
-                'committee_type_id' => 1, // Investigación
-            ]);
-        }
-
-        foreach ($experimentUnits as $unitId) {
-            ManualMilitaryUnit::create([
-                'manuals_id' => $manualId,
-                'military_units_id' => $unitId,
-                'committee_type_id' => 3, // Experimentación
-            ]);
-        }
-
-        foreach ($experimentValidationUnits as $unitId) {
-            ManualMilitaryUnit::create([
-                'manuals_id' => $manualId,
-                'military_units_id' => $unitId,
-                'committee_type_id' => 4, // Validación de Experimentación
-            ]);
-        }
-
-        return redirect()->route('manuals.editOneManual', $id)->with('success', 'Manual actualizado correctamente.');
-    } catch (\Exception $e) {
-        // Capturar errores y retornar un mensaje al usuario
-        return redirect()->route('manuals.editOneManual', $id)->with('error', 'Error al actualizar el manual.');}
 
     }
 
