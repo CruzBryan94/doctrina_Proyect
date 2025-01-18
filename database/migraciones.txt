@@ -1,0 +1,492 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('grades', function (Blueprint $table) {
+            $table->id();
+            $table->string('grade_name');
+            $table->integer('code');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('grades');
+    }
+};
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('manual_phases', function (Blueprint $table) {
+            $table->id();
+            $table->integer('code')->unique();
+            $table->string('phase_name', 150);
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('manual_phases');
+    }
+};
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('military_units', function (Blueprint $table) {
+            $table->id();
+            $table->string('unit_name', 50);
+            $table->string('unit_acronym', 10);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('military_units');
+    }
+};
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('manual_phase_suphases', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('manuals_id');
+            $table->unsignedBigInteger('catalog_subphases_id');
+            $table->unsignedBigInteger('manual_phases_id');
+            $table->boolean('is_completed')->default(false);
+            $table->date('completation_date')->nullable();
+            $table->timestamps();
+
+            // Foreign keys
+            $table->foreign('manuals_id')->references('id')->on('manuals')->onDelete('cascade');
+            $table->foreign('catalog_subphases_id')->references('id')->on('catalog_subphases')->onDelete('cascade');
+            $table->foreign('manual_phases_id')->references('id')->on('manual_phases')->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('manual_phase_suphases');
+    }
+};
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('catalog_subphases', function (Blueprint $table) {
+            $table->id();
+            $table->string('suphase_name', 150);
+            $table->unsignedBigInteger('manual_phases_id');
+            $table->timestamps();
+
+            // Foreign key
+            $table->foreign('manual_phases_id')->references('id')->on('manual_phases')->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('catalog_subphases');
+    }
+};
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('committee_members', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('grades_id');
+            $table->string('full_name', 250);
+            $table->string('identification', 10)->unique();
+            $table->timestamps();
+
+            // Foreign key
+            $table->foreign('grades_id')->references('id')->on('grades')->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('committee_members');
+    }
+};
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('committee_type', function (Blueprint $table) {
+            $table->id();
+            $table->integer('code')->unique();
+            $table->string('name', 250);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('committee_type');
+    }
+};
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('manual_types', function (Blueprint $table) {
+            $table->id();
+            $table->string('code', 10)->unique();
+            $table->string('type_name', 50);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('manual_types');
+    }
+};
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('manuals', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('manual_types_id');
+            $table->string('manual_name', 100);
+            $table->unsignedBigInteger('manual_phases_id');
+            $table->string('code', 20)->nullable();
+            $table->string('observations', 255)->nullable();
+            $table->date('publication_year')->nullable();
+            $table->boolean('is_published')->default(false);
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+
+
+            // Foreign keys
+            $table->foreign('manual_types_id')->references('id')->on('manual_types')->onDelete('cascade');
+            $table->foreign('manual_phases_id')->references('id')->on('manual_phases')->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('manuals');
+    }
+};
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('manual_phase_suphases', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('manuals_id');
+            $table->unsignedBigInteger('catalog_subphases_id');
+            $table->unsignedBigInteger('manual_phases_id');
+            $table->boolean('is_completed')->default(false);
+            $table->date('completation_date')->nullable();
+            $table->timestamps();
+
+            // Foreign keys
+            $table->foreign('manuals_id')->references('id')->on('manuals')->onDelete('cascade');
+            $table->foreign('catalog_subphases_id')->references('id')->on('catalog_subphases')->onDelete('cascade');
+            $table->foreign('manual_phases_id')->references('id')->on('manual_phases')->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('manual_phase_suphases');
+    }
+};
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('manual_committee_members', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('committee_members_id');
+            $table->unsignedBigInteger('manuals_id');
+            $table->unsignedBigInteger('committee_type_id');
+            $table->timestamps();
+
+            // Foreign keys
+            $table->foreign('committee_members_id')->references('id')->on('committee_members')->onDelete('cascade');
+            $table->foreign('manuals_id')->references('id')->on('manuals')->onDelete('cascade');
+            $table->foreign('committee_type_id')->references('id')->on('committee_type')->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('manual_committee_members');
+    }
+};
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('manual_military_units', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('manuals_id');
+            $table->unsignedBigInteger('committee_type_id');
+            $table->unsignedBigInteger('military_units_id');
+            $table->timestamps();
+
+            // Foreign keys
+            $table->foreign('manuals_id')->references('id')->on('manuals')->onDelete('cascade');
+            $table->foreign('committee_type_id')->references('id')->on('committee_type')->onDelete('cascade');
+            $table->foreign('military_units_id')->references('id')->on('military_units')->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('manual_military_units');
+    }
+};
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('manual_phase_suphases', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('manuals_id');
+            $table->unsignedBigInteger('catalog_subphases_id');
+            $table->unsignedBigInteger('manual_phases_id');
+            $table->boolean('is_completed')->default(false);
+            $table->date('completation_date')->nullable();
+            $table->timestamps();
+
+            // Foreign keys
+            $table->foreign('manuals_id')->references('id')->on('manuals')->onDelete('cascade');
+            $table->foreign('catalog_subphases_id')->references('id')->on('catalog_subphases')->onDelete('cascade');
+            $table->foreign('manual_phases_id')->references('id')->on('manual_phases')->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('manual_phase_suphases');
+    }
+};
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('manual_phase_suphases', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('manuals_id');
+            $table->unsignedBigInteger('catalog_subphases_id');
+            $table->unsignedBigInteger('manual_phases_id');
+            $table->boolean('is_completed')->default(false);
+            $table->date('completation_date')->nullable();
+            $table->timestamps();
+
+            // Foreign keys
+            $table->foreign('manuals_id')->references('id')->on('manuals')->onDelete('cascade');
+            $table->foreign('catalog_subphases_id')->references('id')->on('catalog_subphases')->onDelete('cascade');
+            $table->foreign('manual_phases_id')->references('id')->on('manual_phases')->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('manual_phase_suphases');
+    }
+};
+

@@ -48,9 +48,13 @@ Route::middleware('auth')->group(function () {
     //RUTAS PARA MANUALES
     Route::get('/manuals', [App\Http\Controllers\ManualController::class, 'index'])->name('manuals.index');
     Route::get('/manuals/newManual', [App\Http\Controllers\ManualController::class, 'newManual'])->name('manuals.newManual');
+    Route::get('/manuals/editOne/{id}', [App\Http\Controllers\ManualController::class, 'editOneManual'])->name('manuals.editOneManual');
+
     Route::post('/manuals/store', [App\Http\Controllers\ManualController::class, 'store'])->name('manuals.store');
     Route::get('/manuals/editManual/{id}', [App\Http\Controllers\ManualController::class, 'editManual'])->name('manuals.editManual');
     Route::put('/manuals/update/{id}', [App\Http\Controllers\ManualController::class, 'update'])->name('manuals.update');
+    Route::put('/manuals/updateOneManual{id}', [App\Http\Controllers\ManualController::class, 'updateOneManual'])->name('manuals.updateOneManual');
+
 
 
 

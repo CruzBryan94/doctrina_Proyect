@@ -1,14 +1,22 @@
 @extends('adminlte::page')
 
-@section('title', 'NUEVO MANUAL')
+@section('title', 'SEGUIMIENTO MANUAL')
 
 @section('content_header')
     <div class="title-container mb-0" >
-        <h2 class="dashboard-title " style="font-size: x-large;">ADMINISTRACIÓN: {{ $manual->manual_name }}</h2>
+        <h2 class="dashboard-title " style="font-size: x-large;">ADMINISTRACIÓN: {{ $manual->manual_name }}
+        </h2>
     </div>
 @stop
 
 @section('content')
+<div class="d-flex justify-content-center mb-3">
+
+    <a href="{{ route('manuals.editOneManual', $manual->id) }}"
+        class="btn btn-info btn-sm shadow-sm px-3 py-1">
+        <i class="fas fa-pencil-alt" aria-hidden="true"></i>  Editar Datos del Manual
+    </a>
+</div>
     <div class="card mt-0">
 
         {{-- PARA MANUALES EN INVESTIGACION --}}
