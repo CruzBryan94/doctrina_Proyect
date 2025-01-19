@@ -23,16 +23,37 @@ Route::prefix('google-auth')->group(function () {
     Route::get('/callback', function () {
         $user_google = Socialite::driver('google')->stateless()->user();
 
-        $user = User::updateOrCreate(
-            ['google_id' => $user_google->id],
-            [
+        // Verifica si el usuario es nuevo o existente
+        $user = User::firstOrNew(['google_id' => $user_google->id]);
+
+        if (!$user->exists) {
+            // Usuario nuevo: asigna valores predeterminados
+            $user->fill([
                 'name' => $user_google->name,
                 'email' => $user_google->email,
-                'is_admin' => false,
-                'is_active' => false,
-                'grade' => 17
-            ]
-        );
+                'is_active' => true,
+                'grade' => 17,
+            ]);
+
+            $user->save();
+
+            // Asigna el role_id = 3 en la tabla 'model_has_roles'
+            DB::table('model_has_roles')->updateOrInsert(
+                ['model_id' => $user->id, 'model_type' => User::class],
+                ['role_id' => 3]
+            );
+        } else {
+            // Usuario existente: solo actualiza datos básicos
+            $user->fill([
+                'name' => $user_google->name,
+                'email' => $user_google->email,
+            ]);
+
+            // Guarda el usuario (actualiza o crea)
+            $user->save();
+        }
+
+
 
         // Inicia sesión con el usuario autenticado
         Auth::login($user);
@@ -43,17 +64,23 @@ Route::prefix('google-auth')->group(function () {
 
 // RUTA PROTEGIDA PARA EL DASHBOARD
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->middleware('can:home')->name('dashboard');
 
     //RUTAS PARA MANUALES
-    Route::get('/manuals', [App\Http\Controllers\ManualController::class, 'index'])->name('manuals.index');
-    Route::get('/manuals/newManual', [App\Http\Controllers\ManualController::class, 'newManual'])->name('manuals.newManual');
-    Route::get('/manuals/editOne/{id}', [App\Http\Controllers\ManualController::class, 'editOneManual'])->name('manuals.editOneManual');
+    Route::get('/manuals', [App\Http\Controllers\ManualController::class, 'index'])->middleware('can:home')->name('manuals.index');
+    Route::get('/manuals/newManual', [App\Http\Controllers\ManualController::class, 'newManual'])->middleware('can:home')->name('manuals.newManual');
+    Route::get('/manuals/editOne/{id}', [App\Http\Controllers\ManualController::class, 'editOneManual'])->middleware('can:home')->name('manuals.editOneManual');
 
     Route::post('/manuals/store', [App\Http\Controllers\ManualController::class, 'store'])->name('manuals.store');
-    Route::get('/manuals/editManual/{id}', [App\Http\Controllers\ManualController::class, 'editManual'])->name('manuals.editManual');
+    Route::get('/manuals/editManual/{id}', [App\Http\Controllers\ManualController::class, 'editManual'])->middleware('can:home')->name('manuals.editManual');
     Route::put('/manuals/update/{id}', [App\Http\Controllers\ManualController::class, 'update'])->name('manuals.update');
     Route::put('/manuals/updateOneManual{id}', [App\Http\Controllers\ManualController::class, 'updateOneManual'])->name('manuals.updateOneManual');
+
+
+    //RUTAS PARA USUARIOS
+    Route::get('/users', [App\Http\Controllers\UserController::class, 'index'])->middleware('can:home')->name('users.index');
+    Route::post('/users/edit/{id}', [App\Http\Controllers\UserController::class, 'edit'])->middleware('can:home')->name('users.edit');
+    Route::post('/users/update', [App\Http\Controllers\UserController::class, 'update'])->middleware('can:home')->name('users.update');
 
 
 
@@ -69,12 +96,6 @@ Route::middleware('auth')->group(function () {
         return redirect('/login'); // Redirige a la página de login después de cerrar sesión
     })->name('logout');
 });
-
-
-
-
-
-
 
 
 // Redirige a /login si el usuario no está autenticado

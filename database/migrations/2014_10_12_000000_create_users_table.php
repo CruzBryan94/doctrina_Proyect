@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('password')->nullable();
             $table->string('google_id')->nullable();
             $table->foreignId('grade')->nullable();
-            $table->boolean('is_admin')->default(false);
             $table->boolean('is_active')->default(false);
             $table->foreign('grade')->references('id')->on('grades');
             $table->rememberToken();

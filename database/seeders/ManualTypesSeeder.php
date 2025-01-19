@@ -29,18 +29,4 @@ class ManualTypesSeeder extends Seeder
         DB::table('manual_types')->insert($manualTypes);
     }
 
-
-    :
-:
-:
-:
-
-:  (MEM)
-:  (MME)
-:  (MSI)
-:  (MAF)
-RAE:
-CTE:  (CTE)
-
-
 }

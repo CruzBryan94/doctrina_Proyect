@@ -257,7 +257,7 @@ return [
     */
 
     'use_route_url' => false,
-    'dashboard_url' => 'dashboard',
+    'dashboard_url' => '/',
     'logout_url' => 'logout',
     'login_url' => 'login',
     'register_url' => 'register',
@@ -299,39 +299,14 @@ return [
     */
 
     'menu' => [
-        // Navbar items:
-        // [
-        //     'type' => 'navbar-search',
-        //     'text' => 'search',
-        //     'topnav_right' => true,
-        // ],
-        // [
-        //     'type' => 'fullscreen-widget',
-        //     'topnav_right' => true,
-        // ],
 
-        // Sidebar items:
-        // [
-        //     'type' => 'sidebar-menu-search',
-        //     'text' => 'search',
-        // ],
-        [
-            'text' => 'blog',
-            'url' => 'admin/blog',
-            'can' => 'manage-blog',
-        ],
-        // [
-        //     'text' => 'pages',
-        //     'url' => 'admin/pages',
-        //     'icon' => 'far fa-fw fa-file',
-        //     'label' => 4,
-        //     'label_color' => 'success',
-        // ],
+
         ['header' => 'MENÚ DE OPCIONES'],
         [
             'text' => 'Dashboard',
             'url' => 'dashboard',
             'icon' => 'fas fa-fw fa-home',
+            'can' => 'home',
         ],
         // [
         //     'text' => 'Manuales',
@@ -339,16 +314,17 @@ return [
         //     'icon' => 'fas fa-fw fa-lock',
         // ],
         [
-            'text' => 'Manuales',
+            'text' => 'ADMINISTRACIÓN',
             'icon' => 'fas fa-fw fa-book',
+            'can' => 'home',
             'submenu' => [
                 [
-                    'text' => 'Administración',
+                    'text' => 'Manuales',
                     'url' => 'manuals',
                 ],
                 [
                     'text' => 'Usuarios',
-                    'url' => '#',
+                    'url' => 'users',
                 ],
             ],
         ]
