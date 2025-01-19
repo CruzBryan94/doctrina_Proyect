@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('military_units', function (Blueprint $table) {
             $table->id();
-            $table->string('unit_name', 50);
+            $table->string('unit_name', 150);
             $table->string('unit_acronym', 10);
             $table->timestamps();
         });

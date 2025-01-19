@@ -62,7 +62,7 @@
                 <!-- Nombre del Manual -->
                 <div class="form-group">
                     <label for="manual_name">Nombre del Manual o Reglamento</label>
-                    <input type="text" name="manual_name" id="manual_name" class="form-control"
+                    <input type="text" name="manual_name" id="manual_name" class="form-control" maxlength="240"
                         placeholder="Ingrese el nombre del manual" value="{{ $manual->manual_name }}" required>
                 </div>
                 <div class="card mb-4 shadow-sm">
@@ -635,7 +635,7 @@
                         'Debe seleccionar al menos una Unidad para el Comité de Investigación.'
                     );
                 }
-              
+
 
                 // Mostrar mensajes de validación si existen errores
                 if (validationMessages.length > 0) {

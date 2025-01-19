@@ -90,6 +90,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/members/update', [App\Http\Controllers\MembersController::class, 'update'])->middleware('can:home')->name('members.update');
     Route::get('/members/newMember', [App\Http\Controllers\MembersController::class, 'newMember'])->middleware('can:home')->name('members.newMember');
     Route::post('/members/store', [App\Http\Controllers\MembersController::class, 'store'])->name('members.store');
+    //FIN RUTAS DE MIEMBROS DE COMITES
+
+    //RUTAS PARA UNIDADES MILITARES
+    Route::get('/militaryUnits', [App\Http\Controllers\MilitaryUnitController::class, 'index'])->middleware('can:home')->name('militaryUnits.index');
+    Route::post('/militaryUnits/edit/{id}', [App\Http\Controllers\MilitaryUnitController::class, 'edit'])->middleware('can:home')->name('militaryUnits.edit');
+    Route::post('/militaryUnits/update', [App\Http\Controllers\MilitaryUnitController::class, 'update'])->middleware('can:home')->name('militaryUnits.update');
+    Route::get('/militaryUnits/newMilitaryUnit', [App\Http\Controllers\MilitaryUnitController::class, 'newMilitaryUnit'])->middleware('can:home')->name('militaryUnits.newMilitaryUnit');
+    Route::post('/militaryUnits/store', [App\Http\Controllers\MilitaryUnitController::class, 'store'])->name('militaryUnits.store');
+    //FIN RUTAS DE UNIDADES MILITARES
 
 
 

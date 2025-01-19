@@ -28,7 +28,7 @@
                 <div class="form-group">
                     <label for="manual_name">Nombre del Manual o Reglamento</label>
                     <input type="text" name="manual_name" id="manual_name" class="form-control"
-                        placeholder="Ingrese el nombre del manual" required>
+                        maxlength="240" placeholder="Ingrese el nombre del manual" required>
                 </div>
 
                 <!-- INVESTIGACIÓN -->

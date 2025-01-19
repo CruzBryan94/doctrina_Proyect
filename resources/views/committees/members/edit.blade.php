@@ -31,7 +31,7 @@
                         <div class="form-group col-6">
                             <label for="full_name">Apellidos y Nombres:</label>
                             <input type="text" name="full_name" class="form-control"
-                                value="{{ $committeeMember->full_name }}" required>
+                                value="{{ $committeeMember->full_name }}" maxlength="240" required>
                         </div>
 
                         <div class="form-group col-6">

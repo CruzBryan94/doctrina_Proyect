@@ -19,6 +19,7 @@ class MembersController extends Controller
                 'committee_members.id',
                 'committee_members.full_name',
                 'committee_members.identification',
+                'G.code as code',
                 'G.grade_name as grade',
                 DB::raw('COUNT(MCM.id) as manuals') // Corrección aquí
             )
@@ -26,8 +27,10 @@ class MembersController extends Controller
                 'committee_members.id',
                 'committee_members.full_name',
                 'committee_members.identification',
+                'G.code',
                 'G.grade_name'
-            ) // Agrupamos para evitar problemas con COUNT
+            )->orderBy('G.code', 'desc')
+            ->orderBy('committee_members.full_name')
             ->get();
 
         return view('committees.members.index', compact('committeeMembers'));
