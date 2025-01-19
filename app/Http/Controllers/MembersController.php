@@ -41,4 +41,39 @@ class MembersController extends Controller
         return view('committees.members.edit', compact('committeeMember', 'grades'));
 
     }
+
+    public function update(Request $request)
+    {
+        try {
+            $id = $request->id;
+            $committeeMember = CommitteeMember::find($id);
+            $committeeMember->fill($request->all());
+            $committeeMember->save();
+
+
+            return redirect()->route('members.index')->with('success', 'Miembro actualizado correctamente');
+        } catch (\Exception $e) {
+            return redirect()->route('members.index')->with('error', 'Error al actualizar el miembro');
+        }
+    }
+
+    public function newMember()
+    {
+        $grades = Grade::all();
+        return view('committees.members.newMember', compact('grades'));
+    }
+
+    public function store(Request $request)
+    {
+        try{
+
+        $committeeMember = new CommitteeMember();
+        $committeeMember->fill($request->all());
+        $committeeMember->save();
+
+        return redirect()->route('members.index')->with('success', 'Miembro creado correctamente');
+        } catch (\Exception $e) {
+            return redirect()->route('members.index')->with('error', 'Error al crear el miembro');
+        }
+    }
 }

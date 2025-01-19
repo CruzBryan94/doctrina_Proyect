@@ -27,7 +27,7 @@
     <!-- Botón para crear un nuevo manual -->
     <div class="d-flex justify-content-center mt-0 mb-3">
         <a href="{{ route('members.newMember') }}" class="btn btn-info btn-sm shadow-sm px-3 py-1">
-            <i class="fas fa-plus-circle"></i> Crear Nuevo Mimbro
+            <i class="fas fa-plus-circle"></i> Crear Nuevo Miembro
         </a>
     </div>
     <div class="card mt-1">
@@ -62,7 +62,7 @@
                             <td class="align-middle text-center">
                                 {{ $dato->manuals }}
                             <td class="text-center align-middle">
-                                <form action="{{ route('users.edit', $dato->id) }}" method="POST">
+                                <form action="{{ route('members.edit', $dato->id) }}" method="POST">
                                     @csrf
                                     <button class="btn btn-secondary btn-sm" data-toggle="modal">
                                         <span class="fas fa-user-edit"></span>
