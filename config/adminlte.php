@@ -326,6 +326,15 @@ return [
                     'text' => 'Usuarios',
                     'url' => 'users',
                 ],
+                [
+                    'text' => 'Miembros de Comités',
+                    'url' => 'members',
+                ],
+                [
+                    'text' => 'Unidades Militares',
+                    'url' => 'militaryUnits',
+                ],
+
             ],
         ]
 
