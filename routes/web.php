@@ -78,9 +78,9 @@ Route::middleware('auth')->group(function () {
 
 
     //RUTAS PARA USUARIOS
-    Route::get('/users', [App\Http\Controllers\UserController::class, 'index'])->middleware('can:home')->name('users.index');
-    Route::post('/users/edit/{id}', [App\Http\Controllers\UserController::class, 'edit'])->middleware('can:home')->name('users.edit');
-    Route::post('/users/update', [App\Http\Controllers\UserController::class, 'update'])->middleware('can:home')->name('users.update');
+    Route::get('/users', [App\Http\Controllers\UserController::class, 'index'])->middleware('can:admin')->name('users.index');
+    Route::post('/users/edit/{id}', [App\Http\Controllers\UserController::class, 'edit'])->middleware('can:admin')->name('users.edit');
+    Route::post('/users/update', [App\Http\Controllers\UserController::class, 'update'])->middleware('can:admin')->name('users.update');
     //FIN RUTAS DE USUARIOS
 
 

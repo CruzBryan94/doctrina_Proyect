@@ -325,6 +325,7 @@ return [
                 [
                     'text' => 'Usuarios',
                     'url' => 'users',
+                    'can' => 'admin',
                 ],
                 [
                     'text' => 'Miembros de Comités',
