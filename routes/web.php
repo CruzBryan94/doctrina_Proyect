@@ -66,6 +66,10 @@ Route::prefix('google-auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->middleware('can:home')->name('dashboard');
 
+    //RUTAS PARA GENERAR PDF
+    Route::get('/generatePDFPrubea', [App\Http\Controllers\DashboardController::class, 'generatePDFPrubea'])->name('generatePDFPrubea');
+    Route::get('/generatePDFManual', [App\Http\Controllers\DashboardController::class, 'generatePDFManual'])->name('dashboard.generatePDFManual');
+
     //RUTAS PARA MANUALES
     Route::get('/manuals', [App\Http\Controllers\ManualController::class, 'index'])->middleware('can:home')->name('manuals.index');
     Route::get('/manuals/newManual', [App\Http\Controllers\ManualController::class, 'newManual'])->middleware('can:home')->name('manuals.newManual');

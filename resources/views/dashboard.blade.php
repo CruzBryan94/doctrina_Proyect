@@ -13,7 +13,7 @@
     <div class="row">
         @php
             $icons = ['fas fa-search', 'fas fa-flask', 'fas fa-edit', 'fas fa-search-location', 'fas fa-tasks'];
-            $colors = ['bg-primary', 'bg-success', 'bg-warning', 'bg-info','bg-secondary', 'bg-danger'];
+            $colors = ['bg-primary', 'bg-success', 'bg-warning', 'bg-info', 'bg-secondary', 'bg-danger'];
             $ord = 1;
         @endphp
 
@@ -42,25 +42,30 @@
     <!-- Tabla DataTable -->
     <div class="card mt-4">
         <div class="card-header">
-            <h3 class="card-title font-weight-bold">Avance de Manuales y Reglamentos</h3>
+            <h3 class="card-title font-weight-bold">Avance de Manuales y Reglamentos
+                <a href="{{ route('dashboard.generatePDFManual') }}" class="btn btn-secondary btn-sm px-2 py-1">
+                    <i class="fas fa-print"></i> Imprimir Reporte
+                </a>
+            </h3>
         </div>
         <div class="card-body">
             <table id="manualsTable" class="table table-bordered table-hover">
                 <thead>
                     <tr>
-                        <th>Ord</th>
-                        <th>Fase</th>
-                        <th>Tipo</th>
-                        <th>Manuales y Reglamentos</th>
-                        <th>Actividad</th>
-                        <th>Porcentaje</th>
+                        <th class="text-center">Ord</th>
+                        <th class="text-center">Fase</th>
+                        <th class="text-center">Tipo</th>
+                        <th class="text-center">Manuales y Reglamentos</th>
+                        <th class="text-center">Actividad</th>
+                        <th class="text-center">Porcentaje</th>
+                        <th class="text-center">Tiempo de Edición</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($manualData as $row)
                         <tr>
                             <!-- Columna de Número -->
-                            <td>{{ $ord++ }}</td>
+                            <td class="text-center">{{ $ord++ }}</td>
 
                             <!-- Columna de Fase -->
                             <td
@@ -83,8 +88,13 @@
 
                             <!-- Columna de Porcentaje -->
                             <td class="text-center"
-                                @if ($row['progress'] == 100) style="background-color: rgba(40, 167, 69, 0.1);" @endif>
+                                @if ($row['progress'] == 100) style="background-color: rgba(21, 200, 63, 0.333);" @endif>
                                 {{ $row['progress'] }}%
+                            </td>
+
+                            <!-- Columna de Tiempo de Edición -->
+                            <td @if ($row['days_edition'] > 365) style="background-color: rgba(249, 48, 48, 0.3);" @endif>
+                                {{ $row['time_edition'] }}
                             </td>
                         </tr>
                     @endforeach
