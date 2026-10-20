@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class CommitteeType extends Model
 {
+    protected $table = 'committee_type';
+
     use HasFactory;
+
     protected $fillable = ['code', 'name'];
 
     public function manualCommitteeMembers()

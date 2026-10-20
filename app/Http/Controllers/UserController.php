@@ -2,58 +2,52 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Grade;
 use App\Models\User;
-
-
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Validation\Rule;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    //Mostrar los usuarios
     public function index()
     {
-        $user = auth()->user();
-        $roleUser = $user->roles->first()->name;
-
-        $users = User::join('grades as G', 'users.grade', '=', 'G.code')
-            ->join('model_has_roles as MR', 'MR.model_id', '=', 'users.id')
-            ->join('roles as Ro', 'MR.role_id', '=', 'Ro.id')
-            ->select('users.id', 'Ro.name as role', 'users.name', 'users.email', 'users.is_active', 'G.grade_name as grade')
-            ->get();
+        $users = User::with(['roles', 'gradeRecord'])->orderBy('name')->paginate(25);
 
         return view('users.index', compact('users'));
     }
 
-    //Mostrar el formulario para editar un usuario
-    public function edit($id)
+    public function edit(int $id)
     {
-        $user = User::find($id);
-        $grades = DB::table('grades')->get();
-        $roles = DB::table('roles')->get();
-
-        $roleId = DB::table('model_has_roles')->where('model_id', $id)->first()->role_id;
-
-        return view('users.edit', compact('user', 'grades', 'roles', 'roleId'));
+        return view('users.edit', [
+            'user' => User::with('roles')->findOrFail($id), 'grades' => Grade::orderBy('code')->get(),
+            'roles' => Role::where('guard_name', 'web')->get(),
+        ]);
     }
 
-    //Actualizar un usuario
-    public function update(Request $request)
+    public function update(Request $request, int $id)
     {
-        try {
-            $id = $request->id;
-            $user = User::find($id);
-            $user->fill($request->all());
-            $user->save();
-
-            //Actualiza el role_id en la tabla 'model_has_roles'
-            DB::table('model_has_roles')->where('model_id', $id)->update(['role_id' => $request->role_id]);
-            return redirect()->route('users.index')->with('success', 'Usuario modificado correctamente.');
-
-        } catch (\Exception $e) {
-            return redirect()->route('users.index')->with('error', 'Error al modificar el usuario.');
+        if (! $request->input('roles')) {
+            $request->merge(['roles' => []]);
         }
-    }
+        $data = $request->validate([
+            'roles' => ['present', 'array'], 'roles.*' => ['string', 'distinct', Rule::exists('roles', 'name')->where('guard_name', 'web')],
+            'grade' => ['nullable', 'integer', 'exists:grades,id'], 'is_active' => ['required', 'boolean'],
+        ]);
+        DB::transaction(function () use ($id, $data) {
+            $user = User::lockForUpdate()->findOrFail($id);
+            $roles = array_values(array_diff($data['roles'], ['none']));
+            if (! $roles) {
+                $roles = ['none'];
+            }
+            if ($user->hasRole('admin') && (! in_array('admin', $roles, true) || ! $data['is_active'])) {
+                abort_if(User::role('admin')->where('is_active', true)->where('id', '!=', $id)->count() === 0, 422, 'Debe quedar al menos un administrador activo.');
+            }
+            $user->update(['grade' => $data['grade'] ?? null, 'is_active' => $data['is_active']]);
+            $user->syncRoles($roles);
+        });
 
+        return redirect()->route('users.index')->with('success', 'Roles y estado actualizados.');
+    }
 }

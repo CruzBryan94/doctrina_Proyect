@@ -5,8 +5,8 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Spatie\Permission\Models\Permission;
+use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
@@ -22,7 +22,7 @@ class AuthenticationTest extends TestCase
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
         $user = User::factory()->create();
-        $user->givePermissionTo(Permission::findOrCreate('home', 'web'));
+        $user->givePermissionTo(Permission::findOrCreate('dashboard.view', 'web'));
 
         $response = $this->post('/login', [
             'email' => $user->email,

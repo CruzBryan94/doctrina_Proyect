@@ -29,7 +29,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        if (! $request->user()->can('home')) {
+        if (! $request->user()->can('dashboard.view')) {
             return redirect()->route('welcome');
         }
 

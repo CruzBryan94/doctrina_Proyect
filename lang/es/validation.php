@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'required' => 'El campo :attribute es obligatorio.',
+    'required_if' => 'El campo :attribute es obligatorio para esta operación.',
+    'present' => 'Debe enviarse el campo :attribute.',
+    'email' => 'Introduce un correo electrónico válido.',
+    'string' => 'El campo :attribute debe ser texto.',
+    'integer' => 'El campo :attribute debe ser un número entero.',
+    'boolean' => 'El campo :attribute debe indicar sí o no.',
+    'array' => 'El campo :attribute debe ser una lista válida.',
+    'exists' => 'La selección de :attribute no es válida o no pertenece al grupo indicado.',
+    'unique' => 'El valor de :attribute ya está registrado.',
+    'distinct' => 'No repitas valores en :attribute.',
+    'confirmed' => 'La confirmación de :attribute no coincide.',
+    'lowercase' => 'El campo :attribute debe estar en minúsculas.',
+    'in' => 'La opción de :attribute no es válida.',
+    'date' => 'Introduce una fecha válida en :attribute.',
+    'date_format' => 'El campo :attribute debe tener una fecha válida en formato año-mes-día.',
+    'before_or_equal' => 'La fecha de :attribute no puede ser posterior a :date.',
+    'regex' => 'El formato de :attribute no es válido.',
+    'max' => ['string' => 'El campo :attribute no puede superar :max caracteres.', 'numeric' => 'El campo :attribute no puede superar :max.', 'array' => 'El campo :attribute no puede tener más de :max elementos.'],
+    'min' => ['string' => 'El campo :attribute debe tener al menos :min caracteres.', 'numeric' => 'El campo :attribute debe ser al menos :min.', 'array' => 'Selecciona al menos :min elemento en :attribute.'],
+    'between' => ['numeric' => 'El campo :attribute debe estar entre :min y :max.'],
+    'attributes' => ['email' => 'correo electrónico', 'password' => 'contraseña', 'name' => 'nombre', 'full_name' => 'nombre completo', 'grades_id' => 'grado', 'cellphone' => 'celular', 'completation_date' => 'cumplimiento', 'started_on' => 'inicio de fase', 'manual_name' => 'nombre del manual'],
+];

@@ -20,5 +20,8 @@ class DatabaseSeeder extends Seeder
         $this->call(ManualTypesSeeder::class);
         $this->call(RoleSeeder::class);
         $this->call(UserSeeder::class);
+        if (app()->environment('local', 'testing')) {
+            $this->call(DemoSeeder::class);
+        }
     }
 }

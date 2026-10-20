@@ -300,13 +300,12 @@ return [
 
     'menu' => [
 
-
         ['header' => 'MENÚ DE OPCIONES'],
         [
             'text' => 'Dashboard',
             'url' => 'dashboard',
             'icon' => 'fas fa-fw fa-home',
-            'can' => 'home',
+            'can' => 'dashboard.view',
         ],
         // [
         //     'text' => 'Manuales',
@@ -316,7 +315,7 @@ return [
         [
             'text' => 'ADMINISTRACIÓN',
             'icon' => 'fas fa-fw fa-book',
-            'can' => 'home',
+            'can' => 'catalogs.manage',
             'submenu' => [
                 [
                     'text' => 'Manuales',
@@ -325,7 +324,7 @@ return [
                 [
                     'text' => 'Usuarios',
                     'url' => 'users',
-                    'can' => 'admin',
+                    'can' => 'users.manage',
                 ],
                 [
                     'text' => 'Miembros de Comités',
@@ -337,7 +336,7 @@ return [
                 ],
 
             ],
-        ]
+        ],
 
     ],
 

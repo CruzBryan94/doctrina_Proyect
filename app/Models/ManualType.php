@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ManualType extends Model
 {
-    use HasFactory;
-    protected $fillable = ['code', 'type_name'];
+    protected $fillable = ['code', 'type_name', 'doctrinal_map_id'];
+
+    public function doctrinalMap()
+    {
+        return $this->belongsTo(DoctrinalMap::class);
+    }
 
     public function manuals()
     {

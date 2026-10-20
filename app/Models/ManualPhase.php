@@ -2,26 +2,24 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ManualPhase extends Model
 {
-    use HasFactory;
-    protected $fillable = ['code', 'phase_name'];
+    public const ROLES = [
+        'planning' => 'planificador', 'research' => 'investigador',
+        'experimentation' => 'experimentador', 'edition' => 'edición', 'cgft' => 'cgft',
+    ];
+
+    protected $fillable = ['code', 'phase_name', 'slug', 'position', 'is_active'];
+
+    public function catalogSubphases()
+    {
+        return $this->hasMany(CatalogSubphase::class, 'manual_phases_id')->orderBy('position');
+    }
 
     public function manuals()
     {
         return $this->hasMany(Manual::class, 'manual_phases_id');
-    }
-
-    public function catalogSubphases()
-    {
-        return $this->hasMany(CatalogSubphase::class, 'manual_phases_id');
-    }
-
-    public function manualPhaseSuphases()
-    {
-        return $this->hasMany(ManualPhaseSuphase::class, 'manual_phases_id');
     }
 }

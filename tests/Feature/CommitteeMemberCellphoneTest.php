@@ -18,7 +18,7 @@ class CommitteeMemberCellphoneTest extends TestCase
         parent::setUp();
         $this->seed(Grade_Seeder::class);
         $user = User::factory()->create();
-        $user->givePermissionTo(Permission::findOrCreate('home', 'web'));
+        $user->givePermissionTo(Permission::findOrCreate('catalogs.manage', 'web'));
         $this->actingAs($user);
     }
 
