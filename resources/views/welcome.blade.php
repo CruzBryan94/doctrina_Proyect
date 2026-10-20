@@ -17,6 +17,9 @@
 
 
  @section('content')
+     @if (session('status'))
+         <div class="alert alert-success" role="status">{{ session('status') }}</div>
+     @endif
      <div class="container mt-0">
          <div class="row justify-content-center">
              <!-- Tarjeta de acceso denegado -->

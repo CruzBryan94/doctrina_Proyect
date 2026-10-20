@@ -19,6 +19,7 @@ class MembersController extends Controller
                 'committee_members.id',
                 'committee_members.full_name',
                 'committee_members.identification',
+                'committee_members.cellphone',
                 'G.code as code',
                 'G.grade_name as grade',
                 DB::raw('COUNT(MCM.id) as manuals') // Corrección aquí
@@ -27,6 +28,7 @@ class MembersController extends Controller
                 'committee_members.id',
                 'committee_members.full_name',
                 'committee_members.identification',
+                'committee_members.cellphone',
                 'G.code',
                 'G.grade_name'
             )->orderBy('G.code', 'desc')
@@ -47,10 +49,18 @@ class MembersController extends Controller
 
     public function update(Request $request)
     {
+        $validated = $request->validate([
+            'cellphone' => ['nullable', 'string', 'max:20', 'regex:/^\+?[0-9][0-9 ()-]*$/'],
+        ], [
+            'cellphone.regex' => 'El celular debe contener números y puede incluir + al inicio, espacios, guiones o paréntesis.',
+            'cellphone.max' => 'El celular no debe superar los 20 caracteres.',
+        ]);
+
         try {
             $id = $request->id;
             $committeeMember = CommitteeMember::find($id);
-            $committeeMember->fill($request->all());
+            $committeeMember->fill($request->only(['grades_id', 'full_name', 'identification']));
+            $committeeMember->fill($validated);
             $committeeMember->save();
 
 
@@ -68,10 +78,18 @@ class MembersController extends Controller
 
     public function store(Request $request)
     {
+        $validated = $request->validate([
+            'cellphone' => ['nullable', 'string', 'max:20', 'regex:/^\+?[0-9][0-9 ()-]*$/'],
+        ], [
+            'cellphone.regex' => 'El celular debe contener números y puede incluir + al inicio, espacios, guiones o paréntesis.',
+            'cellphone.max' => 'El celular no debe superar los 20 caracteres.',
+        ]);
+
         try{
 
         $committeeMember = new CommitteeMember();
-        $committeeMember->fill($request->all());
+        $committeeMember->fill($request->only(['grades_id', 'full_name', 'identification']));
+        $committeeMember->fill($validated);
         $committeeMember->save();
 
         return redirect()->route('members.index')->with('success', 'Miembro creado correctamente');

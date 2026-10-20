@@ -65,10 +65,11 @@ class DashboardController extends Controller
 
         // Formatear los datos para la vista
         $data = [
+            ['title' => 'PLANIFICACIÓN', 'count' => $investigacionCount],
             ['title' => 'INVESTIGACIÓN', 'count' => $investigacionCount],
             ['title' => 'EXPERIMENTACIÓN', 'count' => $experimentacionCount],
             ['title' => 'EDICIÓN', 'count' => $edicionCount],
-            ['title' => 'GRUPO ASESOR', 'count' => $secretaryCount],
+            ['title' => 'CGFT', 'count' => $secretaryCount],
             ['title' => 'PUBLICADOS', 'count' => $publishedCount],
             ['title' => 'TOTAL', 'count' => $totalCount],
         ];
@@ -143,7 +144,7 @@ class DashboardController extends Controller
             ['title' => 'INVESTIGACIÓN', 'count' => $investigacionCount],
             ['title' => 'EXPERIMENTACIÓN', 'count' => $experimentacionCount],
             ['title' => 'EDICIÓN', 'count' => $edicionCount],
-            ['title' => 'GRUPO ASESOR', 'count' => $secretaryCount],
+            ['title' => 'CGFT', 'count' => $secretaryCount],
             ['title' => 'PUBLICADOS', 'count' => $publishedCount],
             ['title' => 'TOTAL', 'count' => $totalCount],
         ];

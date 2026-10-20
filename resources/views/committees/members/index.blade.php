@@ -39,7 +39,8 @@
                         <th class="text-center">GRADO</th>
                         <th class="text-center">APELLIDOS Y NOMBRES</th>
                         <th class="text-center">CÉDULA DE IDENTIDAD</th>
-                        <th class="text-center">CANTIDAD DE MANUALES</th>>
+                        <th class="text-center">CELULAR</th>
+                        <th class="text-center">CANTIDAD DE MANUALES</th>
                         <th class="text-center">ACCIONES</th>
 
                     </tr>
@@ -60,7 +61,11 @@
                                 {{ $dato->identification }}
                             </td>
                             <td class="align-middle text-center">
+                                {{ $dato->cellphone ?? 'Sin registrar' }}
+                            </td>
+                            <td class="align-middle text-center">
                                 {{ $dato->manuals }}
+                            </td>
                             <td class="text-center align-middle">
                                 <form action="{{ route('members.edit', $dato->id) }}" method="POST">
                                     @csrf

@@ -9,7 +9,7 @@ class CommitteeMember extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['grades_id','full_name','identification'];
+    protected $fillable = ['grades_id','full_name','identification','cellphone'];
 
     public function grade()
     {
