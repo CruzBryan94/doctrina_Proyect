@@ -78,6 +78,23 @@ class Manual extends Model
         return $this->phaseStates->firstWhere('manual_phase_id', $this->manual_phases_id)?->started_on;
     }
 
+    public function currentSubstate(): ?array
+    {
+        if (! isset(ManualPhaseState::VALIDATION_BOUNDARIES[$this->manualPhase->slug])) {
+            return null;
+        }
+        $state = $this->phaseStates->firstWhere('manual_phase_id', $this->manual_phases_id);
+        if (! $state?->substate) {
+            return null;
+        }
+
+        return [
+            'code' => $state->substate,
+            'label' => $state->substate === 'validation' ? 'Validación' : 'Desarrollo',
+            'started_on' => ($state->substate === 'validation' ? $state->validation_started_on : $state->started_on)?->toDateString(),
+        ];
+    }
+
     public function timing(): array
     {
         $end = ($this->published_on ?? today())->copy()->startOfDay();

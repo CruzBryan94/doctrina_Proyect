@@ -55,10 +55,15 @@ El seed en local/testing crea cuatro manuales por fase (20) y cuatro publicados,
 1. Elige una fase y filtra por manual, mapa o tipo.
 2. Registra la fecha de inicio de la fase si no existe.
 3. Marca una actividad e ingresa su fecha: el cambio y porcentaje se guardan sin recargar.
-4. Para corregir un cumplimiento, desmarca e indica un motivo.
+4. Para corregir un cumplimiento, desmarca: retira la fecha y recalcula el porcentaje sin pedir motivo ni confirmación. El historial conserva el cambio.
 5. Editar permite datos generales, cantidades y comités de Investigación/Experimentación. No hay comités en Planificación.
-6. Al completar una fase, el manual avanza una sola etapa. Se publica al finalizar CGFT.
-7. Un retroceso es explícito, exige motivo y solo se permite con todas las actividades de esa fase pendientes.
+6. Al completar una fase se guarda el 100 % y se habilita «Cambiar de fase», visible al final de cada fila. Solo pulsar ese botón abre la confirmación y permite avanzar. Cancelar conserva la fase y las actividades; CGFT usa «Publicar manual».
+7. Un retroceso exige confirmación en un modal y solo se permite con todas las actividades de esa fase pendientes.
+8. Los avisos informativos, errores y confirmaciones usan los modales de ARTEMIS, sin alertas nativas del navegador.
+
+En la edición, cada comité permite buscar integrantes por cédula, nombre o apellido y unidades por código o nombre. Las opciones se consultan en bloques de 25; «Mostrar más» carga el siguiente bloque. Las selecciones permanecen visibles al cambiar la búsqueda y solo se persisten al guardar el manual.
+
+Investigación y Experimentación guardan por manual sus subestados Desarrollo/Validación. Desarrollo inicia con la fase; Validación inicia con la fecha de ENTREGA DE LA CARPETA DE INVESTIGACIÓN o INFORME FINAL DE LA EXPERIMENTACIÓN, respectivamente. La matriz muestra etiquetas azul/violeta y las actualiza al guardar. Desmarcar esa tarea devuelve a Desarrollo; las fechas vigentes se corrigen y el historial se conserva. La migración de subestados reconstruye los datos existentes sin fresh.
 
 Las actividades no configuradas aparecen como «No aplica» y no afectan el porcentaje.
 

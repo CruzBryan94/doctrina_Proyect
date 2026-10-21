@@ -36,6 +36,28 @@ class ManualWorkflow
         ManualEvent::create(['manual_id' => $manual->id, 'user_id' => auth()->id(), 'action' => $action, 'before' => $before, 'after' => $after, 'reason' => $reason]);
     }
 
+    public function synchronizeSubstates(Manual $manual): void
+    {
+        foreach (ManualPhaseState::VALIDATION_BOUNDARIES as $slug => $key) {
+            $boundary = $manual->manualPhaseSuphases->first(fn ($row) => $row->catalogSubphase->activity_key === $key);
+            if (! $boundary) {
+                continue;
+            }
+            $state = $manual->phaseStates->firstWhere('manual_phase_id', $boundary->manual_phases_id);
+            if (! $state) {
+                continue;
+            }
+            $validationDate = $state->started_on && $boundary->is_completed ? $boundary->completation_date : null;
+            $state->fill([
+                'substate' => $state->started_on ? ($validationDate ? 'validation' : 'development') : null,
+                'validation_started_on' => $validationDate,
+            ]);
+            if ($state->isDirty()) {
+                $state->save();
+            }
+        }
+    }
+
     public function lock(int $id, int $version): Manual
     {
         $manual = Manual::with(self::RELATIONS)->lockForUpdate()->findOrFail($id);
@@ -50,7 +72,7 @@ class ManualWorkflow
         return DB::transaction(function () use ($id, $data) {
             $manual = $this->lock($id, $data['version']);
             $phase = $manual->manualPhase;
-            $before = ['phase' => $phase->slug, 'published' => $manual->is_published];
+            $before = ['phase' => $phase->slug, 'published' => $manual->is_published, 'substate' => $manual->currentSubstate()];
             if ($data['action'] === 'start') {
                 $date = $data['started_on'];
                 $previousDates = $manual->manualPhaseSuphases->filter(fn ($row) => $row->manual_phases_id !== $phase->id && $row->is_completed && $row->catalogSubphase->manualPhase->position < $phase->position)->pluck('completation_date');
@@ -76,14 +98,12 @@ class ManualWorkflow
                 if ($completed && (! $date || $date < $start->toDateString())) {
                     throw ValidationException::withMessages(['completation_date' => 'La fecha es obligatoria y debe ser igual o posterior al inicio de la fase.']);
                 }
-                if ($row->is_completed && ! $completed && empty($data['reason'])) {
-                    throw ValidationException::withMessages(['reason' => 'Indica el motivo de la corrección.']);
-                }
                 $before['activity'] = $row->only(['catalog_subphases_id', 'is_completed', 'completation_date']);
                 $row->update(['is_completed' => $completed, 'completation_date' => $date]);
                 $manual->load('manualPhaseSuphases.catalogSubphase');
                 $this->advanceIfComplete($manual);
             } elseif ($data['action'] === 'retreat') {
+                $this->requireConfirmation($data);
                 if ($phase->slug === 'planning' || $manual->manualPhaseSuphases->where('manual_phases_id', $phase->id)->contains('is_completed', true)) {
                     throw ValidationException::withMessages(['phase' => 'Solo se puede retroceder si toda la fase está pendiente. Planificación es el límite inicial.']);
                 }
@@ -92,13 +112,16 @@ class ManualWorkflow
                 $manual->is_published = false;
                 $manual->published_on = null;
             } else {
+                $this->requireConfirmation($data);
                 $this->advanceIfComplete($manual, true);
             }
+            $this->synchronizeSubstates($manual);
             $manual->lock_version++;
             $manual->save();
             $manual->load(self::RELATIONS);
             $this->event($manual, $data['action'], $before, [
                 'phase' => $manual->manualPhase->slug, 'published' => $manual->is_published,
+                'substate' => $manual->currentSubstate(),
                 'activity_id' => $data['activity_id'] ?? null, 'is_completed' => $data['is_completed'] ?? null,
                 'completation_date' => $data['completation_date'] ?? null, 'started_on' => $data['started_on'] ?? null,
             ], $data['reason'] ?? null);
@@ -139,6 +162,10 @@ class ManualWorkflow
                 throw ValidationException::withMessages(['phase' => 'Una fase anterior está incompleta. Corrige el recorrido antes de avanzar.']);
             }
         }
+        // Completing an activity saves its progress; transitions require a separate confirmation.
+        if (! $explicit && ! $manual->is_published) {
+            return;
+        }
         if ($phase->slug === 'cgft') {
             $manual->is_published = true;
             $manual->published_on = $rows->max('completation_date')->toDateString();
@@ -147,6 +174,13 @@ class ManualWorkflow
             $manual->manual_phases_id = $next->id;
             $manual->is_published = false;
             $manual->published_on = null;
+        }
+    }
+
+    private function requireConfirmation(array $data): void
+    {
+        if (! ($data['confirmed'] ?? false)) {
+            throw ValidationException::withMessages(['confirmed' => 'Confirma el cambio de fase antes de continuar.']);
         }
     }
 

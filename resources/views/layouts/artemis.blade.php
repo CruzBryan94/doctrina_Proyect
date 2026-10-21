@@ -6,7 +6,7 @@
     <title>@yield('title', 'ARTEMIS') · ARTEMIS</title>
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     <link rel="stylesheet" href="{{ asset('vendor/fontawesome-free/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/artemis.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/artemis.css') }}?v={{ filemtime(public_path('css/artemis.css')) }}">
     @stack('styles')
 </head>
 <body>
@@ -26,14 +26,11 @@
 <div class="app-workspace">
     <header class="app-topbar"><span class="topbar-context">CEDMFT <span>/</span> Sistema de doctrina</span><div class="account"><span class="avatar">{{ mb_substr(auth()->user()->name, 0, 1) }}</span><span>{{ auth()->user()->name }}<small>{{ auth()->user()->getRoleNames()->join(' · ') ?: 'Sin acceso' }}</small></span><form method="POST" action="{{ route('logout') }}">@csrf<button class="icon-button" aria-label="Cerrar sesión" title="Cerrar sesión"><i class="fas fa-sign-out-alt" aria-hidden="true"></i></button></form></div></header>
     <main id="main" class="app-main">
-        @if(session('success'))<div class="alert alert-success" role="status">{{ session('success') }}</div>@endif
-        @if(session('status'))<div class="alert alert-info" role="status">{{ session('status') }}</div>@endif
-        @if($errors->any())<div class="alert alert-danger" role="alert"><strong>Revisa los datos antes de continuar.</strong><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
         @yield('content')
     </main>
     <footer class="app-footer">ARTEMIS <span>Seguimiento de manuales y publicaciones militares</span></footer>
 </div>
-<div id="live-status" class="live-status" role="status" aria-live="polite" hidden></div>
+@include('partials.alert-modal')
 @stack('scripts')
 </body>
 </html>

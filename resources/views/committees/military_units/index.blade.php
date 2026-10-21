@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends('layouts.legacy')
 
 @section('title', 'ADMIN UNIDADES MILITARES')
 

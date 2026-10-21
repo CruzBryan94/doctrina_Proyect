@@ -29,11 +29,26 @@ class ManualController extends Controller
         $query = Manual::with(ManualWorkflow::RELATIONS)->where('manual_phases_id', $phase->id)->where('is_active', true);
         $query->where('is_published', $request->boolean('published'));
         $this->filters($query, $request);
+        $summaryQuery = (clone $query)->setEagerLoads([])->select(['manuals.id', 'manuals.research_advances', 'manuals.experimentation_advances', 'manuals.is_published'])
+            ->withCount([
+                'manualPhaseSuphases as phase_activities' => fn ($q) => $q->where('manual_phases_id', $phase->id),
+                'manualPhaseSuphases as completed_activities' => fn ($q) => $q->where('manual_phases_id', $phase->id)->where('is_completed', true)->whereNotNull('completation_date'),
+            ])->withExists([
+                'phaseStates as in_development' => fn ($q) => $q->where('manual_phase_id', $phase->id)->where('substate', 'development'),
+                'phaseStates as in_validation' => fn ($q) => $q->where('manual_phase_id', $phase->id)->where('substate', 'validation'),
+            ]);
+        $expected = match ($phase->slug) {
+            'research' => '6 + research_advances', 'experimentation' => '6 + experimentation_advances', 'edition' => '6', default => '2',
+        };
+        $summary = DB::query()->fromSub($summaryQuery->toBase(), 'matrix_summary')->selectRaw(
+            'COUNT(*) as total, COALESCE(SUM(in_development), 0) as development, COALESCE(SUM(in_validation), 0) as validation, '
+            .'COALESCE(SUM(CASE WHEN is_published = 0 AND phase_activities = ('.$expected.') AND completed_activities = ('.$expected.') THEN 1 ELSE 0 END), 0) as ready'
+        )->first();
         $manuals = $query->orderBy('manual_name')->paginate(20)->withQueryString();
         $activities = $phase->catalogSubphases;
         $maps = DoctrinalMap::with('manualTypes')->get();
 
-        return view('manuals.matrix', compact('manuals', 'phase', 'phases', 'activities', 'maps'));
+        return view('manuals.matrix', compact('manuals', 'phase', 'phases', 'activities', 'maps', 'summary'));
     }
 
     public function filters($query, Request $request): void
@@ -62,14 +77,48 @@ class ManualController extends Controller
     {
         $returnTo = $this->returnTo($manual);
         $maps = DoctrinalMap::with('manualTypes')->get();
-        $members = CommitteeMember::with('grade')->orderBy('full_name')->get();
-        $units = MilitaryUnit::orderBy('unit_name')->get();
         $slug = $manual->exists ? $manual->manualPhase->slug : 'planning';
         $committeeTypes = CommitteeType::whereIn('code', match ($slug) {
             'research' => [1, 2], 'experimentation' => [3, 4], default => []
         })->get();
+        $memberIds = collect(old('members', $manual->manualCommitteeMembers->whereIn('committee_type_id', $committeeTypes->pluck('id'))->pluck('committee_members_id')->all()))->flatten()->filter(fn ($id) => is_scalar($id) && ctype_digit((string) $id));
+        $unitIds = collect(old('units', $manual->manualMilitaryUnits->whereIn('committee_type_id', $committeeTypes->pluck('id'))->pluck('military_units_id')->all()))->flatten()->filter(fn ($id) => is_scalar($id) && ctype_digit((string) $id));
+        $members = CommitteeMember::with('grade')->whereIn('id', $memberIds)->orderBy('full_name')->get();
+        $units = MilitaryUnit::whereIn('id', $unitIds)->orderBy('unit_name')->get();
 
         return view('manuals.form', compact('manual', 'maps', 'members', 'units', 'committeeTypes', 'returnTo'));
+    }
+
+    public function assignmentOptions(Request $request, int $id)
+    {
+        $manual = Manual::with('manualPhase')->findOrFail($id);
+        $this->authorize('update', $manual);
+        abort_unless(in_array($manual->manualPhase->slug, ['research', 'experimentation'], true), 403);
+        $data = $request->validate([
+            'kind' => ['required', 'in:members,units'],
+            'q' => ['nullable', 'string', 'max:100'],
+            'page' => ['sometimes', 'integer', 'between:1,10000'],
+        ]);
+        $isMember = $data['kind'] === 'members';
+        $query = $isMember ? CommitteeMember::with('grade') : MilitaryUnit::query();
+        $columns = $isMember ? ['full_name', 'identification'] : ['unit_name', 'unit_acronym'];
+        foreach (preg_split('/\s+/u', trim($data['q'] ?? ''), -1, PREG_SPLIT_NO_EMPTY) as $term) {
+            $query->where(function ($query) use ($columns, $term) {
+                foreach ($columns as $column) {
+                    $query->orWhere($column, 'like', '%'.$term.'%');
+                }
+            });
+        }
+        $results = $query->orderBy($isMember ? 'full_name' : 'unit_name')->orderBy('id')->simplePaginate(25);
+
+        return response()->json([
+            'items' => $results->getCollection()->map(fn ($item) => [
+                'id' => $item->id,
+                'label' => $isMember ? ($item->grade?->grade_name ?? 'Sin grado').' · '.$item->full_name : $item->unit_acronym.' · '.$item->unit_name,
+                'detail' => $isMember ? 'Cédula: '.$item->identification.($item->cellphone ? ' · Celular: '.$item->cellphone : '') : '',
+            ])->values(),
+            'more' => $results->hasMorePages(),
+        ]);
     }
 
     private function returnTo(Manual $manual): string
@@ -143,7 +192,8 @@ class ManualController extends Controller
             'is_completed' => ['required_if:action,activity', 'boolean'],
             'completation_date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
             'started_on' => ['required_if:action,start', 'date_format:Y-m-d', 'before_or_equal:today'],
-            'reason' => ['required_if:action,retreat', 'nullable', 'string', 'max:255'],
+            'reason' => ['nullable', 'string', 'max:255'],
+            'confirmed' => ['exclude_unless:action,retreat,advance', 'required', 'accepted'],
         ]);
         $manual = $workflow->change($id, $data);
         $canAccess = Gate::allows('update', $manual);
@@ -153,6 +203,7 @@ class ManualController extends Controller
             'phase_name' => $manual->manualPhase->phase_name, 'progress' => $manual->progress(),
             'published' => $manual->is_published, 'timing' => $manual->timing(),
             'activity' => $manual->currentActivity(),
+            'substate' => $manual->currentSubstate(),
             'can_access' => $canAccess,
             'url' => $canAccess ? route('manuals.index', ['phase' => $manual->manualPhase->slug, 'published' => $manual->is_published ? 1 : 0]) : route('dashboard'),
         ]);

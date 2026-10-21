@@ -94,6 +94,7 @@ class DemoSeeder extends Seeder
             $manual->published_on = $manual->manualPhaseSuphases()->where('manual_phases_id', $current->id)->max('completation_date');
         }
         $manual->save();
+        $workflow->synchronizeSubstates($manual->load(ManualWorkflow::RELATIONS));
         $workflow->event($manual, 'created', [], ['phase' => $current->slug, 'published' => $published], 'Escenario de prueba generado por DemoSeeder');
     }
 }

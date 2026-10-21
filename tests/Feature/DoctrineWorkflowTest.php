@@ -7,6 +7,7 @@ use App\Models\CommitteeMember;
 use App\Models\Manual;
 use App\Models\ManualPhase;
 use App\Models\ManualType;
+use App\Models\MilitaryUnit;
 use App\Models\User;
 use App\Services\ManualWorkflow;
 use Database\Seeders\CatalogSubphasesSeeder;
@@ -75,6 +76,16 @@ class DoctrineWorkflowTest extends TestCase
         $this->assertDatabaseCount('catalog_subphases', 38);
         $this->assertEquals(['planning', 'research', 'experimentation', 'edition', 'cgft'], ManualPhase::orderBy('position')->pluck('slug')->all());
         $this->assertDatabaseHas('catalog_subphases', ['suphase_name' => 'LEGALIZADO']);
+    }
+
+    public function test_alert_modal_is_available_in_auth_main_and_legacy_screens(): void
+    {
+        $this->get(route('login'))->assertOk()->assertSee('id="artemis-alert"', false);
+        $this->get(route('register'))->assertOk()->assertSee('id="artemis-alert"', false);
+        $this->actor();
+        foreach (['dashboard', 'manuals.index', 'members.index', 'members.newMember', 'militaryUnits.index', 'militaryUnits.newMilitaryUnit'] as $route) {
+            $this->get(route($route))->assertOk()->assertSee('id="artemis-alert"', false)->assertSee('js/alerts.js', false);
+        }
     }
 
     public function test_creation_starts_in_planning_with_zero_and_no_committees(): void
@@ -159,6 +170,12 @@ class DoctrineWorkflowTest extends TestCase
             $this->activity($manual, ['activity_id' => $row->catalog_subphases_id])->assertOk();
         }
         $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
+        $this->assertSame('planning', $manual->manualPhase->slug);
+        $this->assertEquals(100, $manual->progress());
+        $this->patchJson(route('manuals.activity', $manual->id), ['action' => 'advance', 'version' => $manual->lock_version])->assertUnprocessable()->assertJsonValidationErrors('confirmed');
+        $this->assertSame('planning', $manual->fresh()->manualPhase->slug);
+        $this->patchJson(route('manuals.activity', $manual->id), ['action' => 'advance', 'version' => $manual->lock_version, 'confirmed' => true])->assertOk();
+        $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
         $this->assertSame('research', $manual->manualPhase->slug);
         $this->assertNull($manual->currentStart());
         $this->assertEquals(0, $manual->progress());
@@ -174,6 +191,9 @@ class DoctrineWorkflowTest extends TestCase
             $this->activity($manual, ['activity_id' => $row->catalog_subphases_id])->assertOk();
         }
         $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
+        $this->assertSame('edition', $manual->manualPhase->slug);
+        $this->patchJson(route('manuals.activity', $manual->id), ['action' => 'advance', 'version' => $manual->lock_version, 'confirmed' => true])->assertOk();
+        $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
         $this->assertSame('cgft', $manual->manualPhase->slug);
         $this->assertFalse($manual->is_published);
     }
@@ -188,12 +208,16 @@ class DoctrineWorkflowTest extends TestCase
             $this->activity($manual, ['activity_id' => $row->catalog_subphases_id])->assertOk();
         }
         $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
+        $this->assertFalse($manual->is_published);
+        $this->assertEquals(100, $manual->progress());
+        $this->patchJson(route('manuals.activity', $manual->id), ['action' => 'advance', 'version' => $manual->lock_version, 'confirmed' => true])->assertOk();
+        $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
         $this->assertTrue($manual->is_published);
         $this->assertNotNull($manual->published_on);
-        $this->activity($manual, ['activity_id' => $rows->last()->catalog_subphases_id, 'is_completed' => false, 'completation_date' => null, 'reason' => 'Corregir legalización'])->assertOk();
+        $this->activity($manual, ['activity_id' => $rows->last()->catalog_subphases_id, 'is_completed' => false, 'completation_date' => null])->assertOk();
         $this->assertFalse($manual->fresh()->is_published);
         $this->assertNull($manual->fresh()->published_on);
-        $this->assertDatabaseHas('manual_events', ['manual_id' => $manual->id, 'reason' => 'Corregir legalización']);
+        $this->assertDatabaseHas('manual_events', ['manual_id' => $manual->id, 'action' => 'activity', 'reason' => null]);
     }
 
     public function test_retreat_is_explicit_and_limited_to_previous_phase(): void
@@ -202,9 +226,35 @@ class DoctrineWorkflowTest extends TestCase
         $manual = $this->manual('research');
         $this->patchJson(route('manuals.activity', $manual->id), ['action' => 'start', 'started_on' => today()->subDays(40)->toDateString(), 'version' => 0])->assertOk()->assertJsonPath('phase', 'research');
         $manual = $manual->fresh();
-        $this->patchJson(route('manuals.activity', $manual->id), ['action' => 'retreat', 'version' => $manual->lock_version, 'reason' => 'Revisar factibilidad'])->assertOk()->assertJsonPath('phase', 'planning');
+        $this->patchJson(route('manuals.activity', $manual->id), ['action' => 'retreat', 'version' => $manual->lock_version])->assertUnprocessable()->assertJsonValidationErrors('confirmed');
+        $this->patchJson(route('manuals.activity', $manual->id), ['action' => 'retreat', 'version' => $manual->lock_version, 'confirmed' => true])->assertOk()->assertJsonPath('phase', 'planning');
         $manual = $manual->fresh();
-        $this->patchJson(route('manuals.activity', $manual->id), ['action' => 'retreat', 'version' => $manual->lock_version, 'reason' => 'Otro retroceso'])->assertUnprocessable();
+        $this->patchJson(route('manuals.activity', $manual->id), ['action' => 'retreat', 'version' => $manual->lock_version, 'confirmed' => true])->assertUnprocessable();
+    }
+
+    public function test_unchecking_needs_no_reason_and_clears_date_with_audit(): void
+    {
+        $user = $this->actor();
+        $manual = $this->manual();
+        $this->activity($manual)->assertOk();
+        $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
+        $this->activity($manual, ['is_completed' => false, 'completation_date' => null])->assertOk()->assertJsonPath('progress', 0)->assertJsonPath('phase', 'planning');
+        $row = $manual->fresh()->manualPhaseSuphases->first();
+        $this->assertFalse($row->is_completed);
+        $this->assertNull($row->completation_date);
+        $event = $manual->events()->latest('id')->first();
+        $this->assertEquals($user->id, $event->user_id);
+        $this->assertNull($event->reason);
+        $this->assertTrue($event->before['activity']['is_completed']);
+        $this->assertFalse($event->after['is_completed']);
+    }
+
+    public function test_confirmed_transition_still_requires_completed_activities(): void
+    {
+        $this->actor();
+        $manual = $this->manual();
+        $this->patchJson(route('manuals.activity', $manual->id), ['action' => 'advance', 'version' => $manual->lock_version, 'confirmed' => true])->assertUnprocessable()->assertJsonValidationErrors('phase');
+        $this->assertSame('planning', $manual->fresh()->manualPhase->slug);
     }
 
     public function test_foreign_and_nonapplicable_activities_are_rejected(): void
@@ -324,5 +374,163 @@ class DoctrineWorkflowTest extends TestCase
         $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
         $this->activity($manual, ['activity_id' => $rows->last()->catalog_subphases_id])->assertUnprocessable()->assertJsonValidationErrors('committees');
         $this->assertFalse($rows->last()->fresh()->is_completed);
+    }
+
+    public function test_assignment_search_matches_member_name_surname_identification_and_unit(): void
+    {
+        $this->actor(['investigador']);
+        $manual = $this->manual('research');
+        $member = CommitteeMember::create(['grades_id' => 1, 'full_name' => 'Ana Patricia Salazar', 'identification' => '0912345678']);
+        $unit = MilitaryUnit::create(['unit_name' => 'Batallón de Apoyo Logístico', 'unit_acronym' => 'BAL9']);
+        foreach (['Ana', 'salazar', '091234', 'Salazar Ana'] as $query) {
+            $this->getJson(route('manuals.assignmentOptions', ['id' => $manual->id, 'kind' => 'members', 'q' => $query]))
+                ->assertOk()->assertJsonCount(1, 'items')->assertJsonPath('items.0.id', $member->id);
+        }
+        foreach (['BAL9', 'Apoyo', 'Logístico Batallón'] as $query) {
+            $this->getJson(route('manuals.assignmentOptions', ['id' => $manual->id, 'kind' => 'units', 'q' => $query]))
+                ->assertOk()->assertJsonCount(1, 'items')->assertJsonPath('items.0.id', $unit->id);
+        }
+        $this->getJson(route('manuals.assignmentOptions', ['id' => $manual->id, 'kind' => 'members', 'q' => 'Sin coincidencias']))->assertOk()->assertJsonCount(0, 'items');
+    }
+
+    public function test_matrix_summary_counts_all_filtered_pages_and_configured_activities(): void
+    {
+        $this->actor();
+        $ready = $this->manual('research');
+        $ready->update(['manual_name' => 'Especial listo']);
+        $ready->manualPhaseSuphases()->where('manual_phases_id', $ready->manual_phases_id)->update(['is_completed' => true, 'completation_date' => today()]);
+        app(ManualWorkflow::class)->synchronizeSubstates($ready->fresh()->load(ManualWorkflow::RELATIONS));
+        $developing = $this->manual('research', 8);
+        app(ManualWorkflow::class)->synchronizeSubstates($developing->fresh()->load(ManualWorkflow::RELATIONS));
+        foreach (range(1, 25) as $number) {
+            $copy = $ready->replicate();
+            $copy->manual_name = 'Sin inicio '.$number;
+            $copy->save();
+        }
+        $inactive = $ready->replicate();
+        $inactive->is_active = false;
+        $inactive->save();
+        $this->manual('edition');
+        $this->get(route('manuals.index', ['phase' => 'research', 'page' => 2]))->assertOk()->assertViewHas('summary', fn ($summary) => (int) $summary->total === 27 && (int) $summary->development === 1 && (int) $summary->validation === 1 && (int) $summary->ready === 1)
+            ->assertDontSee('actividades de referencia');
+        $this->get(route('manuals.index', ['phase' => 'research', 'q' => 'Especial']))->assertOk()->assertViewHas('summary', fn ($summary) => (int) $summary->total === 1 && (int) $summary->validation === 1 && (int) $summary->ready === 1);
+        $this->get(route('manuals.index', ['phase' => 'research', 'q' => 'No existe']))->assertOk()->assertViewHas('summary', fn ($summary) => (int) $summary->total === 0 && (int) $summary->ready === 0);
+    }
+
+    public function test_matrix_summary_omits_substates_for_other_phases_and_published_are_not_ready(): void
+    {
+        $this->actor();
+        $manual = $this->manual('cgft');
+        $manual->manualPhaseSuphases()->where('manual_phases_id', $manual->manual_phases_id)->update(['is_completed' => true, 'completation_date' => today()]);
+        $manual->update(['is_published' => true, 'published_on' => today()]);
+        $this->get(route('manuals.index', ['phase' => 'cgft', 'published' => 1]))->assertOk()
+            ->assertViewHas('summary', fn ($summary) => (int) $summary->total === 1 && (int) $summary->ready === 0)
+            ->assertDontSee('data-matrix-count="development"', false)->assertDontSee('data-matrix-count="validation"', false);
+        $this->get(route('manuals.index', ['phase' => 'planning']))->assertOk()
+            ->assertSee('Total de manuales')->assertSee('Listos para Investigación')->assertDontSee('data-matrix-count="development"', false);
+    }
+
+    public function test_research_and_experimentation_substates_follow_their_boundary_activity(): void
+    {
+        $this->actor();
+        foreach (['research', 'experimentation'] as $slug) {
+            $manual = $this->manual($slug);
+            $this->patchJson(route('manuals.activity', $manual->id), ['action' => 'start', 'started_on' => today()->subDays(40)->toDateString(), 'version' => 0])
+                ->assertOk()->assertJsonPath('substate.code', 'development');
+            $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
+            $boundary = $manual->manualPhaseSuphases->first(fn ($row) => $row->catalogSubphase->activity_key === $slug.'.12');
+            $this->activity($manual, ['activity_id' => $boundary->catalog_subphases_id, 'completation_date' => today()->subDays(2)->toDateString()])
+                ->assertOk()->assertJsonPath('substate.code', 'validation')->assertJsonPath('substate.started_on', today()->subDays(2)->toDateString())->assertJsonPath('phase', $slug);
+            $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
+            $this->activity($manual)->assertOk()->assertJsonPath('substate.code', 'validation');
+            $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
+            $this->activity($manual, ['activity_id' => $boundary->catalog_subphases_id, 'completation_date' => today()->subDay()->toDateString()])
+                ->assertOk()->assertJsonPath('substate.started_on', today()->subDay()->toDateString());
+            $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
+            $this->activity($manual, ['activity_id' => $boundary->catalog_subphases_id, 'is_completed' => false, 'completation_date' => null])
+                ->assertOk()->assertJsonPath('substate.code', 'development');
+            $state = $manual->fresh()->phaseStates->firstWhere('manual_phase_id', $manual->manual_phases_id);
+            $this->assertSame('development', $state->substate);
+            $this->assertNull($state->validation_started_on);
+            $event = $manual->events()->first();
+            $this->assertSame('validation', $event->before['substate']['code']);
+            $this->assertSame('development', $event->after['substate']['code']);
+        }
+    }
+
+    public function test_substate_is_absent_before_start_and_in_other_phases(): void
+    {
+        $this->actor();
+        $manual = $this->manual('research');
+        $manual->phaseStates()->where('manual_phase_id', $manual->manual_phases_id)->update(['started_on' => null]);
+        app(ManualWorkflow::class)->synchronizeSubstates($manual->fresh()->load(ManualWorkflow::RELATIONS));
+        $this->assertNull($manual->fresh()->currentSubstate());
+        $this->assertNull($this->manual('planning')->currentSubstate());
+        $this->assertNull($this->manual('edition')->currentSubstate());
+    }
+
+    public function test_substate_migration_backfills_existing_and_historical_phase_data(): void
+    {
+        $this->actor();
+        $research = $this->manual('research');
+        $later = $this->manual('edition');
+        $unstarted = $this->manual('experimentation');
+        $unstarted->phaseStates()->where('manual_phase_id', $unstarted->manual_phases_id)->update(['started_on' => null]);
+        $migration = require database_path('migrations/2026_10_21_000001_add_manual_phase_substates.php');
+        $migration->down();
+        $migration->up();
+        $this->assertSame('development', $research->fresh()->currentSubstate()['code']);
+        $this->assertNull($unstarted->fresh()->currentSubstate());
+        foreach (['research', 'experimentation'] as $slug) {
+            $phase = ManualPhase::where('slug', $slug)->first();
+            $state = $later->fresh()->phaseStates->firstWhere('manual_phase_id', $phase->id);
+            $this->assertSame('validation', $state->substate);
+            $this->assertSame(today()->subDays(45)->toDateString(), $state->validation_started_on->toDateString());
+        }
+        $this->assertNull($later->fresh()->currentSubstate());
+    }
+
+    public function test_assignment_search_pages_results_without_loading_the_entire_catalog(): void
+    {
+        $this->actor();
+        $manual = $this->manual('experimentation');
+        foreach (range(1, 28) as $number) {
+            CommitteeMember::create(['grades_id' => 1, 'full_name' => sprintf('Integrante %02d', $number), 'identification' => (string) (9000000000 + $number)]);
+        }
+        $url = route('manuals.assignmentOptions', ['id' => $manual->id, 'kind' => 'members']);
+        $first = $this->getJson($url)->assertOk()->assertJsonCount(25, 'items')->assertJsonPath('more', true)->json('items');
+        $second = $this->getJson($url.'&page=2')->assertOk()->assertJsonCount(3, 'items')->assertJsonPath('more', false)->json('items');
+        $this->assertCount(28, array_unique(array_column(array_merge($first, $second), 'id')));
+    }
+
+    public function test_assignment_search_respects_phase_permissions_and_validates_inputs(): void
+    {
+        $manual = $this->manual('research');
+        $url = route('manuals.assignmentOptions', ['id' => $manual->id, 'kind' => 'members']);
+        $this->getJson($url)->assertUnauthorized();
+        foreach (['supervisor', 'planificador', 'experimentador', 'none'] as $role) {
+            $this->actor([$role]);
+            $this->getJson($url)->assertForbidden();
+        }
+        $this->actor(['investigador']);
+        $this->getJson($url)->assertOk();
+        $this->getJson($url.'&page=0')->assertUnprocessable()->assertJsonValidationErrors('page');
+        $this->getJson($url.'&q='.str_repeat('a', 101))->assertUnprocessable()->assertJsonValidationErrors('q');
+        $this->getJson(route('manuals.assignmentOptions', ['id' => $manual->id, 'kind' => 'invalid']))->assertUnprocessable()->assertJsonValidationErrors('kind');
+        $this->actor();
+        $planning = $this->manual();
+        $this->getJson(route('manuals.assignmentOptions', ['id' => $planning->id, 'kind' => 'members']))->assertForbidden();
+    }
+
+    public function test_manual_form_loads_assigned_members_only_and_retains_old_selections(): void
+    {
+        $this->actor();
+        $manual = $this->manual('research');
+        $member = CommitteeMember::create(['grades_id' => 1, 'full_name' => 'Integrante asignado', 'identification' => '1234567890']);
+        $other = CommitteeMember::create(['grades_id' => 1, 'full_name' => 'Integrante sin asignar', 'identification' => '1234567891']);
+        $manual->manualCommitteeMembers()->create(['committee_members_id' => $member->id, 'committee_type_id' => 1]);
+        $this->get(route('manuals.editOneManual', $manual->id))->assertOk()->assertSee('Integrante asignado')->assertDontSee('Integrante sin asignar')->assertSee('Buscar por cédula, apellido o nombre');
+        $this->withSession(['_old_input' => ['members' => [1 => [$other->id]]]])->get(route('manuals.editOneManual', $manual->id))
+            ->assertOk()->assertSee('Integrante sin asignar')->assertDontSee('Integrante asignado');
     }
 }

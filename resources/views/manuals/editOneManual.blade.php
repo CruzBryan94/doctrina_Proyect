@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends('layouts.legacy')
 
 @section('title', 'EDITAR MANUAL')
 
@@ -639,7 +639,7 @@
 
                 // Mostrar mensajes de validación si existen errores
                 if (validationMessages.length > 0) {
-                    alert(validationMessages.join('\n'));
+                    window.ArtemisAlerts.error(validationMessages.join('\n'));
                     e.preventDefault(); // Evitar que el formulario se envíe
                     return;
                 }

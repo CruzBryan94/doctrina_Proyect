@@ -2,10 +2,33 @@
     const table = document.getElementById('workflow-matrix');
     if (!table) return;
     const queues = new WeakMap();
+    const updateSummary = (row, data) => {
+        const inView = data.phase === table.dataset.phase && data.published === (new URL(location.href).searchParams.get('published') === '1');
+        const before = {total:1, development:Number(row.dataset.summarySubstate === 'development'), validation:Number(row.dataset.summarySubstate === 'validation'), ready:Number(row.dataset.summaryReady || 0)};
+        const after = {total:Number(inView), development:Number(inView && data.substate?.code === 'development'), validation:Number(inView && data.substate?.code === 'validation'), ready:Number(inView && !data.published && data.progress >= 100)};
+        document.querySelectorAll('[data-matrix-count]').forEach(counter => {
+            const key = counter.dataset.matrixCount;
+            counter.textContent = Number(counter.textContent) + after[key] - before[key];
+        });
+        row.dataset.summarySubstate = inView ? data.substate?.code || '' : '';
+        row.dataset.summaryReady = after.ready;
+    };
     const notice = (message, error = false) => {
-        const box = document.getElementById('live-status');
-        box.textContent = message; box.classList.toggle('error', error); box.hidden = false;
-        clearTimeout(box.timer); box.timer = setTimeout(() => box.hidden = true, error ? 12000 : 6500);
+        return window.ArtemisAlerts[error ? 'error' : 'info'](message);
+    };
+    const confirmAdvance = async row => {
+        if (row.dataset.confirming || row.dataset.moved || row.dataset.conflict || row.dataset.busy || row.querySelector('.advance').disabled) return;
+        row.dataset.confirming = '1';
+        const title = row.querySelector('.manual-title').textContent.trim();
+        const published = table.dataset.phase === 'cgft';
+        try {
+            if (await window.ArtemisAlerts.confirm(published
+                ? `Se publicará el manual «${title}». ¿Deseas continuar?`
+                : `El manual «${title}» pasará de ${table.dataset.phaseName} a ${table.dataset.nextPhase}. ¿Deseas continuar?`,
+                published ? 'Confirmar publicación' : 'Confirmar cambio de fase', published ? 'Publicar manual' : 'Cambiar fase')) {
+                save(row, {action:'advance', confirmed:true});
+            }
+        } finally { row.dataset.confirming = ''; }
     };
     const showCell = (cell, completed, date, label) => {
         cell.querySelector('.completion-toggle').checked = completed;
@@ -18,6 +41,7 @@
         const task = async () => {
             if (!row.isConnected || row.dataset.conflict || row.dataset.moved) return;
             row.dataset.busy = '1';
+            row.querySelector('.advance').disabled = true;
             if (cell) { cell.classList.add('saving'); cell.classList.remove('error'); cell.querySelector('.cell-state').textContent = 'Guardando…'; }
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 20000);
@@ -33,6 +57,7 @@
                     throw new Error(Object.values(data.errors || {}).flat().join(' ') || data.message || 'No se pudo guardar. Comprueba la conexión.');
                 }
                 row.dataset.version = data.version;
+                updateSummary(row, data);
                 if (cell) {
                     cell.dataset.saved = payload.is_completed ? '1' : '0';
                     cell.dataset.date = payload.is_completed ? payload.completation_date : '';
@@ -55,12 +80,17 @@
                     row.querySelector('.progress-track span').style.width = data.progress + '%';
                     row.querySelector('.progress-track').setAttribute('aria-valuenow', data.progress);
                     row.querySelector('.row-activity').textContent = data.activity;
+                    const substate = row.querySelector('.manual-substate');
+                    substate.hidden = !data.substate;
+                    substate.textContent = data.substate?.label || '';
+                    substate.className = 'manual-substate' + (['development', 'validation'].includes(data.substate?.code) ? ' substate-' + data.substate.code : '');
+                    substate.title = data.substate ? `${data.substate.label} de ${data.phase_name} · Desde ${data.substate.started_on}` : '';
                     row.querySelector('.phase-days').textContent = data.timing.phase_days === null ? 'Sin iniciar' : data.timing.phase_days + ' días';
                     row.querySelector('.total-days').textContent = data.timing.total_days + ' días';
                     row.querySelector('.timing-cell').classList.toggle('overdue', !!data.timing.phase_overdue);
                     row.querySelector('.phase-alert').hidden = !data.timing.phase_overdue;
                     row.querySelector('.research-alert').hidden = !data.timing.research_overdue;
-                    row.querySelector('.advance').hidden = data.progress < 100 || data.phase === 'cgft';
+                    row.querySelector('.advance').disabled = data.progress < 100 || data.published;
                     if (!cell) notice('Cambios guardados.');
                 }
             } catch (error) {
@@ -79,6 +109,9 @@
                 } else notice(message, true);
             } finally {
                 clearTimeout(timeout); row.dataset.busy = ''; cell?.classList.remove('saving');
+                if (!row.dataset.conflict && !row.dataset.moved) {
+                    row.querySelector('.advance').disabled = Number(row.querySelector('.progress-track').getAttribute('aria-valuenow')) < 100 || new URL(location.href).searchParams.get('published') === '1';
+                }
             }
         };
         queues.set(row, (queues.get(row) || Promise.resolve()).then(task));
@@ -98,31 +131,42 @@
             }
         }
         if (checkbox.checked && !date.value) { cell.querySelector('.cell-state').textContent = 'Fecha obligatoria'; return; }
-        if (checkbox.checked && !date.checkValidity()) { date.reportValidity(); return; }
-        let reason;
-        if (!checkbox.checked && cell.dataset.saved === '1') {
-            reason = prompt('Motivo para retirar el cumplimiento de esta actividad:');
-            if (!reason?.trim()) { showCell(cell, true, cell.dataset.date, 'Guardado'); return; }
-        }
-        save(row, {action:'activity', activity_id:Number(cell.dataset.activity), is_completed:checkbox.checked, completation_date:checkbox.checked ? date.value : null, reason}, cell);
+        if (checkbox.checked && !date.checkValidity()) { notice('Ingresa una fecha de cumplimiento válida, sin superar la fecha actual.', true); return; }
+        save(row, {action:'activity', activity_id:Number(cell.dataset.activity), is_completed:checkbox.checked, completation_date:checkbox.checked ? date.value : null}, cell);
     });
-    table.addEventListener('click', event => {
+    table.addEventListener('click', async event => {
         const row = event.target.closest('tr[data-manual]');
         if (!row) return;
         if (event.target.closest('.save-start')) {
             const date = row.querySelector('.phase-start');
-            if (!date.value || !date.checkValidity()) { date.required = true; date.reportValidity(); return; }
+            if (!date.value || !date.checkValidity()) { notice('Registra una fecha de inicio válida, sin superar la fecha actual.', true); return; }
             save(row, {action:'start', started_on:date.value});
         }
         if (event.target.closest('.retreat')) {
-            const reason = prompt('Retroceder requiere todas las actividades pendientes. Indica el motivo (cancelar conserva la fase):');
-            if (reason?.trim()) save(row, {action:'retreat', reason});
+            if (row.dataset.confirming) return;
+            row.dataset.confirming = '1';
+            try {
+                const title = row.querySelector('.manual-title').textContent.trim();
+                if (await window.ArtemisAlerts.confirm(`El manual «${title}» retrocederá de ${table.dataset.phaseName} a ${table.dataset.previousPhase}. Solo se permite si todas las actividades actuales están pendientes. ¿Deseas continuar?`)) {
+                    save(row, {action:'retreat', confirmed:true});
+                }
+            } finally { row.dataset.confirming = ''; }
         }
-        if (event.target.closest('.advance')) save(row, {action:'advance'});
+        if (event.target.closest('.advance')) confirmAdvance(row);
     });
-    window.addEventListener('beforeunload', event => {
-        if (table.querySelector('[data-busy="1"]') || [...table.querySelectorAll('.matrix-cell')].some(cell => cell.querySelector('.completion-toggle').checked !== (cell.dataset.saved === '1') || (cell.querySelector('.completion-toggle').checked && cell.querySelector('.completion-date').value !== cell.dataset.date))) {
-            event.preventDefault(); event.returnValue = '';
+    const pendingChanges = () => {
+        return table.querySelector('[data-busy="1"]') || [...table.querySelectorAll('.matrix-cell')].some(cell => cell.querySelector('.completion-toggle').checked !== (cell.dataset.saved === '1') || (cell.querySelector('.completion-toggle').checked && cell.querySelector('.completion-date').value !== cell.dataset.date));
+    };
+    document.addEventListener('click', event => {
+        const link = event.target.closest('a[href]');
+        if (!link || link.getAttribute('href').startsWith('#') || !pendingChanges()) return;
+        event.preventDefault();
+        notice('Hay cambios pendientes. Registra las fechas obligatorias y espera a que termine el guardado antes de salir de la matriz.', true);
+    });
+    document.addEventListener('submit', event => {
+        if (pendingChanges()) {
+            event.preventDefault();
+            notice('Hay cambios pendientes. Completa las fechas y espera el guardado antes de continuar.', true);
         }
     });
 })();

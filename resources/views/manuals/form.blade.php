@@ -17,11 +17,13 @@
 @foreach($committeeTypes as $committee)
 @php($selectedMembers=old('members.'.$committee->code,$manual->manualCommitteeMembers->where('committee_type_id',$committee->id)->pluck('committee_members_id')->all()))
 <div class="mb-4"><h3 class="form-section-title">{{ $committee->name }}</h3>
-<div class="check-list" role="group" aria-label="Integrantes de {{ $committee->name }}">
-@foreach($members as $member)<label><input type="checkbox" name="members[{{ $committee->id }}][]" value="{{ $member->id }}" @checked(in_array($member->id,$selectedMembers))><span><strong>{{ $member->grade->grade_name }} · {{ $member->full_name }}</strong><small class="d-block text-muted">{{ $member->identification }}{{ $member->cellphone ? ' · '.$member->cellphone : '' }}</small></span></label>@endforeach</div><p class="form-text">Marca los integrantes de este comité. Dejarlo vacío retira sus asignaciones.</p><input type="hidden" name="present_members[]" value="{{ $committee->id }}">
+@include('partials.assignment-picker', ['kind'=>'members', 'options'=>$members->whereIn('id',$selectedMembers)])
+<p class="form-text">Busca y marca los integrantes de este comité. Las selecciones se conservan al buscar. Dejarlo vacío retira sus asignaciones.</p><input type="hidden" name="present_members[]" value="{{ $committee->id }}">
 @if(in_array($committee->code,[1,3,4]))
 @php($selectedUnits=old('units.'.$committee->code,$manual->manualMilitaryUnits->where('committee_type_id',$committee->id)->pluck('military_units_id')->all()))
-<div class="form-label mt-2">Unidades militares</div><div class="check-list" role="group" aria-label="Unidades de {{ $committee->name }}">@foreach($units as $unit)<label><input type="checkbox" name="units[{{ $committee->id }}][]" value="{{ $unit->id }}" @checked(in_array($unit->id,$selectedUnits))><span>{{ $unit->unit_acronym }} · {{ $unit->unit_name }}</span></label>@endforeach</div><input type="hidden" name="present_units[]" value="{{ $committee->id }}">
+<div class="form-label mt-2">Unidades militares</div>
+@include('partials.assignment-picker', ['kind'=>'units', 'options'=>$units->whereIn('id',$selectedUnits)])
+<input type="hidden" name="present_units[]" value="{{ $committee->id }}">
 @endif
 </div>@endforeach</div></div>
 @else<div class="status-banner"><i class="fas fa-info-circle" aria-hidden="true"></i> {{ !$manual->exists || $manual->manualPhase->slug==='planning' ? 'En Planificación no se asignan comités.' : 'Esta fase conserva los comités de las fases anteriores.' }} Los comités se gestionan únicamente durante Investigación y Experimentación, cada fase con sus propios integrantes.</div>@endif
@@ -34,6 +36,7 @@
 </div></div></form>
 @endsection
 @push('scripts')
+<script src="{{ asset('js/assignment-picker.js') }}?v={{ filemtime(public_path('js/assignment-picker.js')) }}" defer></script>
 <script>
 const mapSelect=document.getElementById('map'), typeSelect=document.getElementById('manual_type');
 function filterTypes(){[...typeSelect.options].forEach(option=>{if(!option.value)return;option.hidden=option.dataset.map!==mapSelect.value;option.disabled=option.hidden;});if(typeSelect.selectedOptions[0]?.disabled)typeSelect.value='';}
