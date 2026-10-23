@@ -55,7 +55,7 @@ class DemoSeeder extends Seeder
         $manual = Manual::create([
             'manual_name' => $name.' · '.$current->phase_name.($published ? ' · Publicado' : ''),
             'manual_types_id' => $typeId, 'manual_phases_id' => $current->id,
-            'research_advances' => [2, 4, 6, 8][$index], 'experimentation_advances' => [3, 5, 8, 2][$index],
+            'research_advances' => [2, 4, 5, 6][$index], 'experimentation_advances' => [3, 5, 8, 2][$index],
             'process_started_on' => $base, 'observations' => 'Dato sintético para pruebas funcionales. No corresponde a un manual real.',
             'is_active' => true, 'is_published' => $published,
         ]);

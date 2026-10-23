@@ -2,7 +2,7 @@
 
 Aplicación Laravel 10 para gestionar manuales en cinco fases: **Planificación → Investigación → Experimentación → Edición → CGFT**. CGFT contiene Pendiente y Legalizado; al finalizar se publica el manual.
 
-Incluye matrices por fase, guardado automático de cumplimiento con fecha obligatoria, mapas doctrinarios, avances configurables por manual (2–8 por Investigación/Experimentación), comités propios de cada fase, roles múltiples, historial y reportes PDF.
+Incluye matrices por fase, guardado automático de cumplimiento con fecha obligatoria, mapas doctrinarios, avances configurables por manual (2–6 en Investigación y 2–8 en Experimentación), comités propios de cada fase, roles múltiples, historial y reportes PDF.
 
 ## Ejecutar en local
 
@@ -64,6 +64,8 @@ El seed en local/testing crea cuatro manuales por fase (20) y cuatro publicados,
 En la edición, cada comité permite buscar integrantes por cédula, nombre o apellido y unidades por código o nombre. Las opciones se consultan en bloques de 25; «Mostrar más» carga el siguiente bloque. Las selecciones permanecen visibles al cambiar la búsqueda y solo se persisten al guardar el manual.
 
 Investigación y Experimentación guardan por manual sus subestados Desarrollo/Validación. Desarrollo inicia con la fase; Validación inicia con la fecha de ENTREGA DE LA CARPETA DE INVESTIGACIÓN o INFORME FINAL DE LA EXPERIMENTACIÓN, respectivamente. La matriz muestra etiquetas azul/violeta y las actualiza al guardar. Desmarcar esa tarea devuelve a Desarrollo; las fechas vigentes se corrigen y el historial se conserva. La migración de subestados reconstruye los datos existentes sin fresh.
+
+Investigación tiene 10 tareas fijas y de 2 a 6 avances numerados. Incluye «TRES MES DE INVESTIGACIÓN», tres reuniones de validación y la entrega del proyecto corregido y finalizado. La corrección de datos de prueba conserva IDs y fechas de tareas equivalentes, limita los antiguos ocho avances a seis y registra el antes/después en el historial. Las tareas nuevas de investigaciones ya superadas usan la fecha de cierre de esos escenarios; las actuales/futuras quedan pendientes. La migración no requiere fresh y se aplica tras crear un respaldo local.
 
 Las actividades no configuradas aparecen como «No aplica» y no afectan el porcentaje.
 

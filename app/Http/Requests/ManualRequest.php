@@ -34,7 +34,7 @@ class ManualRequest extends FormRequest
             'observations' => ['nullable', 'string', 'max:255'],
             'doctrinal_map_id' => ['required', 'integer', 'exists:doctrinal_maps,id'],
             'manual_types_id' => ['required', 'integer', Rule::exists('manual_types', 'id')->where('doctrinal_map_id', $this->input('doctrinal_map_id'))],
-            'research_advances' => ['required', 'integer', 'between:2,8'],
+            'research_advances' => ['required', 'integer', 'between:2,6'],
             'experimentation_advances' => ['required', 'integer', 'between:2,8'],
             'process_started_on' => [$this->route('id') ? 'sometimes' : 'required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'version' => [$this->route('id') ? 'required' : 'sometimes', 'integer', 'min:0'],

@@ -38,7 +38,7 @@ class ManualController extends Controller
                 'phaseStates as in_validation' => fn ($q) => $q->where('manual_phase_id', $phase->id)->where('substate', 'validation'),
             ]);
         $expected = match ($phase->slug) {
-            'research' => '6 + research_advances', 'experimentation' => '6 + experimentation_advances', 'edition' => '6', default => '2',
+            'research' => '10 + research_advances', 'experimentation' => '6 + experimentation_advances', 'edition' => '6', default => '2',
         };
         $summary = DB::query()->fromSub($summaryQuery->toBase(), 'matrix_summary')->selectRaw(
             'COUNT(*) as total, COALESCE(SUM(in_development), 0) as development, COALESCE(SUM(in_validation), 0) as validation, '

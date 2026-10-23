@@ -73,9 +73,80 @@ class DoctrineWorkflowTest extends TestCase
     {
         $this->assertDatabaseCount('manual_phases', 5);
         $this->assertDatabaseCount('doctrinal_maps', 2);
-        $this->assertDatabaseCount('catalog_subphases', 38);
+        $this->assertDatabaseCount('catalog_subphases', 40);
         $this->assertEquals(['planning', 'research', 'experimentation', 'edition', 'cgft'], ManualPhase::orderBy('position')->pluck('slug')->all());
         $this->assertDatabaseHas('catalog_subphases', ['suphase_name' => 'LEGALIZADO']);
+        $research = ManualPhase::where('slug', 'research')->first();
+        $this->assertSame(array_column(CatalogSubphasesSeeder::researchDefinitions(), 1), $research->catalogSubphases->pluck('suphase_name')->all());
+    }
+
+    public function test_research_limit_is_six_while_experimentation_still_accepts_eight(): void
+    {
+        $this->actor();
+        $type = ManualType::first();
+        $payload = ['manual_name' => 'Límites por fase', 'doctrinal_map_id' => $type->doctrinal_map_id, 'manual_types_id' => $type->id, 'research_advances' => 7, 'experimentation_advances' => 8, 'process_started_on' => today()->toDateString()];
+        $this->postJson(route('manuals.store'), $payload)->assertUnprocessable()->assertJsonValidationErrors('research_advances');
+        $payload['research_advances'] = 6;
+        $this->post(route('manuals.store'), $payload)->assertRedirect()->assertSessionHasNoErrors();
+        $manual = Manual::first()->load(ManualWorkflow::RELATIONS);
+        $this->assertSame(6, $manual->research_advances);
+        $this->assertSame(8, $manual->experimentation_advances);
+        $this->assertCount(40, $manual->manualPhaseSuphases);
+    }
+
+    public function test_research_data_migration_preserves_ids_dates_and_other_phases_and_caps_test_data(): void
+    {
+        $this->actor();
+        $active = $this->manual('research', 6);
+        $later = $this->manual('edition', 6);
+        $researchId = $active->manual_phases_id;
+        $newKeys = ['research.three-months', 'research.validation-meeting.1', 'research.validation-meeting.2', 'research.validation-meeting.3'];
+        $newIds = CatalogSubphase::whereIn('activity_key', $newKeys)->pluck('id');
+        \App\Models\ManualPhaseSuphase::whereIn('catalog_subphases_id', $newIds)->delete();
+        CatalogSubphase::whereIn('id', $newIds)->delete();
+        CatalogSubphase::where('activity_key', 'research.3')->update(['suphase_name' => 'ENTREGA DEL PERFIL DEL PROYECTO Y CRONOGRAMA']);
+        $legacy = [];
+        foreach ([7, 8] as $number) {
+            $legacy[] = CatalogSubphase::create(['manual_phases_id' => $researchId, 'activity_key' => 'research.'.($number + 3), 'suphase_name' => 'AVANCE ANTIGUO '.$number, 'position' => $number + 3, 'advance_number' => $number]);
+        }
+        foreach ([$active, $later] as $manual) {
+            $manual->update(['research_advances' => 8]);
+            foreach ($legacy as $activity) {
+                $manual->manualPhaseSuphases()->create(['manual_phases_id' => $researchId, 'catalog_subphases_id' => $activity->id, 'is_completed' => true, 'completation_date' => today()->subDays(45)]);
+            }
+        }
+        $keptId = CatalogSubphase::where('activity_key', 'research.4')->first()->id;
+        $active->manualPhaseSuphases()->where('catalog_subphases_id', $keptId)->update(['is_completed' => true, 'completation_date' => today()->subDays(10)]);
+        $kept = $active->manualPhaseSuphases()->where('catalog_subphases_id', $keptId)->first();
+        $otherRows = \App\Models\ManualPhaseSuphase::where('manual_phases_id', '!=', $researchId)->orderBy('id')->get()->toArray();
+        $users = User::orderBy('id')->get()->toArray();
+        $migration = require database_path('migrations/2026_10_21_000002_correct_research_activities.php');
+        $migration->up();
+        $this->assertDatabaseCount('manuals', 2);
+        $this->assertDatabaseCount('catalog_subphases', 40);
+        $this->assertEquals($users, User::orderBy('id')->get()->toArray());
+        $this->assertEquals($otherRows, \App\Models\ManualPhaseSuphase::where('manual_phases_id', '!=', $researchId)->orderBy('id')->get()->toArray());
+        $this->assertDatabaseHas('manual_phase_suphases', ['id' => $kept->id, 'catalog_subphases_id' => $keptId, 'is_completed' => true, 'completation_date' => $kept->getRawOriginal('completation_date')]);
+        $this->assertDatabaseHas('catalog_subphases', ['id' => $keptId, 'suphase_name' => '1. AVANCE DE LA INVESTIGACIÓN']);
+        foreach ([$active, $later] as $manual) {
+            $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
+            $this->assertSame(6, $manual->research_advances);
+            $this->assertSame(1, $manual->lock_version);
+            $rows = $manual->manualPhaseSuphases->where('manual_phases_id', $researchId);
+            $this->assertCount(16, $rows);
+            $this->assertFalse($rows->contains(fn ($row) => $row->catalogSubphase->advance_number > 6));
+            $added = $rows->filter(fn ($row) => in_array($row->catalogSubphase->activity_key, $newKeys));
+            $this->assertCount(4, $added);
+            $this->assertTrue($added->every(fn ($row) => $row->is_completed === ($manual->id === $later->id)));
+            $event = $manual->events()->where('action', 'research_catalog_updated')->first();
+            $this->assertSame(8, $event->before['research_advances']);
+            $this->assertSame(6, $event->after['research_advances']);
+            $this->assertTrue(collect($event->before['activities'])->contains('catalog_subphases_id', $legacy[1]->id));
+        }
+        $later = $later->fresh()->load(ManualWorkflow::RELATIONS);
+        $this->assertSame('edition', $later->manualPhase->slug);
+        $this->assertEquals(100, $later->progress($researchId));
+        $this->assertTrue($later->manualPhaseSuphases->where('manual_phases_id', $researchId)->every(fn ($row) => $row->completation_date->toDateString() === today()->subDays(45)->toDateString()));
     }
 
     public function test_alert_modal_is_available_in_auth_main_and_legacy_screens(): void
@@ -101,7 +172,7 @@ class DoctrineWorkflowTest extends TestCase
         $this->assertSame('planning', $manual->manualPhase->slug);
         $this->assertEquals(0, $manual->progress());
         $this->assertCount(0, $manual->manualCommitteeMembers);
-        $this->assertCount(32, $manual->manualPhaseSuphases);
+        $this->assertCount(36, $manual->manualPhaseSuphases);
     }
 
     public function test_wrong_map_and_invalid_advance_quantities_are_rejected(): void
@@ -261,7 +332,7 @@ class DoctrineWorkflowTest extends TestCase
     {
         $this->actor();
         $manual = $this->manual('research', 2);
-        $other = CatalogSubphase::whereHas('manualPhase', fn ($q) => $q->where('slug', 'research'))->where('advance_number', 8)->first();
+        $other = CatalogSubphase::whereHas('manualPhase', fn ($q) => $q->where('slug', 'research'))->where('advance_number', 6)->first();
         $this->activity($manual, ['activity_id' => $other->id])->assertUnprocessable();
         $this->activity($manual, ['activity_id' => CatalogSubphase::whereHas('manualPhase', fn ($q) => $q->where('slug', 'cgft'))->first()->id])->assertUnprocessable();
     }
@@ -323,8 +394,8 @@ class DoctrineWorkflowTest extends TestCase
         $this->put(route('manuals.updateOneManual', $manual->id), $payload)->assertRedirect()->assertSessionHasNoErrors();
         $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
         $this->assertSame('research', $manual->manualPhase->slug);
-        $this->assertEquals(10, $manual->manualPhaseSuphases->where('manual_phases_id', $manual->manual_phases_id)->count());
-        $this->assertEquals(10, $manual->progress());
+        $this->assertEquals(14, $manual->manualPhaseSuphases->where('manual_phases_id', $manual->manual_phases_id)->count());
+        $this->assertEquals(7.14, $manual->progress());
         $this->assertEquals(1, $manual->manualPhaseSuphases->where('manual_phases_id', $manual->manual_phases_id)->where('is_completed', true)->count());
     }
 
@@ -400,7 +471,7 @@ class DoctrineWorkflowTest extends TestCase
         $ready->update(['manual_name' => 'Especial listo']);
         $ready->manualPhaseSuphases()->where('manual_phases_id', $ready->manual_phases_id)->update(['is_completed' => true, 'completation_date' => today()]);
         app(ManualWorkflow::class)->synchronizeSubstates($ready->fresh()->load(ManualWorkflow::RELATIONS));
-        $developing = $this->manual('research', 8);
+        $developing = $this->manual('research', 6);
         app(ManualWorkflow::class)->synchronizeSubstates($developing->fresh()->load(ManualWorkflow::RELATIONS));
         foreach (range(1, 25) as $number) {
             $copy = $ready->replicate();

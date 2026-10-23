@@ -28,9 +28,9 @@
 </div>@endforeach</div></div>
 @else<div class="status-banner"><i class="fas fa-info-circle" aria-hidden="true"></i> {{ !$manual->exists || $manual->manualPhase->slug==='planning' ? 'En Planificación no se asignan comités.' : 'Esta fase conserva los comités de las fases anteriores.' }} Los comités se gestionan únicamente durante Investigación y Experimentación, cada fase con sus propios integrantes.</div>@endif
 </div><div>
-<div class="panel"><div class="panel-heading"><h2>Avances por fase</h2></div><div class="panel-body"><p class="form-text">Cada fase puede tener entre 2 y 8 avances. Las actividades fijas se mantienen.</p>
+<div class="panel"><div class="panel-heading"><h2>Avances por fase</h2></div><div class="panel-body"><p class="form-text">Investigación admite de 2 a 6 avances y Experimentación de 2 a 8. Las actividades fijas se mantienen.</p>
 @foreach(['research_advances'=>'Investigación','experimentation_advances'=>'Experimentación'] as $field=>$label)
-<div class="mb-4"><label class="form-label" for="{{ $field }}">{{ $label }}</label><input class="form-control advance-count" type="number" min="2" max="8" required name="{{ $field }}" id="{{ $field }}" value="{{ old($field,$manual->$field ?? 2) }}"><div class="form-text">6 actividades fijas + avances configurados.</div></div>@endforeach
+<div class="mb-4"><label class="form-label" for="{{ $field }}">{{ $label }}</label><input class="form-control advance-count" type="number" min="2" max="{{ $field === 'research_advances' ? 6 : 8 }}" required name="{{ $field }}" id="{{ $field }}" value="{{ old($field,$manual->$field ?? 2) }}"><div class="form-text">{{ $field === 'research_advances' ? 10 : 6 }} actividades fijas + avances configurados.</div></div>@endforeach
 @if($manual->exists)<p class="form-text">Aumentar avances puede reducir el porcentaje. No se pueden retirar avances con historial ni cambiar fases ya superadas.</p>@endif
 <hr><button class="btn btn-primary w-100" type="submit"><i class="fas fa-save" aria-hidden="true"></i> {{ $manual->exists ? 'Guardar cambios' : 'Crear manual' }}</button></div></div>
 </div></div></form>

@@ -186,6 +186,9 @@ class ManualWorkflow
 
     public function resize(Manual $manual, string $slug, int $count): void
     {
+        if ($count < 2 || $count > ($slug === 'research' ? 6 : 8)) {
+            throw ValidationException::withMessages([$slug === 'research' ? 'research_advances' : 'experimentation_advances' => 'Cantidad de avances fuera del rango permitido.']);
+        }
         $phase = ManualPhase::where('slug', $slug)->firstOrFail();
         $field = $slug === 'research' ? 'research_advances' : 'experimentation_advances';
         if ($count === $manual->$field) {

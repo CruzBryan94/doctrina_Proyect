@@ -2,6 +2,10 @@
 @section('title', 'Matriz de '.$phase->phase_name)
 @section('content')
 @php($nextPhaseName=App\Models\ManualPhase::where('position', '>', $phase->position)->orderBy('position')->value('phase_name'))
+@php($boundaryKey=App\Models\ManualPhaseState::VALIDATION_BOUNDARIES[$phase->slug] ?? null)
+@php($boundaryPosition=$boundaryKey ? $activities->firstWhere('activity_key',$boundaryKey)?->position : null)
+@php($activityGroups=$activities->mapWithKeys(fn($activity)=>[$activity->id=>$boundaryPosition ? ($activity->position <= $boundaryPosition ? 'activity-development' : 'activity-validation') : '']))
+
 <div class="page-heading"><div><div class="eyebrow">Control de avance</div><h1>Matriz de manuales</h1><p class="page-subtitle">Registra el cumplimiento y su fecha en cada actividad. El avance se guarda automáticamente.</p></div>@can('create', App\Models\Manual::class)<a class="btn btn-primary" href="{{ route('manuals.newManual') }}"><i class="fas fa-plus" aria-hidden="true"></i> Nuevo manual</a>@endcan</div>
 <nav class="phase-tabs" aria-label="Fases">@foreach($phases as $item)<a href="{{ route('manuals.index', ['phase' => $item->slug]) }}" class="{{ $item->id === $phase->id && !request()->boolean('published') ? 'active' : '' }}">{{ $item->position }}. {{ $item->phase_name }}</a>@endforeach
 @if($phases->contains('slug','cgft'))<a class="{{ request()->boolean('published') ? 'active' : '' }}" href="{{ route('manuals.index', ['phase'=>'cgft','published'=>1]) }}"><i class="fas fa-check-circle" aria-hidden="true"></i> Publicados</a>@endif</nav>
@@ -20,7 +24,7 @@
 @if($phase->slug !== 'planning')<div class="px-4 py-2 small text-muted">Rojo: más de 3 meses en esta fase. Alerta adicional: más de 1 año desde el inicio de Investigación. Registra el inicio antes de completar actividades.</div>@endif
 <div class="matrix-wrap">
 <table class="matrix" id="workflow-matrix" data-phase="{{ $phase->slug }}" data-phase-name="{{ $phase->phase_name }}" data-next-phase="{{ $nextPhaseName }}" data-previous-phase="{{ App\Models\ManualPhase::where('position', '<', $phase->position)->orderByDesc('position')->value('phase_name') }}">
-<thead><tr><th class="identity sticky-name" scope="col">MANUAL</th><th class="map-column" scope="col">MAPA DOCTRINARIO</th><th class="type-column" scope="col">TIPO</th>@foreach($activities as $activity)<th scope="col" title="{{ $activity->suphase_name }}">{{ $activity->suphase_name }}</th>@endforeach<th scope="col">AVANCE DE FASE</th><th scope="col">INICIO Y TIEMPOS</th><th scope="col">ACCIONES</th></tr></thead>
+<thead><tr><th class="identity sticky-name" scope="col">MANUAL</th><th class="map-column" scope="col">MAPA DOCTRINARIO</th><th class="type-column" scope="col">TIPO</th>@foreach($activities as $activity)<th class="{{ $activityGroups[$activity->id] }}" scope="col" title="{{ $activity->suphase_name }}">{{ $activity->suphase_name }}@if($activityGroups[$activity->id])<small class="activity-group-label">{{ $activityGroups[$activity->id] === 'activity-development' ? 'Desarrollo' : 'Validación' }}</small>@endif</th>@endforeach<th scope="col">AVANCE DE FASE</th><th scope="col">INICIO Y TIEMPOS</th><th scope="col">ACCIONES</th></tr></thead>
 <tbody>
 @forelse($manuals as $manual)
 @php($timing=$manual->timing())
@@ -31,8 +35,8 @@
 <td class="type-column"><span class="type-pill" title="{{ $manual->manualType->type_name }}">{{ $manual->manualType->code }}</span></td>
 @foreach($activities as $activity)
 @php($state=$manual->manualPhaseSuphases->firstWhere('catalog_subphases_id',$activity->id))
-@if(!$state)<td class="not-applicable">No aplica</td>@else
-<td class="matrix-cell {{ $state->is_completed ? 'done' : '' }}" data-activity="{{ $activity->id }}" data-saved="{{ $state->is_completed ? '1' : '0' }}" data-date="{{ $state->completation_date?->format('Y-m-d') }}">
+@if(!$state)<td class="not-applicable {{ $activityGroups[$activity->id] }}">No aplica</td>@else
+<td class="matrix-cell {{ $activityGroups[$activity->id] }} {{ $state->is_completed ? 'done' : '' }}" data-activity="{{ $activity->id }}" data-saved="{{ $state->is_completed ? '1' : '0' }}" data-date="{{ $state->completation_date?->format('Y-m-d') }}">
 <input type="checkbox" class="completion-toggle" aria-label="{{ $manual->manual_name }}: {{ $activity->suphase_name }}" @checked($state->is_completed)>
 <input type="date" class="completion-date" aria-label="Fecha de {{ $activity->suphase_name }} para {{ $manual->manual_name }}" max="{{ today()->format('Y-m-d') }}" value="{{ $state->completation_date?->format('Y-m-d') }}" @disabled(!$state->is_completed)>
 <span class="cell-state" aria-live="polite">{{ $state->is_completed ? 'Guardado' : 'Pendiente' }}</span>

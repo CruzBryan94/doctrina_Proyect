@@ -61,7 +61,7 @@ class Manual extends Model
     public function expectedActivities(string $slug): int
     {
         return match ($slug) {
-            'planning', 'cgft' => 2, 'research' => 6 + $this->research_advances, 'experimentation' => 6 + $this->experimentation_advances, 'edition' => 6, default => throw new \LogicException('Fase desconocida')
+            'planning', 'cgft' => 2, 'research' => 10 + $this->research_advances, 'experimentation' => 6 + $this->experimentation_advances, 'edition' => 6, default => throw new \LogicException('Fase desconocida')
         };
     }
 
