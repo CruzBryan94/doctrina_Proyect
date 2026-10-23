@@ -434,6 +434,68 @@ class DoctrineWorkflowTest extends TestCase
         $this->assertEquals(1, $manual->manualCommitteeMembers()->count());
     }
 
+    public function test_research_and_validation_units_are_independent_optional_and_nullable(): void
+    {
+        $this->actor(['investigador']);
+        $manual = $this->manual('research');
+        $units = MilitaryUnit::orderBy('id')->take(2)->pluck('id');
+        $this->get(route('manuals.editOneManual', $manual->id))->assertOk()->assertSee('id="search-units-1"', false)->assertSee('id="search-units-2"', false);
+        $payload = $this->editPayload($manual);
+        $payload['units'] = [1 => [$units[0]], 2 => [$units[1]]];
+        $payload['present_units'] = [1, 2];
+        $this->put(route('manuals.updateOneManual', $manual->id), $payload)->assertRedirect()->assertSessionHasNoErrors();
+        $retained = $manual->manualMilitaryUnits()->where('committee_type_id', 2)->first()->id;
+        $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
+        $payload = $this->editPayload($manual);
+        $payload['units'] = [1 => [$units[1]]];
+        $this->put(route('manuals.updateOneManual', $manual->id), $payload)->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('manual_military_units', ['id' => $retained, 'military_units_id' => $units[1]]);
+        $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
+        $payload = $this->editPayload($manual);
+        $payload['units'] = [2 => null];
+        $this->put(route('manuals.updateOneManual', $manual->id), $payload)->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseMissing('manual_military_units', ['id' => $retained]);
+        $this->assertSame(1, $manual->manualMilitaryUnits()->where('committee_type_id', 1)->count());
+        $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
+        $payload = $this->editPayload($manual);
+        $payload['units'] = null;
+        $this->put(route('manuals.updateOneManual', $manual->id), $payload)->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(1, $manual->manualMilitaryUnits()->count());
+    }
+
+    public function test_research_unit_validation_rejects_other_phase_and_unknown_units(): void
+    {
+        $this->actor();
+        $manual = $this->manual('research');
+        $payload = $this->editPayload($manual);
+        $payload['units'] = [2 => [999999]];
+        $this->putJson(route('manuals.updateOneManual', $manual->id), $payload)->assertUnprocessable()->assertJsonValidationErrors('units.2.0');
+        $payload['units'] = [3 => [MilitaryUnit::first()->id]];
+        $this->putJson(route('manuals.updateOneManual', $manual->id), $payload)->assertUnprocessable();
+        $this->assertSame(0, $manual->manualMilitaryUnits()->count());
+    }
+
+    public function test_validation_units_demo_seed_preserves_assignments_and_is_repeatable(): void
+    {
+        $this->actor();
+        $member = CommitteeMember::create(['grades_id' => 1, 'full_name' => 'Comité de prueba', 'identification' => '0012345678']);
+        $empty = $this->manual('research');
+        $existing = $this->manual('research');
+        foreach ([$empty, $existing] as $manual) {
+            $manual->manualCommitteeMembers()->create(['committee_members_id' => $member->id, 'committee_type_id' => 2]);
+        }
+        $unit = MilitaryUnit::first();
+        $existing->manualMilitaryUnits()->create(['committee_type_id' => 2, 'military_units_id' => $unit->id]);
+        $this->seed(\Database\Seeders\ResearchValidationUnitsSeeder::class);
+        $this->seed(\Database\Seeders\ResearchValidationUnitsSeeder::class);
+        $this->assertSame(1, $empty->manualMilitaryUnits()->where('committee_type_id', 2)->count());
+        $this->assertSame(1, $empty->fresh()->lock_version);
+        $this->assertSame(0, $existing->fresh()->lock_version);
+        $this->assertSame($unit->id, $existing->manualMilitaryUnits()->first()->military_units_id);
+        $this->assertSame(1, $empty->events()->where('action', 'validation_units_seeded')->count());
+        $this->assertSame(1, MilitaryUnit::where('unit_acronym', 'PR-VAL-INV')->count());
+    }
+
     public function test_research_cannot_finish_without_its_own_committees(): void
     {
         $this->actor();

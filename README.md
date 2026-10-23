@@ -2,7 +2,7 @@
 
 Aplicación Laravel 10 para gestionar manuales en cinco fases: **Planificación → Investigación → Experimentación → Edición → CGFT**. CGFT contiene Pendiente y Legalizado; al finalizar se publica el manual.
 
-Incluye matrices por fase, guardado automático de cumplimiento con fecha obligatoria, mapas doctrinarios, avances configurables por manual (2–6 en Investigación y 2–8 en Experimentación), comités propios de cada fase, roles múltiples, historial y reportes PDF.
+Incluye matrices por fase, guardado automático de cumplimiento con fecha obligatoria, mapas doctrinarios, avances configurables por manual (2–6 en Investigación y 2–8 en Experimentación), comités propios de cada fase con sus unidades independientes y opcionales, roles múltiples, historial y reportes PDF.
 
 ## Ejecutar en local
 
@@ -60,6 +60,8 @@ El seed en local/testing crea cuatro manuales por fase (20) y cuatro publicados,
 6. Al completar una fase se guarda el 100 % y se habilita «Cambiar de fase», visible al final de cada fila. Solo pulsar ese botón abre la confirmación y permite avanzar. Cancelar conserva la fase y las actividades; CGFT usa «Publicar manual».
 7. Un retroceso exige confirmación en un modal y solo se permite con todas las actividades de esa fase pendientes.
 8. Los avisos informativos, errores y confirmaciones usan los modales de ARTEMIS, sin alertas nativas del navegador.
+
+Investigación y Validación de Investigación tienen cada una sus propias unidades, igual que ambos comités de Experimentación. Las unidades pueden quedar vacías y no son obligatorias para finalizar la fase.
 
 En la edición, cada comité permite buscar integrantes por cédula, nombre o apellido y unidades por código o nombre. Las opciones se consultan en bloques de 25; «Mostrar más» carga el siguiente bloque. Las selecciones permanecen visibles al cambiar la búsqueda y solo se persisten al guardar el manual.
 

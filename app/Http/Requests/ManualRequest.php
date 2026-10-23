@@ -11,6 +11,18 @@ class ManualRequest extends FormRequest
     {
         foreach (['members', 'units'] as $group) {
             $values = $this->input($group, []);
+            if ($group === 'units') {
+                if ($values === null) {
+                    $values = [];
+                }
+                if (is_array($values)) {
+                    foreach ($values as $type => $ids) {
+                        if ($ids === null) {
+                            $values[$type] = [];
+                        }
+                    }
+                }
+            }
             foreach ($this->input('present_'.$group, []) as $type) {
                 if (is_array($values) && is_scalar($type) && ! isset($values[$type])) {
                     $values[$type] = [];
@@ -41,13 +53,13 @@ class ManualRequest extends FormRequest
             'members' => ['sometimes', 'array:1,2,3,4'],
             'members.*' => ['array'],
             'members.*.*' => ['integer', 'exists:committee_members,id'],
-            'units' => ['sometimes', 'array:1,3,4'],
+            'units' => ['sometimes', 'array:1,2,3,4'],
             'units.*' => ['array'],
             'units.*.*' => ['integer', 'exists:military_units,id'],
             'present_members' => ['sometimes', 'array'],
             'present_members.*' => ['integer', 'in:1,2,3,4'],
             'present_units' => ['sometimes', 'array'],
-            'present_units.*' => ['integer', 'in:1,3,4'],
+            'present_units.*' => ['integer', 'in:1,2,3,4'],
         ];
     }
 

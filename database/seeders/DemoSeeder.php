@@ -85,7 +85,7 @@ class DemoSeeder extends Seeder
                 foreach ($ids as $memberId) {
                     ManualCommitteeMember::create(['manuals_id' => $manual->id, 'committee_type_id' => $committee, 'committee_members_id' => $memberId]);
                 }
-                if (in_array($committee, [1, 3, 4], true)) {
+                if (in_array($committee, [1, 2, 3, 4], true)) {
                     ManualMilitaryUnit::create(['manuals_id' => $manual->id, 'committee_type_id' => $committee, 'military_units_id' => 1 + ($index % 3)]);
                 }
             }

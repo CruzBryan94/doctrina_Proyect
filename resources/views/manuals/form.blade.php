@@ -19,10 +19,11 @@
 <div class="mb-4"><h3 class="form-section-title">{{ $committee->name }}</h3>
 @include('partials.assignment-picker', ['kind'=>'members', 'options'=>$members->whereIn('id',$selectedMembers)])
 <p class="form-text">Busca y marca los integrantes de este comité. Las selecciones se conservan al buscar. Dejarlo vacío retira sus asignaciones.</p><input type="hidden" name="present_members[]" value="{{ $committee->id }}">
-@if(in_array($committee->code,[1,3,4]))
+@if(in_array($committee->code,[1,2,3,4]))
 @php($selectedUnits=old('units.'.$committee->code,$manual->manualMilitaryUnits->where('committee_type_id',$committee->id)->pluck('military_units_id')->all()))
 <div class="form-label mt-2">Unidades militares</div>
 @include('partials.assignment-picker', ['kind'=>'units', 'options'=>$units->whereIn('id',$selectedUnits)])
+<p class="form-text">Unidades de {{ $committee->name }}. Asignación opcional e independiente de los otros comités.</p>
 <input type="hidden" name="present_units[]" value="{{ $committee->id }}">
 @endif
 </div>@endforeach</div></div>
