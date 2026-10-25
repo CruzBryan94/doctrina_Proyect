@@ -9,10 +9,10 @@
     <link rel="stylesheet" href="{{ asset('css/artemis.css') }}?v={{ filemtime(public_path('css/artemis.css')) }}">
     @stack('styles')
 </head>
-<body>
+<body class="artemis-ui">
 <a class="skip-link" href="#main">Ir al contenido</a>
 <aside class="app-sidebar">
-    <a class="app-brand" href="{{ route('welcome') }}"><span class="brand-mark">A</span><span>ARTEMIS<small>GESTIÓN DE DOCTRINA</small></span></a>
+    <a class="app-brand" href="{{ route('welcome') }}"><img class="app-brand-logo" src="{{ asset('imagenes/Logo_pequeño.png') }}" alt="ARTEMIS"></a>
     <div class="nav-caption">ESPACIO DE TRABAJO</div>
     <nav aria-label="Navegación principal">
         @can('dashboard.view')<a class="{{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}"><i class="fas fa-chart-pie" aria-hidden="true"></i> Panel general</a>@endcan

@@ -6,7 +6,7 @@
 @php($boundaryPosition=$boundaryKey ? $activities->firstWhere('activity_key',$boundaryKey)?->position : null)
 @php($activityGroups=$activities->mapWithKeys(fn($activity)=>[$activity->id=>$boundaryPosition ? ($activity->position <= $boundaryPosition ? 'activity-development' : 'activity-validation') : '']))
 
-<div class="page-heading"><div><div class="eyebrow">Control de avance</div><h1>Matriz de manuales</h1><p class="page-subtitle">Registra el cumplimiento y su fecha en cada actividad. El avance se guarda automáticamente.</p></div>@can('create', App\Models\Manual::class)<a class="btn btn-primary" href="{{ route('manuals.newManual') }}"><i class="fas fa-plus" aria-hidden="true"></i> Nuevo manual</a>@endcan</div>
+<div class="page-heading artemis-page-title"><div><div class="eyebrow artemis-page-kicker">ARTEMIS · Control de avance</div><h1>Matriz de manuales</h1><p class="page-subtitle">Registra el cumplimiento y su fecha en cada actividad. El avance se guarda automáticamente.</p></div>@can('create', App\Models\Manual::class)<a class="btn btn-primary" href="{{ route('manuals.newManual') }}"><i class="fas fa-plus" aria-hidden="true"></i> Nuevo manual</a>@endcan</div>
 <nav class="phase-tabs" aria-label="Fases">@foreach($phases as $item)<a href="{{ route('manuals.index', ['phase' => $item->slug]) }}" class="{{ $item->id === $phase->id && !request()->boolean('published') ? 'active' : '' }}">{{ $item->position }}. {{ $item->phase_name }}</a>@endforeach
 @if($phases->contains('slug','cgft'))<a class="{{ request()->boolean('published') ? 'active' : '' }}" href="{{ route('manuals.index', ['phase'=>'cgft','published'=>1]) }}"><i class="fas fa-check-circle" aria-hidden="true"></i> Publicados</a>@endif</nav>
 <div class="panel">

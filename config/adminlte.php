@@ -15,7 +15,7 @@ return [
     */
 
     'title' => '',
-    'title_prefix' => 'CEDMT | ',
+    'title_prefix' => 'ARTEMIS | ',
     'title_postfix' => '',
 
     /*
@@ -48,7 +48,7 @@ return [
     */
 
     'google_fonts' => [
-        'allowed' => true,
+        'allowed' => false,
     ],
 
     /*
@@ -63,12 +63,12 @@ return [
     |
     */
 
-    'logo' => '<b>CEDMT</b> Doctrina',
-    'logo_img' => 'vendor/adminlte/dist/img/logo CDMT_fondoBlanco.png',
-    'logo_img_class' => 'brand-image img-circle elevation-3',
+    'logo' => '<b>ARTEMIS</b>',
+    'logo_img' => 'imagenes/Logo_pequeño.png',
+    'logo_img_class' => 'brand-image elevation-3',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'CEDMT Logo',
+    'logo_img_alt' => 'ARTEMIS',
 
     /*
     |--------------------------------------------------------------------------
@@ -190,7 +190,7 @@ return [
     |
     */
 
-    'classes_body' => '',
+    'classes_body' => 'artemis-ui',
     'classes_brand' => '',
     'classes_brand_text' => '',
     'classes_content_wrapper' => '',
