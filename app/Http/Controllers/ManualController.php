@@ -12,6 +12,7 @@ use App\Models\ManualMilitaryUnit;
 use App\Models\ManualPhase;
 use App\Models\ManualPhaseState;
 use App\Models\MilitaryUnit;
+use App\Models\User;
 use App\Services\ManualWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,13 +33,13 @@ class ManualController extends Controller
         $summaryQuery = (clone $query)->setEagerLoads([])->select(['manuals.id', 'manuals.research_advances', 'manuals.experimentation_advances', 'manuals.is_published'])
             ->withCount([
                 'manualPhaseSuphases as phase_activities' => fn ($q) => $q->where('manual_phases_id', $phase->id),
-                'manualPhaseSuphases as completed_activities' => fn ($q) => $q->where('manual_phases_id', $phase->id)->where('is_completed', true)->whereNotNull('completation_date'),
-            ])->withExists([
+                'manualPhaseSuphases as completed_activities' => fn ($q) => $q->where('manual_phases_id', $phase->id)->completedForWorkflow(),
+            ])->withMax(['phaseStates as edition_catalog_version' => fn ($q) => $q->where('manual_phase_id', $phase->id)], 'catalog_version')->withExists([
                 'phaseStates as in_development' => fn ($q) => $q->where('manual_phase_id', $phase->id)->where('substate', 'development'),
                 'phaseStates as in_validation' => fn ($q) => $q->where('manual_phase_id', $phase->id)->where('substate', 'validation'),
             ]);
         $expected = match ($phase->slug) {
-            'research' => '10 + research_advances', 'experimentation' => '6 + experimentation_advances', 'edition' => '6', default => '2',
+            'research' => '10 + research_advances', 'experimentation' => '6 + experimentation_advances', 'edition' => 'CASE WHEN edition_catalog_version = 1 THEN 6 ELSE 3 END', default => '2',
         };
         $summary = DB::query()->fromSub($summaryQuery->toBase(), 'matrix_summary')->selectRaw(
             'COUNT(*) as total, COALESCE(SUM(in_development), 0) as development, COALESCE(SUM(in_validation), 0) as validation, '
@@ -121,6 +122,20 @@ class ManualController extends Controller
         ]);
     }
 
+    public function responsibleOptions(Request $request, int $id)
+    {
+        $manual = Manual::with('manualPhase')->findOrFail($id);
+        $this->authorize('update', $manual);
+        abort_unless($manual->manualPhase->slug === 'edition', 403);
+        $data = $request->validate(['q' => ['nullable', 'string', 'max:100']]);
+        $query = User::where('is_active', true);
+        foreach (preg_split('/\s+/u', trim($data['q'] ?? ''), -1, PREG_SPLIT_NO_EMPTY) as $word) {
+            $query->where(fn ($q) => $q->where('name', 'like', '%'.$word.'%')->orWhere('email', 'like', '%'.$word.'%'));
+        }
+
+        return response()->json(['items' => $query->orderBy('name')->orderBy('id')->limit(25)->get(['id', 'name', 'email'])->map(fn ($user) => ['id' => $user->id, 'label' => $user->name.' · '.$user->email])]);
+    }
+
     private function returnTo(Manual $manual): string
     {
         $value = request()->input('return_to');
@@ -191,12 +206,16 @@ class ManualController extends Controller
             'activity_id' => ['required_if:action,activity', 'integer'],
             'is_completed' => ['required_if:action,activity', 'boolean'],
             'completation_date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
-            'started_on' => ['required_if:action,start', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'started_on' => ['required_if:action,start', 'nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'follow_up' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'due_on' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
+            'responsible_user_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
             'reason' => ['nullable', 'string', 'max:255'],
             'confirmed' => ['exclude_unless:action,retreat,advance', 'required', 'accepted'],
         ]);
         $manual = $workflow->change($id, $data);
         $canAccess = Gate::allows('update', $manual);
+        $activityState = isset($data['activity_id']) ? $manual->manualPhaseSuphases->firstWhere('catalog_subphases_id', $data['activity_id']) : null;
 
         return response()->json([
             'version' => $manual->lock_version, 'phase' => $manual->manualPhase->slug,
@@ -204,6 +223,12 @@ class ManualController extends Controller
             'published' => $manual->is_published, 'timing' => $manual->timing(),
             'activity' => $manual->currentActivity(),
             'substate' => $manual->currentSubstate(),
+            'activity_state' => $activityState ? [
+                'is_completed' => $activityState->is_completed, 'completation_date' => $activityState->completation_date?->toDateString(),
+                'follow_up' => $activityState->follow_up, 'started_on' => $activityState->started_on?->toDateString(),
+                'due_on' => $activityState->due_on?->toDateString(), 'responsible_user_id' => $activityState->responsible_user_id,
+                'deadline_status' => $activityState->deadlineStatus(),
+            ] : null,
             'can_access' => $canAccess,
             'url' => $canAccess ? route('manuals.index', ['phase' => $manual->manualPhase->slug, 'published' => $manual->is_published ? 1 : 0]) : route('dashboard'),
         ]);
@@ -211,7 +236,7 @@ class ManualController extends Controller
 
     public function history(int $id)
     {
-        $manual = Manual::with('manualPhase')->findOrFail($id);
+        $manual = Manual::with(['manualPhase', 'legacyActivities.catalogSubphase', 'legacyActivities.responsibleUser'])->findOrFail($id);
         $this->authorize('view', $manual);
         $events = $manual->events()->with('user')->paginate(30);
 

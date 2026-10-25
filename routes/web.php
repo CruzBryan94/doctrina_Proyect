@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/manuals/store', [ManualController::class, 'store'])->name('manuals.store');
     Route::get('/manuals/{id}/edit', [ManualController::class, 'edit'])->name('manuals.editOneManual');
     Route::get('/manuals/{id}/assignment-options', [ManualController::class, 'assignmentOptions'])->name('manuals.assignmentOptions');
+    Route::get('/manuals/{id}/responsible-options', [ManualController::class, 'responsibleOptions'])->name('manuals.responsibleOptions');
     Route::put('/manuals/{id}', [ManualController::class, 'update'])->name('manuals.updateOneManual');
     Route::patch('/manuals/{id}/activity', [ManualController::class, 'activity'])->name('manuals.activity');
     Route::get('/manuals/{id}/history', [ManualController::class, 'history'])->name('manuals.history');

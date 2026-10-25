@@ -74,7 +74,15 @@ class DemoSeeder extends Seeder
             $completed = $phase->position < $current->position || $published ? $rows->count() : min($index, $rows->count() - 1);
             foreach ($rows as $rowIndex => $row) {
                 if ($rowIndex < $completed) {
-                    $row->update(['is_completed' => true, 'completation_date' => $start->copy()->addDays(min($rowIndex, 5))]);
+                    $values = ['is_completed' => true, 'completation_date' => $start->copy()->addDays(min($rowIndex, 5))];
+                    if ($phase->slug === 'edition') {
+                        $values += match ($row->catalogSubphase->activity_key) {
+                            \App\Services\EditionActivity::START => ['follow_up' => 'Inicio de corrección idiomática registrado para este escenario de prueba.'],
+                            \App\Services\EditionActivity::REVIEW => ['follow_up' => 'Revisión final del texto realizada en el escenario de prueba.', 'due_on' => $start->copy()->addDays(5)],
+                            default => ['started_on' => $start, 'due_on' => $start->copy()->addDays(5), 'responsible_user_id' => User::where('email', 'admin@admin.com')->value('id')],
+                        };
+                    }
+                    $row->update($values);
                 }
             }
             $committeeTypes = match ($phase->slug) {

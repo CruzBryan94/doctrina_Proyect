@@ -2,6 +2,10 @@
     const table = document.getElementById('workflow-matrix');
     if (!table) return;
     const queues = new WeakMap();
+    const editionValues = cell => Object.fromEntries([...cell.querySelectorAll('.edition-field')].map(input => [input.dataset.field, input.value || null]));
+    const cellDirty = cell => cell.querySelector('.completion-toggle').checked !== (cell.dataset.saved === '1') || (cell.querySelector('.completion-toggle').checked && cell.querySelector('.completion-date').value !== cell.dataset.date) || (cell.classList.contains('edition-cell') && JSON.stringify(editionValues(cell)) !== cell.dataset.fields);
+    const rowDirty = row => [...row.querySelectorAll('.matrix-cell')].some(cellDirty);
+    table.querySelectorAll('.edition-cell').forEach(cell => cell.dataset.fields = JSON.stringify(editionValues(cell)));
     const updateSummary = (row, data) => {
         const inView = data.phase === table.dataset.phase && data.published === (new URL(location.href).searchParams.get('published') === '1');
         const before = {total:1, development:Number(row.dataset.summarySubstate === 'development'), validation:Number(row.dataset.summarySubstate === 'validation'), ready:Number(row.dataset.summaryReady || 0)};
@@ -17,7 +21,7 @@
         return window.ArtemisAlerts[error ? 'error' : 'info'](message);
     };
     const confirmAdvance = async row => {
-        if (row.dataset.confirming || row.dataset.moved || row.dataset.conflict || row.dataset.busy || row.querySelector('.advance').disabled) return;
+        if (row.dataset.confirming || row.dataset.moved || row.dataset.conflict || row.dataset.busy || rowDirty(row) || row.querySelector('.advance').disabled) return;
         row.dataset.confirming = '1';
         const title = row.querySelector('.manual-title').textContent.trim();
         const published = table.dataset.phase === 'cgft';
@@ -38,8 +42,12 @@
         cell.querySelector('.cell-state').textContent = label;
     };
     const save = (row, payload, cell = null) => {
+        row.dataset.queued = Number(row.dataset.queued || 0) + 1;
+        row.querySelector('.advance').disabled = true;
         const task = async () => {
-            if (!row.isConnected || row.dataset.conflict || row.dataset.moved) return;
+            if (!row.isConnected || row.dataset.conflict || row.dataset.moved) { row.dataset.queued--; return; }
+            if (typeof payload === 'function') payload = payload();
+            const revision = cell?.dataset.revision || '0';
             row.dataset.busy = '1';
             row.querySelector('.advance').disabled = true;
             if (cell) { cell.classList.add('saving'); cell.classList.remove('error'); cell.querySelector('.cell-state').textContent = 'Guardando…'; }
@@ -61,7 +69,14 @@
                 if (cell) {
                     cell.dataset.saved = payload.is_completed ? '1' : '0';
                     cell.dataset.date = payload.is_completed ? payload.completation_date : '';
-                    showCell(cell, !!payload.is_completed, cell.dataset.date, 'Guardado');
+                    if (cell.classList.contains('edition-cell')) {
+                        const saved = data.activity_state;
+                        if ((cell.dataset.revision || '0') === revision) cell.querySelectorAll('.edition-field').forEach(input => input.value = saved?.[input.dataset.field] ?? '');
+                        cell.dataset.fields = JSON.stringify(Object.fromEntries([...cell.querySelectorAll('.edition-field')].map(input => [input.dataset.field, saved?.[input.dataset.field] == null ? null : String(saved[input.dataset.field])])));
+                        cell.querySelector('.deadline-state').textContent = saved?.deadline_status || '';
+                    }
+                    if ((cell.dataset.revision || '0') === revision) showCell(cell, !!payload.is_completed, cell.dataset.date, 'Guardado');
+                    else cell.querySelector('.cell-state').textContent = 'Sin guardar';
                     cell.querySelector('.retry-save')?.remove();
                 }
                 const oldPhase = table.dataset.phase;
@@ -73,7 +88,7 @@
                     row.querySelector('.progress-label').textContent = originProgress.toLocaleString('es-EC', {minimumFractionDigits:2,maximumFractionDigits:2}) + ' %';
                     row.querySelector('.progress-track span').style.width = originProgress + '%';
                     row.style.opacity = '.45';
-                    row.querySelectorAll('input,button').forEach(control => control.disabled = true);
+                    row.querySelectorAll('input,button,select,textarea').forEach(control => control.disabled = true);
                     setTimeout(() => row.remove(), 3000);
                 } else {
                     row.querySelector('.progress-label').textContent = Number(data.progress).toLocaleString('es-EC', {minimumFractionDigits:2,maximumFractionDigits:2}) + ' %';
@@ -104,21 +119,28 @@
                     }
                 }
                 if (row.dataset.conflict) {
-                    row.querySelectorAll('input,button').forEach(control => control.disabled = true);
+                    row.querySelectorAll('input,button,select,textarea').forEach(control => control.disabled = true);
                     notice(message + ' Recarga la página.', true);
                 } else notice(message, true);
             } finally {
-                clearTimeout(timeout); row.dataset.busy = ''; cell?.classList.remove('saving');
+                clearTimeout(timeout); row.dataset.busy = ''; row.dataset.queued--; cell?.classList.remove('saving');
                 if (!row.dataset.conflict && !row.dataset.moved) {
-                    row.querySelector('.advance').disabled = Number(row.querySelector('.progress-track').getAttribute('aria-valuenow')) < 100 || new URL(location.href).searchParams.get('published') === '1';
+                    row.querySelector('.advance').disabled = Number(row.dataset.queued) > 0 || rowDirty(row) || Number(row.querySelector('.progress-track').getAttribute('aria-valuenow')) < 100 || new URL(location.href).searchParams.get('published') === '1';
                 }
             }
         };
         queues.set(row, (queues.get(row) || Promise.resolve()).then(task));
     };
+    table.addEventListener('input', event => {
+        const cell = event.target.closest('.edition-cell');
+        if (!cell || !event.target.matches('.edition-field,.completion-date,.completion-toggle')) return;
+        cell.dataset.revision = Number(cell.dataset.revision || 0) + 1;
+        cell.querySelector('.cell-state').textContent = 'Sin guardar';
+        cell.closest('tr').querySelector('.advance').disabled = true;
+    });
     table.addEventListener('change', event => {
         const cell = event.target.closest('.matrix-cell');
-        if (!cell) return;
+        if (!cell || event.target.matches('.responsible-query')) return;
         const row = cell.closest('tr');
         const checkbox = cell.querySelector('.completion-toggle');
         const date = cell.querySelector('.completion-date');
@@ -126,13 +148,14 @@
             if (checkbox.checked) {
                 date.disabled = false;
                 if (!date.value) { cell.querySelector('.cell-state').textContent = 'Fecha obligatoria'; date.focus(); return; }
-            } else if (cell.dataset.saved === '0') {
+            } else if (cell.dataset.saved === '0' && !cell.classList.contains('edition-cell')) {
                 showCell(cell, false, '', 'Pendiente'); return;
             }
         }
         if (checkbox.checked && !date.value) { cell.querySelector('.cell-state').textContent = 'Fecha obligatoria'; return; }
         if (checkbox.checked && !date.checkValidity()) { notice('Ingresa una fecha de cumplimiento válida, sin superar la fecha actual.', true); return; }
-        save(row, {action:'activity', activity_id:Number(cell.dataset.activity), is_completed:checkbox.checked, completation_date:checkbox.checked ? date.value : null}, cell);
+        const payload = () => ({action:'activity', activity_id:Number(cell.dataset.activity), is_completed:checkbox.checked, completation_date:checkbox.checked ? date.value : null, ...(cell.classList.contains('edition-cell') ? editionValues(cell) : {})});
+        save(row, cell.classList.contains('edition-cell') ? payload : payload(), cell);
     });
     table.addEventListener('click', async event => {
         const row = event.target.closest('tr[data-manual]');
@@ -155,7 +178,7 @@
         if (event.target.closest('.advance')) confirmAdvance(row);
     });
     const pendingChanges = () => {
-        return table.querySelector('[data-busy="1"]') || [...table.querySelectorAll('.matrix-cell')].some(cell => cell.querySelector('.completion-toggle').checked !== (cell.dataset.saved === '1') || (cell.querySelector('.completion-toggle').checked && cell.querySelector('.completion-date').value !== cell.dataset.date));
+        return [...table.querySelectorAll('tr[data-manual]')].some(row => Number(row.dataset.queued || 0) > 0 || rowDirty(row));
     };
     document.addEventListener('click', event => {
         const link = event.target.closest('a[href]');

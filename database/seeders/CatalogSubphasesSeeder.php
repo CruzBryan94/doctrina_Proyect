@@ -15,11 +15,18 @@ class CatalogSubphasesSeeder extends Seeder
             'planning' => ['ANÁLISIS', 'FACTIBILIDAD'],
             'research' => [],
             'experimentation' => ['DISPONER LA EXPERIMENTACIÓN', 'INDUCCIÓN Y LINEAMIENTOS AL COMITÉ DE EXPERIMENTACIÓN', 'ENTREGA DEL CRONOGRAMA DE ACTIVIDADES'],
-            'edition' => ['CORRECCIÓN IDIOMÁTICA', 'CORRECCIÓN GRÁFICA', 'CORRECCIONES FINALES ARTE DISEÑO EDITORIAL', 'TRÁMITE DE LEGALIZACIÓN', 'ENVIADO GRUPO ASESOR', 'PUBLICACIÓN EN EL SIFTE'],
+            'edition' => [],
             'cgft' => ['PENDIENTE', 'LEGALIZADO'],
         ];
         foreach ($definitions as $slug => $names) {
             $phase = ManualPhase::where('slug', $slug)->firstOrFail();
+            if ($slug === 'edition') {
+                foreach (\App\Services\EditionActivity::NAMES as $key => $name) {
+                    CatalogSubphase::updateOrCreate(['activity_key' => $key], ['suphase_name' => $name, 'manual_phases_id' => $phase->id, 'position' => array_search($key, array_keys(\App\Services\EditionActivity::NAMES), true) + 1]);
+                }
+
+                continue;
+            }
             if ($slug === 'research') {
                 foreach (self::researchDefinitions() as $index => [$key, $name, $advance]) {
                     CatalogSubphase::updateOrCreate(['activity_key' => $key], [

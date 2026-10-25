@@ -86,3 +86,9 @@ git diff --check
 Hay pruebas heredadas de perfil/recuperación/verificación para rutas que no forman parte del flujo activo; la ejecución dirigida anterior verifica el alcance implementado.
 
 La guía de negocio y desarrollo está en AGENTS.MD (actualmente excluido por .gitignore).
+
+### Edición
+
+Tres actividades: inicio de corrección idiomática (seguimiento), revisión final (seguimiento y plazo) y corrección editorial/gráfica/maquetación (inicio, plazo y usuario responsable). Los borradores admiten campos vacíos; completar exige sus datos y fecha. Cada actividad aporta un tercio. El botón «Enviar a CGFT» se habilita al 100 % y exige confirmación.
+
+Las migraciones de 23 de octubre agregan campos y actualizan el catálogo sin fresh. Conservan actividades antiguas en Historial y mantienen las ediciones ya cerradas en su versión histórica; un retroceso explícito abre el nuevo flujo. Crear respaldo antes de migrar.

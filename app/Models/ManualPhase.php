@@ -15,7 +15,7 @@ class ManualPhase extends Model
 
     public function catalogSubphases()
     {
-        return $this->hasMany(CatalogSubphase::class, 'manual_phases_id')->orderBy('position');
+        return $this->hasMany(CatalogSubphase::class, 'manual_phases_id')->where('is_active', true)->orderBy('position');
     }
 
     public function manuals()

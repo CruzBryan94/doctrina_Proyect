@@ -13,12 +13,15 @@ use Illuminate\Validation\ValidationException;
 
 class ManualWorkflow
 {
-    public const RELATIONS = ['manualType.doctrinalMap', 'manualPhase', 'manualPhaseSuphases.catalogSubphase.manualPhase', 'phaseStates', 'manualCommitteeMembers', 'manualMilitaryUnits'];
+    public const RELATIONS = ['manualType.doctrinalMap', 'manualPhase', 'manualPhaseSuphases.catalogSubphase.manualPhase', 'manualPhaseSuphases.responsibleUser', 'phaseStates', 'manualCommitteeMembers', 'manualMilitaryUnits'];
 
     public function configure(Manual $manual): void
     {
         foreach (ManualPhase::orderBy('position')->get() as $phase) {
-            ManualPhaseState::firstOrCreate(['manual_id' => $manual->id, 'manual_phase_id' => $phase->id]);
+            $state = ManualPhaseState::firstOrCreate(['manual_id' => $manual->id, 'manual_phase_id' => $phase->id], ['catalog_version' => 2]);
+            if ($phase->slug === 'edition' && $state->catalog_version === 1) {
+                continue;
+            }
             $limit = $phase->slug === 'research' ? $manual->research_advances : ($phase->slug === 'experimentation' ? $manual->experimentation_advances : 8);
             foreach ($phase->catalogSubphases as $activity) {
                 if ($activity->advance_number && $activity->advance_number > $limit) {
@@ -29,6 +32,18 @@ class ManualWorkflow
                 ], ['manual_phases_id' => $phase->id, 'is_completed' => false]);
             }
         }
+    }
+
+    public function reopenEdition(Manual $manual, ManualPhase $phase): void
+    {
+        $state = $manual->phaseStates->firstWhere('manual_phase_id', $phase->id);
+        if ($state?->catalog_version !== 1) {
+            return;
+        }
+        $manual->manualPhaseSuphases()->where('manual_phases_id', $phase->id)->update(['is_legacy' => true]);
+        $state->update(['catalog_version' => 2]);
+        $this->configure($manual);
+        $manual->load(self::RELATIONS);
     }
 
     public function event(Manual $manual, string $action, array $before, array $after, ?string $reason = null): void
@@ -83,6 +98,9 @@ class ManualWorkflow
                 $state = $manual->phaseStates->firstWhere('manual_phase_id', $phase->id);
                 $before['started_on'] = $state->started_on?->toDateString();
                 $state->update(['started_on' => $date]);
+                foreach ($manual->manualPhaseSuphases->where('manual_phases_id', $phase->id) as $activity) {
+                    EditionActivity::validate($activity, [], $state->started_on);
+                }
                 if ($phase->slug === 'research') {
                     $manual->research_started_on = ! $manual->research_started_on || $date < $manual->research_started_on->toDateString() ? $date : $manual->research_started_on;
                 }
@@ -90,7 +108,7 @@ class ManualWorkflow
                 $row = $manual->manualPhaseSuphases->firstWhere('catalog_subphases_id', $data['activity_id']);
                 abort_unless($row && $row->manual_phases_id === $phase->id, 422, 'Esta actividad no pertenece a la fase actual del manual.');
                 $start = $manual->currentStart();
-                if (! $start) {
+                if (! $start && ($phase->slug !== 'edition' || (bool) $data['is_completed'])) {
                     throw ValidationException::withMessages(['started_on' => 'Registra primero la fecha de inicio de esta fase.']);
                 }
                 $completed = (bool) $data['is_completed'];
@@ -98,8 +116,11 @@ class ManualWorkflow
                 if ($completed && (! $date || $date < $start->toDateString())) {
                     throw ValidationException::withMessages(['completation_date' => 'La fecha es obligatoria y debe ser igual o posterior al inicio de la fase.']);
                 }
-                $before['activity'] = $row->only(['catalog_subphases_id', 'is_completed', 'completation_date']);
-                $row->update(['is_completed' => $completed, 'completation_date' => $date]);
+                $before['activity'] = $row->only(['catalog_subphases_id', 'is_completed', 'completation_date', 'follow_up', 'started_on', 'due_on', 'responsible_user_id']);
+                $row->fill(['is_completed' => $completed, 'completation_date' => $date]);
+                EditionActivity::validate($row, $data, $start);
+                $row->save();
+                $data['saved_activity'] = $row->fresh()->toArray();
                 $manual->load('manualPhaseSuphases.catalogSubphase');
                 $this->advanceIfComplete($manual);
             } elseif ($data['action'] === 'retreat') {
@@ -109,6 +130,9 @@ class ManualWorkflow
                 }
                 $previous = ManualPhase::where('position', '<', $phase->position)->orderByDesc('position')->firstOrFail();
                 $manual->manual_phases_id = $previous->id;
+                if ($previous->slug === 'edition') {
+                    $this->reopenEdition($manual, $previous);
+                }
                 $manual->is_published = false;
                 $manual->published_on = null;
             } else {
@@ -124,6 +148,7 @@ class ManualWorkflow
                 'substate' => $manual->currentSubstate(),
                 'activity_id' => $data['activity_id'] ?? null, 'is_completed' => $data['is_completed'] ?? null,
                 'completation_date' => $data['completation_date'] ?? null, 'started_on' => $data['started_on'] ?? null,
+                'activity' => $data['saved_activity'] ?? null,
             ], $data['reason'] ?? null);
 
             return $manual;
@@ -135,7 +160,7 @@ class ManualWorkflow
         $phase = $manual->manualPhase;
         $rows = $manual->manualPhaseSuphases->where('manual_phases_id', $phase->id);
         $expected = $manual->expectedActivities($phase->slug);
-        $complete = $rows->count() === $expected && $expected > 0 && $rows->every(fn ($row) => $row->is_completed && $row->completation_date);
+        $complete = $rows->count() === $expected && $expected > 0 && $rows->every(fn ($row) => $row->isWorkflowComplete());
         if (! $complete) {
             $manual->is_published = false;
             $manual->published_on = null;
@@ -148,6 +173,9 @@ class ManualWorkflow
         if (! $manual->currentStart()) {
             throw ValidationException::withMessages(['started_on' => 'Registra la fecha de inicio.']);
         }
+        foreach ($rows as $row) {
+            EditionActivity::validate($row, [], $manual->currentStart());
+        }
         if (in_array($phase->slug, ['research', 'experimentation'], true)) {
             $types = $phase->slug === 'research' ? [1, 2] : [3, 4];
             foreach ($types as $type) {
@@ -158,7 +186,7 @@ class ManualWorkflow
         }
         foreach (ManualPhase::where('position', '<', $phase->position)->get() as $previous) {
             $previousRows = $manual->manualPhaseSuphases->where('manual_phases_id', $previous->id);
-            if ($previousRows->count() !== $manual->expectedActivities($previous->slug) || ! $previousRows->every(fn ($row) => $row->is_completed && $row->completation_date)) {
+            if ($previousRows->count() !== $manual->expectedActivities($previous->slug) || ! $previousRows->every(fn ($row) => $row->isWorkflowComplete())) {
                 throw ValidationException::withMessages(['phase' => 'Una fase anterior está incompleta. Corrige el recorrido antes de avanzar.']);
             }
         }

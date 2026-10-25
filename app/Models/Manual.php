@@ -37,7 +37,12 @@ class Manual extends Model
 
     public function manualPhaseSuphases()
     {
-        return $this->hasMany(ManualPhaseSuphase::class, 'manuals_id');
+        return $this->hasMany(ManualPhaseSuphase::class, 'manuals_id')->where('is_legacy', false);
+    }
+
+    public function legacyActivities()
+    {
+        return $this->hasMany(ManualPhaseSuphase::class, 'manuals_id')->where('is_legacy', true);
     }
 
     public function phaseStates()
@@ -55,20 +60,23 @@ class Manual extends Model
         $rows = $this->manualPhaseSuphases->where('manual_phases_id', $phaseId ?? $this->manual_phases_id);
         $slug = $phaseId && $phaseId !== $this->manual_phases_id ? ManualPhase::findOrFail($phaseId)->slug : $this->manualPhase->slug;
 
-        return round(100 * $rows->filter(fn ($row) => $row->is_completed && $row->completation_date)->count() / $this->expectedActivities($slug), 2);
+        return round(100 * $rows->filter(fn ($row) => $row->isWorkflowComplete())->count() / $this->expectedActivities($slug), 2);
     }
 
     public function expectedActivities(string $slug): int
     {
+        $edition = $slug === 'edition' ? $this->manualPhaseSuphases->first(fn ($row) => $row->catalogSubphase->manualPhase->slug === 'edition') : null;
+        $legacyEdition = $edition && $this->phaseStates->firstWhere('manual_phase_id', $edition->manual_phases_id)?->catalog_version === 1;
+
         return match ($slug) {
-            'planning', 'cgft' => 2, 'research' => 10 + $this->research_advances, 'experimentation' => 6 + $this->experimentation_advances, 'edition' => 6, default => throw new \LogicException('Fase desconocida')
+            'planning', 'cgft' => 2, 'research' => 10 + $this->research_advances, 'experimentation' => 6 + $this->experimentation_advances, 'edition' => $legacyEdition ? 6 : 3, default => throw new \LogicException('Fase desconocida')
         };
     }
 
     public function currentActivity(): string
     {
         $row = $this->manualPhaseSuphases->where('manual_phases_id', $this->manual_phases_id)
-            ->sortBy(fn ($row) => $row->catalogSubphase->position)->first(fn ($row) => ! $row->is_completed);
+            ->sortBy(fn ($row) => $row->catalogSubphase->position)->first(fn ($row) => ! $row->isWorkflowComplete());
 
         return $row?->catalogSubphase->suphase_name ?? 'Fase completada';
     }

@@ -56,15 +56,32 @@ class DoctrineWorkflowTest extends TestCase
             }
         }
 
+        foreach ($manual->manualPhaseSuphases->filter(fn ($row) => $row->catalogSubphase->manualPhase->slug === 'edition') as $row) {
+            if ($row->fresh()->is_completed) {
+                $row->update(match ($row->catalogSubphase->activity_key) {
+                    \App\Services\EditionActivity::START => ['follow_up' => 'Inicio documentado de prueba'],
+                    \App\Services\EditionActivity::REVIEW => ['follow_up' => 'Revisión documentada de prueba', 'due_on' => today()->subDays(45)],
+                    default => ['started_on' => today()->subDays(50), 'due_on' => today()->subDays(45), 'responsible_user_id' => auth()->id()],
+                });
+            }
+        }
+
         return $manual->fresh()->load(ManualWorkflow::RELATIONS);
     }
 
     private function activity(Manual $manual, array $data = [])
     {
-        $row = $manual->manualPhaseSuphases->firstWhere('manual_phases_id', $manual->manual_phases_id);
+        $row = isset($data['activity_id']) ? $manual->manualPhaseSuphases->firstWhere('catalog_subphases_id', $data['activity_id']) : $manual->manualPhaseSuphases->firstWhere('manual_phases_id', $manual->manual_phases_id);
+        if ($row && $manual->manualPhase->slug === 'edition' && ($data['is_completed'] ?? true)) {
+            $data += match ($row->catalogSubphase->activity_key) {
+                \App\Services\EditionActivity::START => ['follow_up' => 'Inicio de corrección de prueba'],
+                \App\Services\EditionActivity::REVIEW => ['follow_up' => 'Revisión final de prueba', 'due_on' => today()->toDateString()],
+                default => ['started_on' => today()->toDateString(), 'due_on' => today()->addDay()->toDateString(), 'responsible_user_id' => auth()->id()],
+            };
+        }
 
         return $this->patchJson(route('manuals.activity', $manual->id), $data + [
-            'action' => 'activity', 'activity_id' => $row->catalog_subphases_id,
+            'action' => 'activity', 'activity_id' => $row?->catalog_subphases_id ?? ($data['activity_id'] ?? 0),
             'is_completed' => true, 'completation_date' => today()->toDateString(), 'version' => $manual->lock_version,
         ]);
     }
@@ -73,7 +90,7 @@ class DoctrineWorkflowTest extends TestCase
     {
         $this->assertDatabaseCount('manual_phases', 5);
         $this->assertDatabaseCount('doctrinal_maps', 2);
-        $this->assertDatabaseCount('catalog_subphases', 40);
+        $this->assertDatabaseCount('catalog_subphases', 37);
         $this->assertEquals(['planning', 'research', 'experimentation', 'edition', 'cgft'], ManualPhase::orderBy('position')->pluck('slug')->all());
         $this->assertDatabaseHas('catalog_subphases', ['suphase_name' => 'LEGALIZADO']);
         $research = ManualPhase::where('slug', 'research')->first();
@@ -91,7 +108,7 @@ class DoctrineWorkflowTest extends TestCase
         $manual = Manual::first()->load(ManualWorkflow::RELATIONS);
         $this->assertSame(6, $manual->research_advances);
         $this->assertSame(8, $manual->experimentation_advances);
-        $this->assertCount(40, $manual->manualPhaseSuphases);
+        $this->assertCount(37, $manual->manualPhaseSuphases);
     }
 
     public function test_research_data_migration_preserves_ids_dates_and_other_phases_and_caps_test_data(): void
@@ -123,7 +140,7 @@ class DoctrineWorkflowTest extends TestCase
         $migration = require database_path('migrations/2026_10_21_000002_correct_research_activities.php');
         $migration->up();
         $this->assertDatabaseCount('manuals', 2);
-        $this->assertDatabaseCount('catalog_subphases', 40);
+        $this->assertDatabaseCount('catalog_subphases', 37);
         $this->assertEquals($users, User::orderBy('id')->get()->toArray());
         $this->assertEquals($otherRows, \App\Models\ManualPhaseSuphase::where('manual_phases_id', '!=', $researchId)->orderBy('id')->get()->toArray());
         $this->assertDatabaseHas('manual_phase_suphases', ['id' => $kept->id, 'catalog_subphases_id' => $keptId, 'is_completed' => true, 'completation_date' => $kept->getRawOriginal('completation_date')]);
@@ -172,7 +189,7 @@ class DoctrineWorkflowTest extends TestCase
         $this->assertSame('planning', $manual->manualPhase->slug);
         $this->assertEquals(0, $manual->progress());
         $this->assertCount(0, $manual->manualCommitteeMembers);
-        $this->assertCount(36, $manual->manualPhaseSuphases);
+        $this->assertCount(33, $manual->manualPhaseSuphases);
     }
 
     public function test_wrong_map_and_invalid_advance_quantities_are_rejected(): void
