@@ -10,7 +10,7 @@ class CatalogSubphasesSeeder extends Seeder
 {
     public function run(): void
     {
-        $ordinals = ['PRIMER', 'SEGUNDO', 'TERCER', 'CUARTO', 'QUINTO', 'SEXTO', 'SÉPTIMO', 'OCTAVO'];
+        $ordinals = ['PRIMER', 'SEGUNDO', 'TERCER', 'CUARTO', 'QUINTO'];
         $definitions = [
             'planning' => ['ANÁLISIS', 'FACTIBILIDAD'],
             'research' => [],
@@ -38,15 +38,18 @@ class CatalogSubphasesSeeder extends Seeder
                 continue;
             }
             if ($slug === 'experimentation') {
+                CatalogSubphase::where('manual_phases_id', $phase->id)->where('advance_number', '>', 5)->update(['is_active' => false]);
                 foreach ($ordinals as $index => $ordinal) {
                     $names[] = $ordinal.' AVANCE DE LA EXPERIMENTACIÓN';
                 }
                 $names = array_merge($names, ['INFORME FINAL DE LA EXPERIMENTACIÓN', 'VALIDACIÓN DE LA EXPERIMENTACIÓN DEL PROYECTO DOCTRINARIO', 'ENTREGA DEL PROYECTO DOCTRINARIO CON TODAS LAS OBSERVACIONES']);
             }
             foreach ($names as $index => $name) {
-                $advance = $slug === 'experimentation' && $index >= 3 && $index <= 10 ? $index - 2 : null;
-                CatalogSubphase::updateOrCreate(['activity_key' => $slug.'.'.($index + 1)], [
-                    'suphase_name' => $name, 'manual_phases_id' => $phase->id, 'position' => $index + 1, 'advance_number' => $advance,
+                $advance = $slug === 'experimentation' && $index >= 3 && $index <= 7 ? $index - 2 : null;
+                // The final three keys remain .12, .13 and .14 after retiring advances 6–8.
+                $keyNumber = $slug === 'experimentation' && $index >= 8 ? $index + 4 : $index + 1;
+                CatalogSubphase::updateOrCreate(['activity_key' => $slug.'.'.$keyNumber], [
+                    'suphase_name' => $name, 'manual_phases_id' => $phase->id, 'position' => $index + 1, 'advance_number' => $advance, 'is_active' => true,
                 ]);
             }
         }
@@ -70,6 +73,7 @@ class CatalogSubphasesSeeder extends Seeder
             ['research.validation-meeting.1', '1. REUNIÓN DE VALIDACIÓN', null],
             ['research.validation-meeting.2', '2. REUNIÓN DE VALIDACIÓN', null],
             ['research.validation-meeting.3', '3. REUNIÓN DE VALIDACIÓN', null],
+            ['research.validation-meeting.4', '4. REUNIÓN DE VALIDACIÓN', null],
             ['research.14', 'ENTREGA DEL PROYECTO DOCTRINARIO CORREGIDO Y FINALIZADO', null],
         ];
     }

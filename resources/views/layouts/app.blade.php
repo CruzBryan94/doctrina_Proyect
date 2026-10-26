@@ -1,12 +1,36 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}">
-<title>ARTEMIS · Acceso al sistema</title>
-@vite(['resources/sass/app.scss','resources/js/app.js'])
-<link rel="stylesheet" href="{{ asset('css/artemis.css') }}">
-<style>
-.auth-shell{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}.auth-intro{background:#132e29;color:#edf3e1;padding:70px;display:flex;flex-direction:column;justify-content:center;position:relative}.auth-intro .app-brand{margin-bottom:80px}.auth-intro h1{font-size:45px;line-height:1.2;max-width:480px}.auth-intro p{color:#b4c9bd;max-width:400px;font-size:16px;line-height:1.8;margin-top:22px}.auth-intro .eyebrow{color:#d6e89d}.auth-phases{display:flex;gap:9px;margin-top:35px;flex-wrap:wrap}.auth-phases span{border:1px solid #56745d;padding:7px 12px;font-size:11px;border-radius:30px}.auth-content{padding:55px 25px;display:flex;align-items:center;justify-content:center;background:#f3f6f3}.auth-content>.container{width:100%;max-width:610px}.auth-content .col-md-8{width:100%}.auth-content .card{border:1px solid #dce6e1;border-radius:15px;padding:24px;box-shadow:0 12px 35px #193a2b08}.auth-content .card-header{background:none;border:none;font-size:25px;font-weight:900;padding:12px 15px 20px}.auth-content .card-body{padding:12px 15px}.auth-content label{font-size:13px;font-weight:700}.auth-content .row.mb-3{display:block}.auth-content .row.mb-3>.col-md-4,.auth-content .row.mb-3>.col-md-6{width:100%;text-align:left!important}.auth-content .row.mb-3>.offset-md-4{margin-left:0}.auth-content .row.mb-0>.offset-md-4{margin-left:0;width:100%}.auth-content input:not([type=checkbox]){padding:11px}.auth-content .btn-primary{width:100%;margin-top:6px}.auth-content .btn-link{display:block;margin-top:10px}.auth-content .invalid-feedback{font-size:12px}
-@media(max-width:850px){.auth-shell{grid-template-columns:1fr}.auth-intro{padding:30px}.auth-intro .app-brand{margin-bottom:30px}.auth-intro h1{font-size:29px}.auth-intro p,.auth-phases{display:none}.auth-content{padding:25px 12px}}
-</style></head>
-<body class="artemis-ui"><div class="auth-shell"><section class="auth-intro"><a class="app-brand" href="{{ route('login') }}"><span class="brand-mark">A</span><span>ARTEMIS<small>GESTIÓN DE DOCTRINA</small></span></a><div class="eyebrow">Sistema de control de generación de doctrina</div><h1>Cada avance cuenta.<br>Cada fase, conectada.</h1><p>Un espacio para planificar, coordinar y dar seguimiento a los manuales y publicaciones militares.</p><div class="auth-phases"><span>Planificación</span><span>Investigación</span><span>Experimentación</span><span>Edición</span><span>CGFT</span></div></section><main class="auth-content">@yield('content')</main></div>@include('partials.alert-modal')</body></html>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'ARTEMIS · Acceso al sistema')</title>
+    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{ asset('vendor/fontawesome-free/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/artemis.css') }}?v={{ filemtime(public_path('css/artemis.css')) }}">
+</head>
+<body class="artemis-ui auth-page">
+    <div class="auth-shell">
+        <section class="auth-intro" aria-labelledby="auth-title">
+            <div class="auth-brand-surface">
+                <a class="auth-brand" href="{{ route('login') }}" aria-label="ARTEMIS, inicio de sesión">
+                    <img src="{{ asset('imagenes/Logo_pequeño.png') }}" alt="ARTEMIS">
+                </a>
+            </div>
+            <div class="auth-intro-copy">
+                <p class="auth-eyebrow">Sistema de control de generación de doctrina</p>
+                <h1 id="auth-title">Seguimiento institucional de manuales y publicaciones militares</h1>
+                <p class="auth-description">Planifica, coordina y consulta el avance de cada fase del proceso doctrinario.</p>
+                <img class="auth-cover" src="{{ asset('imagenes/Logo de portada.png') }}" alt="Identidad institucional ARTEMIS con mapa y escena militar">
+                <ul class="auth-phases" aria-label="Fases del proceso">
+                    <li>Planificación</li><li>Investigación</li><li>Experimentación</li><li>Edición</li><li>CGFT</li>
+                </ul>
+            </div>
+        </section>
+        <main class="auth-content">
+            <div class="auth-form-wrap">@yield('content')</div>
+        </main>
+    </div>
+    @include('partials.alert-modal')
+</body>
+</html>

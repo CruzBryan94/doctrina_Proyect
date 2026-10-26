@@ -15,15 +15,21 @@ class ManualWorkflow
 {
     public const RELATIONS = ['manualType.doctrinalMap', 'manualPhase', 'manualPhaseSuphases.catalogSubphase.manualPhase', 'manualPhaseSuphases.responsibleUser', 'phaseStates', 'manualCommitteeMembers', 'manualMilitaryUnits'];
 
-    public function configure(Manual $manual): void
+    public function configure(Manual $manual, bool $fromEntry = false): void
     {
-        foreach (ManualPhase::orderBy('position')->get() as $phase) {
-            $state = ManualPhaseState::firstOrCreate(['manual_id' => $manual->id, 'manual_phase_id' => $phase->id], ['catalog_version' => 2]);
+        foreach (ManualPhase::when($fromEntry, fn ($q) => $q->where('position', '>=', $manual->manualPhase->position))->orderBy('position')->get() as $phase) {
+            $state = ManualPhaseState::firstOrCreate(['manual_id' => $manual->id, 'manual_phase_id' => $phase->id], ['catalog_version' => in_array($phase->slug, ['research', 'experimentation'], true) ? 3 : 2]);
             if ($phase->slug === 'edition' && $state->catalog_version === 1) {
                 continue;
             }
+            if (in_array($phase->slug, ['research', 'experimentation'], true) && $state->catalog_version < 3 && ($manual->is_published || $phase->position < $manual->manualPhase->position)) {
+                continue; // Closed historical phases are evidence, not templates to reconstruct.
+            }
             $limit = $phase->slug === 'research' ? $manual->research_advances : ($phase->slug === 'experimentation' ? $manual->experimentation_advances : 8);
             foreach ($phase->catalogSubphases as $activity) {
+                if ($phase->slug === 'research' && $state->catalog_version < 3 && $activity->activity_key === 'research.validation-meeting.4') {
+                    continue;
+                }
                 if ($activity->advance_number && $activity->advance_number > $limit) {
                     continue;
                 }
@@ -46,9 +52,35 @@ class ManualWorkflow
         $manual->load(self::RELATIONS);
     }
 
+    public function reopenVariablePhase(Manual $manual, ManualPhase $phase): void
+    {
+        if (! in_array($phase->slug, ['research', 'experimentation'], true)) {
+            return;
+        }
+        $state = $manual->phaseStates->firstWhere('manual_phase_id', $phase->id);
+        if (! $state || $state->catalog_version >= 3) {
+            return;
+        }
+        $before = ['catalog_version' => $state->catalog_version, 'experimentation_advances' => $manual->experimentation_advances];
+        if ($phase->slug === 'experimentation' && $manual->experimentation_advances > 5) {
+            $ids = $manual->manualPhaseSuphases->where('manual_phases_id', $phase->id)->filter(fn ($row) => $row->catalogSubphase->advance_number > 5)->pluck('id');
+            ManualPhaseSuphase::whereIn('id', $ids)->update(['is_legacy' => true]);
+            $manual->experimentation_advances = 5;
+            $manual->save();
+        }
+        $state->update(['catalog_version' => 3]);
+        $this->configure($manual);
+        $manual->load(self::RELATIONS);
+        $this->event($manual, 'variable_catalog_reopened', $before, ['catalog_version' => 3, 'experimentation_advances' => $manual->experimentation_advances], 'Reapertura con catálogo vigente; evidencia retirada conservada como histórica.');
+    }
+
     public function event(Manual $manual, string $action, array $before, array $after, ?string $reason = null): void
     {
-        ManualEvent::create(['manual_id' => $manual->id, 'user_id' => auth()->id(), 'action' => $action, 'before' => $before, 'after' => $after, 'reason' => $reason]);
+        DB::transaction(function () use ($manual, $action, $before, $after, $reason) {
+            Manual::whereKey($manual->id)->lockForUpdate()->firstOrFail();
+            $event = ManualEvent::create(['manual_id' => $manual->id, 'user_id' => auth()->id(), 'action' => $action, 'before' => $before, 'after' => $after, 'reason' => $reason]);
+            app(ManualPhaseHistory::class)->record($manual, $event);
+        });
     }
 
     public function synchronizeSubstates(Manual $manual): void
@@ -73,10 +105,10 @@ class ManualWorkflow
         }
     }
 
-    public function lock(int $id, int $version): Manual
+    public function lock(int $id, int $version, string $ability = 'update'): Manual
     {
         $manual = Manual::with(self::RELATIONS)->lockForUpdate()->findOrFail($id);
-        Gate::authorize('update', $manual);
+        Gate::authorize($ability, $manual);
         abort_if($manual->lock_version !== $version, 409, 'Otro usuario modificó este manual. Recarga la fila antes de continuar.');
 
         return $manual;
@@ -87,12 +119,15 @@ class ManualWorkflow
         return DB::transaction(function () use ($id, $data) {
             $manual = $this->lock($id, $data['version']);
             $phase = $manual->manualPhase;
+            if ($manual->is_published && (! $manual->phaseStates->contains('manual_phase_id', $phase->id) || $manual->manualPhaseSuphases->where('manual_phases_id', $phase->id)->isEmpty())) {
+                throw ValidationException::withMessages(['phase' => 'La publicación incorporada directamente no tiene seguimiento de fases. Sus metadatos se editan desde la ficha.']);
+            }
             $before = ['phase' => $phase->slug, 'published' => $manual->is_published, 'substate' => $manual->currentSubstate()];
             if ($data['action'] === 'start') {
                 $date = $data['started_on'];
                 $previousDates = $manual->manualPhaseSuphases->filter(fn ($row) => $row->manual_phases_id !== $phase->id && $row->is_completed && $row->catalogSubphase->manualPhase->position < $phase->position)->pluck('completation_date');
                 $ownDates = $manual->manualPhaseSuphases->where('manual_phases_id', $phase->id)->where('is_completed', true)->pluck('completation_date');
-                if ($date < $manual->process_started_on->toDateString() || $previousDates->contains(fn ($d) => $d && $d->toDateString() > $date) || $ownDates->contains(fn ($d) => $d && $d->toDateString() < $date)) {
+                if (($manual->process_started_on && $date < $manual->process_started_on->toDateString()) || $previousDates->contains(fn ($d) => $d && $d->toDateString() > $date) || $ownDates->contains(fn ($d) => $d && $d->toDateString() < $date)) {
                     throw ValidationException::withMessages(['started_on' => 'El inicio debe respetar las fechas de las fases anteriores y no superar el cumplimiento ya registrado.']);
                 }
                 $state = $manual->phaseStates->firstWhere('manual_phase_id', $phase->id);
@@ -133,18 +168,29 @@ class ManualWorkflow
                 if ($previous->slug === 'edition') {
                     $this->reopenEdition($manual, $previous);
                 }
+                $this->reopenVariablePhase($manual, $previous);
                 $manual->is_published = false;
                 $manual->published_on = null;
             } else {
                 $this->requireConfirmation($data);
-                $this->advanceIfComplete($manual, true);
+                $this->advanceIfComplete($manual, true, $data['published_on'] ?? null);
             }
             $this->synchronizeSubstates($manual);
             $manual->lock_version++;
             $manual->save();
             $manual->load(self::RELATIONS);
+            $effectiveDate = null;
+            if ($before['phase'] !== $manual->manualPhase->slug || $before['published'] !== $manual->is_published) {
+                $effectiveDate = in_array($data['action'], ['retreat', 'activity'], true) ? today()->toDateString()
+                    : $manual->manualPhaseSuphases->where('manual_phases_id', $phase->id)->max('completation_date')?->toDateString();
+                $entry = \App\Models\ManualPhaseVisit::where('manual_id', $manual->id)->where('manual_phase_id', $phase->id)->whereNull('exit_event_id')->latest('id')->first();
+                if ($entry?->entered_on && $effectiveDate && $effectiveDate < $entry->entered_on->toDateString()) {
+                    $effectiveDate = $entry->entered_on->toDateString(); // A re-entry cannot end before its accredited arrival.
+                }
+            }
             $this->event($manual, $data['action'], $before, [
                 'phase' => $manual->manualPhase->slug, 'published' => $manual->is_published,
+                'effective_on' => $effectiveDate, 'published_on' => $manual->published_on?->toDateString(),
                 'substate' => $manual->currentSubstate(),
                 'activity_id' => $data['activity_id'] ?? null, 'is_completed' => $data['is_completed'] ?? null,
                 'completation_date' => $data['completation_date'] ?? null, 'started_on' => $data['started_on'] ?? null,
@@ -155,7 +201,7 @@ class ManualWorkflow
         });
     }
 
-    private function advanceIfComplete(Manual $manual, bool $explicit = false): void
+    private function advanceIfComplete(Manual $manual, bool $explicit = false, ?string $publicationDate = null): void
     {
         $phase = $manual->manualPhase;
         $rows = $manual->manualPhaseSuphases->where('manual_phases_id', $phase->id);
@@ -184,19 +230,13 @@ class ManualWorkflow
                 }
             }
         }
-        foreach (ManualPhase::where('position', '<', $phase->position)->get() as $previous) {
-            $previousRows = $manual->manualPhaseSuphases->where('manual_phases_id', $previous->id);
-            if ($previousRows->count() !== $manual->expectedActivities($previous->slug) || ! $previousRows->every(fn ($row) => $row->isWorkflowComplete())) {
-                throw ValidationException::withMessages(['phase' => 'Una fase anterior está incompleta. Corrige el recorrido antes de avanzar.']);
-            }
-        }
         // Completing an activity saves its progress; transitions require a separate confirmation.
         if (! $explicit && ! $manual->is_published) {
             return;
         }
         if ($phase->slug === 'cgft') {
             $manual->is_published = true;
-            $manual->published_on = $rows->max('completation_date')->toDateString();
+            $manual->published_on = $publicationDate ?? $rows->max('completation_date')->toDateString();
         } else {
             $next = ManualPhase::where('position', '>', $phase->position)->orderBy('position')->firstOrFail();
             $manual->manual_phases_id = $next->id;
@@ -214,14 +254,14 @@ class ManualWorkflow
 
     public function resize(Manual $manual, string $slug, int $count): void
     {
-        if ($count < 2 || $count > ($slug === 'research' ? 6 : 8)) {
+        $field = $slug === 'research' ? 'research_advances' : 'experimentation_advances';
+        if ($count === $manual->$field) {
+            return; // Historical quantities remain intact when editing unrelated metadata.
+        }
+        if ($count < 2 || $count > ($slug === 'research' ? 6 : 5)) {
             throw ValidationException::withMessages([$slug === 'research' ? 'research_advances' : 'experimentation_advances' => 'Cantidad de avances fuera del rango permitido.']);
         }
         $phase = ManualPhase::where('slug', $slug)->firstOrFail();
-        $field = $slug === 'research' ? 'research_advances' : 'experimentation_advances';
-        if ($count === $manual->$field) {
-            return;
-        }
         if ($manual->is_published || $phase->position < $manual->manualPhase->position) {
             throw ValidationException::withMessages([$field => 'Esta fase ya fue superada. No se puede cambiar su configuración desde la edición general.']);
         }

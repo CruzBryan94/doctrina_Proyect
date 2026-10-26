@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Manual;
+use App\Models\ManualPhase;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -41,14 +43,21 @@ class ManualRequest extends FormRequest
 
     public function rules(): array
     {
+        $manual = $this->route('id') ? Manual::with('manualPhase')->find($this->route('id')) : null;
+        $legacyCount = $manual && $manual->experimentation_advances > 5 && ($manual->is_published || $manual->manualPhase->position > ManualPhase::where('slug', 'experimentation')->value('position'));
+
         return [
             'manual_name' => ['required', 'string', 'max:250'],
+            'classification' => [$this->route('id') ? 'sometimes' : 'required', Rule::in(array_keys(\App\Models\Manual::CLASSIFICATIONS))],
+            'entry_phase' => [$this->route('id') ? 'prohibited' : 'sometimes', Rule::in(['planning', 'research', 'experimentation', 'edition', 'cgft', 'published'])],
+            'phase_started_on' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'before_or_equal:today', Rule::when($this->filled('process_started_on'), 'after_or_equal:process_started_on')],
+            'published_on' => [$this->input('entry_phase') === 'published' ? 'required' : 'sometimes', 'date_format:Y-m-d'],
             'observations' => ['nullable', 'string', 'max:255'],
             'doctrinal_map_id' => ['required', 'integer', 'exists:doctrinal_maps,id'],
             'manual_types_id' => ['required', 'integer', Rule::exists('manual_types', 'id')->where('doctrinal_map_id', $this->input('doctrinal_map_id'))],
             'research_advances' => ['required', 'integer', 'between:2,6'],
-            'experimentation_advances' => ['required', 'integer', 'between:2,8'],
-            'process_started_on' => [$this->route('id') ? 'sometimes' : 'required', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'experimentation_advances' => ['required', 'integer', $legacyCount ? Rule::in([$manual->experimentation_advances]) : 'between:2,5'],
+            'process_started_on' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
             'version' => [$this->route('id') ? 'required' : 'sometimes', 'integer', 'min:0'],
             'members' => ['sometimes', 'array:1,2,3,4'],
             'members.*' => ['array'],

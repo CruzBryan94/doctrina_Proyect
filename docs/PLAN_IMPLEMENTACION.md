@@ -1,6 +1,6 @@
 # ARTEMIS — plan modular de implementación
 
-Versión: 24 de octubre de 2026. Basado en [REQUERIMIENTOS](REQUERIMIENTOS.md) y [AGENTS.MD](../AGENTS.MD). **Solo la tarea 01 está autorizada en esta entrega. Las demás quedan pendientes y bloqueadas hasta autorización expresa de implementación.**
+Versión: 24 de octubre de 2026. Basado en [REQUERIMIENTOS](REQUERIMIENTOS.md) y [AGENTS.MD](../AGENTS.MD). **Implementación autónoma autorizada por el usuario el 24/10/2026. La restricción documental anterior queda sustituida para esta ejecución; se mantienen las restricciones de datos y migraciones. Estado actualizado al final del documento.**
 
 ## 1. Convenciones y condiciones de trabajo
 
@@ -145,3 +145,60 @@ Por entrega registrar: IDs, archivos, regla cumplida, migración/copia/respaldo 
 Tareas M delegables posteriormente: 24 y subcomponentes cerrados de 14/19/25/28/30/36. Tareas I pueden delegarse con contrato y revisión; tareas A y decisiones de seguridad/datos requieren razonamiento avanzado. Si una tarea M descubre cambio de schema, permisos, fechas o negocio, detener esa ampliación y elevarla al responsable, no resolverla por conveniencia visual.
 
 Esta entrega no modifica .gitignore ni fuerza AGENTS.MD al índice. No ejecuta los pasos del plan ni autoriza automáticamente una siguiente etapa.
+
+## 6. Ejecución autónoma 24–25/10/2026 — pausa por reserva de cuota
+
+Autorización: texto ARTEMIS adjunto y mensaje del usuario; varias tareas consecutivas y subagentes permitidos. No se aplicaron migraciones a MySQL ni se modificaron datos existentes. Sin commits, cambios de dependencias o .env. Se conserva aproximadamente el 10 % de reserva; no reanudar automáticamente hasta que el usuario vuelva.
+
+### Estado por tarea
+
+- 02: línea base técnica verificada, 59 pruebas/508 aserciones SQLite memory; esquema definido por migraciones. Pendiente copia/restauración y cobertura física de MySQL. No se certifica despliegue real.
+- 03–05: rol publicados y capacidades separadas, consulta transversal, bloqueo HTTP de sesiones inactivas, clasificación obligatoria en altas y desconocida nullable en existentes. Implementado y probado aisladamente; migraciones pendientes de aplicación autorizada.
+- 06–08: cuarta reunión, Investigación 11+N y Experimentación 2–5, denominadores/matriz y evidencia histórica versionada. Preparado y probado; migración conserva IDs, fechas y archivo, sin aplicación real.
+- 09–12: altas por fase autorizada, antecedentes desconocidos, comités remotos en alta, avance solo fase actual y publicados directos/futuros. Probados; navegador confirmó alta Investigación y ficha. Fecha declarada CGFT añadida al botón; este último control tiene pruebas servidor pero falta recorrido visual completo.
+- 15–16: permanencias efectivas, reingresos y reconstrucción conservadora con comando en modo revisión por defecto. Preparado/probado, reconstrucción real NO ejecutada.
+- 21–23: listado personas paginado, FK grado por id, búsqueda prefijo, CSV revisión e inserción solo nuevos. Pruebas correctas y pantallas inspeccionadas. Pendiente carga CSV completa en navegador y concurrencia física MySQL entre dos conexiones.
+- 26: ficha individual con lectura transversal, enlaces autorizados, participantes y fechas/historia sin notas. Probada e inspeccionada en navegador. Dependencias cosméticas 24/25 no implementadas; reutiliza layout vigente.
+- 27–30: dashboard agregado/paginado, filtros clasificación/mapa/tipo/fase, publicados sin doble CGFT, productividad por permanencia/fecha efectiva, comparación y PDF. Pruebas e inspección navegador correctas. Historia real depende de migración/reconstrucción autorizadas; no se certifican antecedentes ausentes. Ver documentos de verificación por bloque.
+- 13–14, 17–20, 24–25, 31–37: pendientes. No presentar notas, sección de transferidos en matriz, reset local, alta administrativa de cuentas, referencia institucional ni cronograma como implementados.
+
+### Verificación y reanudación
+
+Conjunto de integración observado: 107 pruebas/1021 aserciones correctas; no incluye las pruebas heredadas desconectadas ni certifica suite global. Historia además: 7 pruebas/65 aserciones, conjunto catálogo/workflow/edición/historia 55/641 correcto. Ficha final 10/111 y dashboard/histórico 18/97 correctos. `route:list` muestra39 rutas y `git diff --check` correcto. Sin build por no cambiar fuentes Vite.
+
+Navegador aislado 127.0.0.1:8765 con SQLite propia en storage/app/qa; registros claramente QA. Revisados dashboard móvil/escritorio, filtros/publicado futuro, alta Investigación/selector/guardado, ficha, historial productivo, catálogo/CSV inicial y supervisor Planificación/Edición. Consola sin errores en esas comprobaciones. No equivale a ensayo visual completo de todos los estados. Evidencia específica: DASHBOARD_VERIFICACION.md, PRODUCTIVIDAD_VERIFICACION.md, FICHA_VERIFICACION.md, HISTORIA_VERIFICACION.md, PERSONAS_VERIFICACION.md.
+
+Primero al retomar: revisar diffs y este estado; preparar respaldo verificable y copia MySQL antes de solicitar aplicación de las cuatro nuevas migraciones. No ejecutar `migrate` sobre la base existente sin autorización. Probar adaptación y reconstrucción en copia; después completar verificaciones pendientes y avanzar con notas/matriz o proyecciones según dependencias. Datos desconocidos permanecen desconocidos. Listado exacto de archivos: `git status --short` (cambios sin commit).
+PDF QA: actual2 páginas e histórico1, A4 horizontal renderizados e inspeccionados sin cortes/solapes. Artefactos aislados en storage/app/qa. Se corrigió filtro inclusivo published_on mediante whereDate para timestamps SQLite. Fecha histórica puede mostrar hora00:00:00 (presentación pendiente). Servidor QA detenido al pausar.
+
+## 7. Continuación autorizada 25/10/2026 — ejecución económica
+
+El usuario autorizó aplicar migraciones sin respaldo por tratarse de datos de prueba, con preservación obligatoria de usuario y contraseña admin. Se usa un trabajador GPT-6 Luna Medium por bloque y revisión/integración del agente principal. No se crearon agentes con herencia del contexto completo. No se cargan30.000 registros: benchmark anterior ahora es opt-in `RUN_MEMBER_VOLUME_BENCHMARK=1`.
+
+- Las cuatro migraciones de catálogo/permanencias/clasificación/rol publicados ya se aplicaron en MySQL. Se verificaron antes/después identidad, hash de contraseña, estado y roles admin sin imprimir credenciales. Reconstrucción conservadora aplicada a26 manuales desde eventos, sin inventar fechas desconocidas. La cuenta admin se conserva intacta.
+- 13/14/17 implementadas: notas nullable hasta1000 caracteres por manual/fase, auditoría separada, versión compartida/409, edición por responsable aun transferido; historial contextual y sección plegable/paginada de salidas/reingresos. Migración000008 aplicada MySQL. 8 pruebas/68aserciones; QA navegador guardar/limpiar y auditoría, transferencia por workflow y consulta de fase anterior correctos. Las notas no se cargan en ficha/dashboard/PDF/eventos generales.
+- 33–36 implementadas: duración global1–120meses por fase, inicialmente3, admin activo, auditoría/409, meses calendario, alertas dinámicas coherentes en matriz/dashboard/PDF, cronograma mes/año/horizonte con real/proyectado y ejemplos ante vencimiento; fila sin inicio sinbarras y publicados excluidos. Migración000009 aplicada MySQL. 7pruebas/41aserciones del bloque y DashboardQuery10/54. QA navegador cambió Investigación3→4 en baseQA, recalculó dos manuales sin cambiar inicios y respetó igualdad de plazo. Ver PROYECCION_VERIFICACION.md.
+- Catálogo personas actual pequeño:12 iniciales, se agregó una persona claramente QA para concurrencia CSV en dos procesos MySQL independientes; uno insertó1 y otro omitió1, sin duplicado. Usuarios12 y manuales26 conservados. Para UI se creó SQLite QA separada con10 integrantes y2manuales por fase más1publicado; no es la base habitual.
+- Comprobaciones HTTP sobre MySQL: dashboard, productividad, matriz Investigación, ficha y nota contextual200. ServidorQA propio en127.0.0.1:8765 durante revisión. Restantes bloques funcionales:31/32 en curso;18–20 pendientes;24/25 no se amplían por ser principalmente visuales;37 pendiente de verificación final acotada. No commits ni cambios de dependencias/.env.
+
+### Cierre funcional de la continuación — 25/10/2026
+
+- 18–20: alta/edición administrativa individual, roles acumulables/none, reset local con provisional132456, pantalla obligatoria antes de módulos, nueva clave confirmada, auditoría sin credenciales, preservación de remember_token y sin cierre masivo de sesiones. Migración000011 aplicada MySQL sin cambiar claves existentes. AccountAccessTest final7/61 y caso heredado de roles1/2 correctos. UI creación y pantalla obligatoria inspeccionadas; acceso provisional y URL directa redirigieron correctamente; el guardado de nueva clave se verificó por pruebas automáticas, no mediante navegador.
+- Se detectó una carrera física MySQL al retirar simultáneamente dos roles admin en una base QA separada: ambos cambios inicialmente pasaban. Se corrigió serializando sobre la fila estable del rol admin antes de leer el conjunto. Repetición con dos procesos: uno302 y otro422, exactamente1admin activo conservado. La base habitual nunca participó en esa prueba y su admin pasó verificación de identidad/hash/estado/roles antes y después.
+- 31–32: referencias independientes nullable por mapa, cero distinto de sin configurar, auditoría/versión409 y comparación del alcance completo activo (publicados futuros y actualizaciones incluidos). Migración000010 aplicada MySQL. Pruebas4/20 correctas. QA navegador pasó de sin configurar a referencia13 frente a11 registros de prueba y mostró diferencia−2, sin modificar manuales. La referencia de MySQL habitual permanece sin configurar; no se inventó una cifra institucional.
+- Integración dirigida:142 pruebas,1284 aserciones,1 omitida deliberadamente (benchmark30.000). Las141 restantes correctas. Después del conjunto se verificaron los ajustes de cuentas y mutex con pruebas dirigidas y concurrencia física, sin repetir globales innecesarios.
+- PDF finales: actual e histórico renderizados,1página A4 horizontal cada uno, sin cortes ni solapes. Sentinel de nota excluido de ambos. Ver PDF_VERIFICACION_FINAL.md.
+- Los ocho cambios de esquema de esta entrega están aplicados a MySQL: cuatro anteriores y000008–000011. Se reconstruyó solo historia acreditada por eventos. Datos habituales:13 integrantes (incluye1QA de concurrenciaCSV),12 cuentas y26manuales; no se borraron ni recargaron datos. Fixtures de navegador:10 integrantes y2manuales por fase al crear la base aislada, más1publicado; pruebas de transferencia mueven alguno posteriormente.
+- Pendiente:24/25 adaptación visual integral (fuera de prioridad funcional); completar ensayo manual CSV de carga/revisión/importación y recorrido visual completo del botón de publicación CGFT con fecha declarada; ambos tienen cobertura automática de servidor. La verificación37 está parcialmente cerrada con evidencia dirigida, no certifica rutas heredadas desconectadas ni todos los escenarios manuales. No quedan bloques funcionales principales13–23/26–36 sin implementación según alcance, sujeto a esas limitaciones.
+
+## 8. Unificación visual autorizada — 25/10/2026
+
+Tareas24/25 completadas para las rutas activas: login/registro/cambio obligatorio, bienvenida, navegación, dashboard, matrices y formularios, notas/historial, cronograma, referencias, cuentas, catálogos AdminLTE y PDF. Paleta institucional centralizada, imágenes auténticas verificadas por hash, fuente local coherente, contraste/foco y vista móvil compacta. Bootstrap5 y AdminLTE/Bootstrap4 permanecen separados. Sin generación/edición de imágenes ni cambios de lógica, autenticación, datos o versiones.
+
+Validación:28 pruebas165aserciones dirigidas auth/registro/cuentas/dashboard y2casos8aserciones de roles correctos; compilación Blade/lint/diffcheck correctos; buildVite correcto sin instalar dependencias. QA navegador escritorio/móvil e interacciones de navegación/tablas, y PDF renderizados sin cortes. Corrección de float en logo AdminLTE confirmada por navegación real. DataTables1.10.19 y fuentes resueltos localmente, sin nuevos servicios/CDN. Detalle y límites: UNIFICACION_VISUAL_VERIFICACION.md y PDF_VERIFICACION_FINAL.md.
+
+Los pendientes visuales24/25 anteriores quedan sustituidos por este cierre; permanecen los recorridos manuales generales CSV completo y publicaciónCGFT detallados en sección7, fuera de esta tarea de identidad. La prueba de30.000 personas continúa opt-in. Preview de base habitual en127.0.0.1:8766/login; no cambia credenciales admin.
+
+## 9. Pendientes registrados a solicitud del usuario
+
+Ver TAREAS_PENDIENTES.md como índice de próximas sesiones. Aclaración de estado: la base funcional del dashboard está implementada y la identidad visual24/25 cerrada, pero la tarea28 permanece PARCIAL respecto de gráficos analíticos. Se registraron G01–G08: donas/pasteles de situación y clasificación, barras por fase/mapa, series históricas, interacción con filtros/listado, secciones del dashboard, accesibilidad/offline y validación/exportación. No están implementados y no se inicia código por documentarlos. Se conservan las comprobaciones manuales CSV y publicaciónCGFT y el cierre integrado37.

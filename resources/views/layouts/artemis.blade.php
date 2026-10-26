@@ -16,9 +16,13 @@
     <div class="nav-caption">ESPACIO DE TRABAJO</div>
     <nav aria-label="Navegación principal">
         @can('dashboard.view')<a class="{{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}"><i class="fas fa-chart-pie" aria-hidden="true"></i> Panel general</a>@endcan
+        @can('dashboard.view')<a class="{{ request()->routeIs('dashboard.history') ? 'active' : '' }}" href="{{ route('dashboard.history') }}"><i class="fas fa-history" aria-hidden="true"></i> Productividad histórica</a>@endcan
+        @can('dashboard.view')<a class="{{ request()->routeIs('dashboard.schedule') ? 'active' : '' }}" href="{{ route('dashboard.schedule') }}"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Cronograma</a>@endcan
+        @can('viewAny', App\Models\Manual::class)<a class="{{ request()->routeIs('references.*') ? 'active' : '' }}" href="{{ route('references.index') }}"><i class="fas fa-balance-scale" aria-hidden="true"></i> Consistencia por mapa</a>@endcan
         @can('viewAny', App\Models\Manual::class)<a class="{{ request()->routeIs('manuals.*') ? 'active' : '' }}" href="{{ route('manuals.index') }}"><i class="fas fa-th" aria-hidden="true"></i> Matriz de manuales</a>@endcan
         @can('reports.view')<a href="{{ route('reports.manuals') }}"><i class="fas fa-file-pdf" aria-hidden="true"></i> Descargar reporte</a>@endcan
         @can('users.manage')<div class="nav-caption">ADMINISTRACIÓN</div><a class="{{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}"><i class="fas fa-users" aria-hidden="true"></i> Usuarios y roles</a>@endcan
+        @if(auth()->user()->is_active && auth()->user()->hasRole('admin'))<a class="{{ request()->routeIs('phase-durations.*') ? 'active' : '' }}" href="{{ route('phase-durations.index') }}"><i class="fas fa-clock" aria-hidden="true"></i> Plazos por fase</a>@endif
         @can('catalogs.manage')<a href="{{ route('members.index') }}"><i class="fas fa-user-friends" aria-hidden="true"></i> Miembros de comités</a><a href="{{ route('militaryUnits.index') }}"><i class="fas fa-building" aria-hidden="true"></i> Unidades militares</a>@endcan
     </nav>
     <div class="sidebar-foot"><span class="status-dot"></span> Control del proceso doctrinario<small>Planificar · Investigar · Publicar</small></div>

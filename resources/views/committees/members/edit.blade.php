@@ -13,6 +13,10 @@
 
 @section('content')
 
+    @if ($errors->any())
+        <div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+    @endif
+
     <div class="" id="">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -48,7 +52,7 @@
                             <label for="grades_id">Grado:</label>
                             <select name="grades_id" class="form-control" required>
                                 @foreach ($grades as $grade)
-                                    <option value="{{ $grade->code }}" @selected(old('grades_id', $committeeMember->grades_id) == $grade->code)>
+                                    <option value="{{ $grade->id }}" @selected(old('grades_id', $committeeMember->grades_id) == $grade->id)>
                                         {{ $grade->grade_name }}</option>
                                 @endforeach
                             </select>
@@ -67,7 +71,7 @@
 
                         <div class="p-4 bg-white rounded shadow-sm mx-auto" style="max-width: 400px;">
                             <div class="form-group d-flex justify-content-between">
-                                <a href="{{ route('members.index') }}" class="btn btn-danger m-2">Regresar</a>
+                                <a href="{{ route('members.index') }}" class="btn btn-secondary m-2">Regresar</a>
                                 <button class="btn btn-success m-2" id="saveButton">Guardar Cambios</button>
                             </div>
                         </div>
@@ -76,10 +80,6 @@
             </div>
         </div>
 
-    @stop
-
-    @section('css')
-        <link rel="stylesheet" href="/css/admin_custom.css">
     @stop
 
     @section('js')

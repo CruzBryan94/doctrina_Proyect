@@ -44,7 +44,7 @@ class DoctrineWorkflowTest extends TestCase
         $phase = ManualPhase::where('slug', $slug)->firstOrFail();
         $manual = Manual::create([
             'manual_name' => 'Manual de prueba', 'manual_types_id' => ManualType::first()->id,
-            'manual_phases_id' => $phase->id, 'research_advances' => $advances, 'experimentation_advances' => $advances,
+            'manual_phases_id' => $phase->id, 'research_advances' => $advances, 'experimentation_advances' => min(5, $advances),
             'process_started_on' => today()->subDays(60), 'is_active' => true, 'is_published' => false,
         ]);
         app(ManualWorkflow::class)->configure($manual);
@@ -90,25 +90,29 @@ class DoctrineWorkflowTest extends TestCase
     {
         $this->assertDatabaseCount('manual_phases', 5);
         $this->assertDatabaseCount('doctrinal_maps', 2);
-        $this->assertDatabaseCount('catalog_subphases', 37);
+        $this->assertDatabaseCount('catalog_subphases', 35);
         $this->assertEquals(['planning', 'research', 'experimentation', 'edition', 'cgft'], ManualPhase::orderBy('position')->pluck('slug')->all());
         $this->assertDatabaseHas('catalog_subphases', ['suphase_name' => 'LEGALIZADO']);
         $research = ManualPhase::where('slug', 'research')->first();
         $this->assertSame(array_column(CatalogSubphasesSeeder::researchDefinitions(), 1), $research->catalogSubphases->pluck('suphase_name')->all());
     }
 
-    public function test_research_limit_is_six_while_experimentation_still_accepts_eight(): void
+    public function test_research_limit_is_six_and_experimentation_limit_is_five(): void
     {
         $this->actor();
         $type = ManualType::first();
-        $payload = ['manual_name' => 'Límites por fase', 'doctrinal_map_id' => $type->doctrinal_map_id, 'manual_types_id' => $type->id, 'research_advances' => 7, 'experimentation_advances' => 8, 'process_started_on' => today()->toDateString()];
+        $payload = ['classification' => 'generated', 'manual_name' => 'Límites por fase', 'doctrinal_map_id' => $type->doctrinal_map_id, 'manual_types_id' => $type->id, 'research_advances' => 7, 'experimentation_advances' => 5, 'process_started_on' => today()->toDateString()];
         $this->postJson(route('manuals.store'), $payload)->assertUnprocessable()->assertJsonValidationErrors('research_advances');
         $payload['research_advances'] = 6;
         $this->post(route('manuals.store'), $payload)->assertRedirect()->assertSessionHasNoErrors();
         $manual = Manual::first()->load(ManualWorkflow::RELATIONS);
         $this->assertSame(6, $manual->research_advances);
-        $this->assertSame(8, $manual->experimentation_advances);
-        $this->assertCount(37, $manual->manualPhaseSuphases);
+        $this->assertSame(5, $manual->experimentation_advances);
+        $this->assertCount(35, $manual->manualPhaseSuphases);
+        foreach ([1, 6, 8] as $invalid) {
+            $payload['experimentation_advances'] = $invalid;
+            $this->postJson(route('manuals.store'), $payload)->assertUnprocessable()->assertJsonValidationErrors('experimentation_advances');
+        }
     }
 
     public function test_research_data_migration_preserves_ids_dates_and_other_phases_and_caps_test_data(): void
@@ -140,7 +144,7 @@ class DoctrineWorkflowTest extends TestCase
         $migration = require database_path('migrations/2026_10_21_000002_correct_research_activities.php');
         $migration->up();
         $this->assertDatabaseCount('manuals', 2);
-        $this->assertDatabaseCount('catalog_subphases', 37);
+        $this->assertDatabaseCount('catalog_subphases', 35);
         $this->assertEquals($users, User::orderBy('id')->get()->toArray());
         $this->assertEquals($otherRows, \App\Models\ManualPhaseSuphase::where('manual_phases_id', '!=', $researchId)->orderBy('id')->get()->toArray());
         $this->assertDatabaseHas('manual_phase_suphases', ['id' => $kept->id, 'catalog_subphases_id' => $keptId, 'is_completed' => true, 'completation_date' => $kept->getRawOriginal('completation_date')]);
@@ -150,7 +154,7 @@ class DoctrineWorkflowTest extends TestCase
             $this->assertSame(6, $manual->research_advances);
             $this->assertSame(1, $manual->lock_version);
             $rows = $manual->manualPhaseSuphases->where('manual_phases_id', $researchId);
-            $this->assertCount(16, $rows);
+            $this->assertCount(17, $rows);
             $this->assertFalse($rows->contains(fn ($row) => $row->catalogSubphase->advance_number > 6));
             $added = $rows->filter(fn ($row) => in_array($row->catalogSubphase->activity_key, $newKeys));
             $this->assertCount(4, $added);
@@ -181,15 +185,15 @@ class DoctrineWorkflowTest extends TestCase
         $this->actor(['planificador']);
         $type = ManualType::first();
         $this->post(route('manuals.store'), [
-            'manual_name' => 'Nuevo manual', 'doctrinal_map_id' => $type->doctrinal_map_id,
-            'manual_types_id' => $type->id, 'research_advances' => 2, 'experimentation_advances' => 8,
+            'classification' => 'generated', 'manual_name' => 'Nuevo manual', 'doctrinal_map_id' => $type->doctrinal_map_id,
+            'manual_types_id' => $type->id, 'research_advances' => 2, 'experimentation_advances' => 5,
             'process_started_on' => today()->toDateString(),
-        ])->assertRedirect(route('manuals.index', ['phase' => 'planning']));
+        ])->assertRedirect(route('manuals.index', ['phase' => 'planning', 'published' => 0]));
         $manual = Manual::first()->load(ManualWorkflow::RELATIONS);
         $this->assertSame('planning', $manual->manualPhase->slug);
         $this->assertEquals(0, $manual->progress());
         $this->assertCount(0, $manual->manualCommitteeMembers);
-        $this->assertCount(33, $manual->manualPhaseSuphases);
+        $this->assertCount(31, $manual->manualPhaseSuphases);
     }
 
     public function test_wrong_map_and_invalid_advance_quantities_are_rejected(): void
@@ -223,7 +227,7 @@ class DoctrineWorkflowTest extends TestCase
         $this->actor(['planificador', 'investigador']);
         $this->get(route('manuals.index', ['phase' => 'research']))->assertOk()->assertSee('Manual de prueba');
         $this->activity($manual)->assertOk();
-        $this->get(route('manuals.index', ['phase' => 'edition']))->assertForbidden();
+        $this->get(route('manuals.index', ['phase' => 'edition']))->assertOk();
         $this->actor(['supervisor']);
         $this->activity($manual->fresh()->load(ManualWorkflow::RELATIONS))->assertForbidden();
         $this->get(route('manuals.editOneManual', $manual->id))->assertForbidden();
@@ -411,8 +415,8 @@ class DoctrineWorkflowTest extends TestCase
         $this->put(route('manuals.updateOneManual', $manual->id), $payload)->assertRedirect()->assertSessionHasNoErrors();
         $manual = $manual->fresh()->load(ManualWorkflow::RELATIONS);
         $this->assertSame('research', $manual->manualPhase->slug);
-        $this->assertEquals(14, $manual->manualPhaseSuphases->where('manual_phases_id', $manual->manual_phases_id)->count());
-        $this->assertEquals(7.14, $manual->progress());
+        $this->assertEquals(15, $manual->manualPhaseSuphases->where('manual_phases_id', $manual->manual_phases_id)->count());
+        $this->assertEquals(6.67, $manual->progress());
         $this->assertEquals(1, $manual->manualPhaseSuphases->where('manual_phases_id', $manual->manual_phases_id)->where('is_completed', true)->count());
     }
 

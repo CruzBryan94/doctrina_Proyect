@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Manual extends Model
 {
-    protected $fillable = ['manual_types_id', 'manual_name', 'manual_phases_id', 'code', 'observations', 'publication_year', 'is_published', 'is_active', 'research_advances', 'experimentation_advances', 'process_started_on', 'research_started_on', 'published_on'];
+    public const CLASSIFICATIONS = ['generated' => 'Generado', 'update' => 'Actualización'];
+    protected $fillable = ['classification', 'manual_types_id', 'manual_name', 'manual_phases_id', 'code', 'observations', 'publication_year', 'is_published', 'is_active', 'research_advances', 'experimentation_advances', 'process_started_on', 'research_started_on', 'published_on'];
 
     protected $casts = [
         'is_published' => 'boolean', 'is_active' => 'boolean', 'manual_phases_id' => 'integer',
@@ -67,9 +68,11 @@ class Manual extends Model
     {
         $edition = $slug === 'edition' ? $this->manualPhaseSuphases->first(fn ($row) => $row->catalogSubphase->manualPhase->slug === 'edition') : null;
         $legacyEdition = $edition && $this->phaseStates->firstWhere('manual_phase_id', $edition->manual_phases_id)?->catalog_version === 1;
+        $research = $slug === 'research' ? $this->manualPhaseSuphases->first(fn ($row) => $row->catalogSubphase->manualPhase->slug === 'research') : null;
+        $researchVersion = $research ? $this->phaseStates->firstWhere('manual_phase_id', $research->manual_phases_id)?->catalog_version : null;
 
         return match ($slug) {
-            'planning', 'cgft' => 2, 'research' => 10 + $this->research_advances, 'experimentation' => 6 + $this->experimentation_advances, 'edition' => $legacyEdition ? 6 : 3, default => throw new \LogicException('Fase desconocida')
+            'planning', 'cgft' => 2, 'research' => ($researchVersion >= 3 ? 11 : 10) + $this->research_advances, 'experimentation' => 6 + $this->experimentation_advances, 'edition' => $legacyEdition ? 6 : 3, default => throw new \LogicException('Fase desconocida')
         };
     }
 
@@ -105,15 +108,21 @@ class Manual extends Model
 
     public function timing(): array
     {
-        $end = ($this->published_on ?? today())->copy()->startOfDay();
+        $end = ($this->is_published && $this->published_on && $this->published_on->lte(today()) ? $this->published_on : today())->copy()->startOfDay();
         $start = $this->currentStart();
-        $total = $this->process_started_on ?? $this->created_at;
+        $total = $this->process_started_on;
+        $durationService = app(\App\Services\PhaseDurationService::class);
+        $phaseMonths = $durationService->forPhase($this->manualPhase);
+        $phaseLimit = $start?->copy()->addMonthsNoOverflow($phaseMonths);
+        $researchLimit = $this->research_started_on?->copy()->addYearNoOverflow();
 
         return [
             'total_days' => $total ? (int) $total->copy()->startOfDay()->diffInDays($end) : null,
             'phase_days' => $start ? (int) $start->copy()->startOfDay()->diffInDays($end) : null,
-            'phase_overdue' => ! $this->is_published && $this->manualPhase->slug !== 'planning' && $start && today()->gt($start->copy()->addMonthsNoOverflow(3)),
-            'research_overdue' => ! $this->is_published && $this->manualPhase->slug !== 'planning' && $this->research_started_on && today()->gt($this->research_started_on->copy()->addYearNoOverflow()),
+            'phase_duration_months' => $phaseMonths,
+            'phase_deadline' => $phaseLimit?->toDateString(),
+            'phase_overdue' => ! $this->is_published && $this->manualPhase->slug !== 'planning' && $phaseLimit && today()->gt($phaseLimit),
+            'research_overdue' => ! $this->is_published && $this->manualPhase->slug !== 'planning' && $researchLimit && today()->gt($researchLimit),
         ];
     }
 }

@@ -23,7 +23,7 @@ class ManualController extends Controller
     public function index(Request $request)
     {
         $this->authorize('viewAny', Manual::class);
-        $phases = ManualPhase::whereIn('slug', $request->user()->accessiblePhaseSlugs())->orderBy('position')->get();
+        $phases = ManualPhase::orderBy('position')->get();
         $slug = $request->query('phase', $phases->first()?->slug);
         $phase = $phases->firstWhere('slug', $slug);
         abort_unless($phase, 403);
@@ -39,8 +39,9 @@ class ManualController extends Controller
                 'phaseStates as in_validation' => fn ($q) => $q->where('manual_phase_id', $phase->id)->where('substate', 'validation'),
             ]);
         $expected = match ($phase->slug) {
-            'research' => '10 + research_advances', 'experimentation' => '6 + experimentation_advances', 'edition' => 'CASE WHEN edition_catalog_version = 1 THEN 6 ELSE 3 END', default => '2',
+            'research' => '(CASE WHEN research_catalog_version >= 3 THEN 11 ELSE 10 END) + research_advances', 'experimentation' => '6 + experimentation_advances', 'edition' => 'CASE WHEN edition_catalog_version = 1 THEN 6 ELSE 3 END', default => '2',
         };
+        $summaryQuery->withMax(['phaseStates as research_catalog_version' => fn ($q) => $q->where('manual_phase_id', $phase->id)], 'catalog_version');
         $summary = DB::query()->fromSub($summaryQuery->toBase(), 'matrix_summary')->selectRaw(
             'COUNT(*) as total, COALESCE(SUM(in_development), 0) as development, COALESCE(SUM(in_validation), 0) as validation, '
             .'COALESCE(SUM(CASE WHEN is_published = 0 AND phase_activities = ('.$expected.') AND completed_activities = ('.$expected.') THEN 1 ELSE 0 END), 0) as ready'
@@ -48,37 +49,47 @@ class ManualController extends Controller
         $manuals = $query->orderBy('manual_name')->paginate(20)->withQueryString();
         $activities = $phase->catalogSubphases;
         $maps = DoctrinalMap::with('manualTypes')->get();
+        $transferredVisits = app(\App\Services\TransferredPhaseVisits::class)->paginate($phase, $request);
 
-        return view('manuals.matrix', compact('manuals', 'phase', 'phases', 'activities', 'maps', 'summary'));
+        return view('manuals.matrix', compact('manuals', 'phase', 'phases', 'activities', 'maps', 'summary', 'transferredVisits'));
     }
 
     public function filters($query, Request $request): void
     {
         $query->when($request->filled('q'), fn ($q) => $q->where('manual_name', 'like', '%'.$request->string('q').'%'))
             ->when($request->filled('map'), fn ($q) => $q->whereHas('manualType', fn ($q) => $q->where('doctrinal_map_id', $request->integer('map'))))
-            ->when($request->filled('type'), fn ($q) => $q->where('manual_types_id', $request->integer('type')));
+            ->when($request->filled('type'), fn ($q) => $q->where('manual_types_id', $request->integer('type')))
+            ->when($request->filled('classification'), fn ($q) => $request->query('classification') === 'unknown' ? $q->whereNull('classification') : $q->where('classification', $request->query('classification')));
     }
 
     public function create()
     {
         $this->authorize('create', Manual::class);
 
-        return $this->form(new Manual);
+        $entryPhase = request()->query('entry_phase', auth()->user()->accessiblePhaseSlugs()[0] ?? 'published');
+        $this->authorize('createInPhase', [Manual::class, $entryPhase]);
+
+        return $this->form(new Manual, $entryPhase);
     }
 
     public function edit(int $id)
     {
         $manual = Manual::with(ManualWorkflow::RELATIONS)->findOrFail($id);
-        $this->authorize('update', $manual);
+        $this->authorize('updateMetadata', $manual);
 
         return $this->form($manual);
     }
 
-    private function form(Manual $manual)
+    private function form(Manual $manual, ?string $entryPhase = null)
     {
         $returnTo = $this->returnTo($manual);
         $maps = DoctrinalMap::with('manualTypes')->get();
-        $slug = $manual->exists ? $manual->manualPhase->slug : 'planning';
+        $entryPhase = $manual->exists ? ($manual->is_published ? 'published' : $manual->manualPhase->slug) : $entryPhase;
+        $slug = $entryPhase;
+        $entryPhases = ManualPhase::orderBy('position')->get()->filter(fn ($phase) => Gate::allows('createInPhase', [Manual::class, $phase->slug]))->pluck('phase_name', 'slug')->all();
+        if (Gate::allows('createPublished', Manual::class)) {
+            $entryPhases['published'] = 'Publicado';
+        }
         $committeeTypes = CommitteeType::whereIn('code', match ($slug) {
             'research' => [1, 2], 'experimentation' => [3, 4], default => []
         })->get();
@@ -87,7 +98,16 @@ class ManualController extends Controller
         $members = CommitteeMember::with('grade')->whereIn('id', $memberIds)->orderBy('full_name')->get();
         $units = MilitaryUnit::whereIn('id', $unitIds)->orderBy('unit_name')->get();
 
-        return view('manuals.form', compact('manual', 'maps', 'members', 'units', 'committeeTypes', 'returnTo'));
+        return view('manuals.form', compact('manual', 'maps', 'members', 'units', 'committeeTypes', 'returnTo', 'entryPhase', 'entryPhases'));
+    }
+
+    public function newAssignmentOptions(Request $request)
+    {
+        $phase = $request->query('entry_phase');
+        abort_unless(in_array($phase, ['research', 'experimentation'], true), 422);
+        $this->authorize('createInPhase', [Manual::class, $phase]);
+
+        return $this->searchAssignments($request);
     }
 
     public function assignmentOptions(Request $request, int $id)
@@ -95,6 +115,12 @@ class ManualController extends Controller
         $manual = Manual::with('manualPhase')->findOrFail($id);
         $this->authorize('update', $manual);
         abort_unless(in_array($manual->manualPhase->slug, ['research', 'experimentation'], true), 403);
+
+        return $this->searchAssignments($request);
+    }
+
+    private function searchAssignments(Request $request)
+    {
         $data = $request->validate([
             'kind' => ['required', 'in:members,units'],
             'q' => ['nullable', 'string', 'max:100'],
@@ -103,7 +129,10 @@ class ManualController extends Controller
         $isMember = $data['kind'] === 'members';
         $query = $isMember ? CommitteeMember::with('grade') : MilitaryUnit::query();
         $columns = $isMember ? ['full_name', 'identification'] : ['unit_name', 'unit_acronym'];
-        foreach (preg_split('/\s+/u', trim($data['q'] ?? ''), -1, PREG_SPLIT_NO_EMPTY) as $term) {
+        if ($isMember) {
+            app(\App\Services\MemberDirectory::class)->search($query, $data['q'] ?? '');
+        }
+        foreach ($isMember ? [] : preg_split('/\s+/u', trim($data['q'] ?? ''), -1, PREG_SPLIT_NO_EMPTY) as $term) {
             $query->where(function ($query) use ($columns, $term) {
                 foreach ($columns as $column) {
                     $query->orWhere($column, 'like', '%'.$term.'%');
@@ -150,44 +179,47 @@ class ManualController extends Controller
     {
         $this->authorize('create', Manual::class);
         $data = $request->validated();
-        DB::transaction(function () use ($data, $workflow) {
-            $phase = ManualPhase::where('slug', 'planning')->firstOrFail();
-            $manual = Manual::create(collect($data)->only(['manual_name', 'manual_types_id', 'observations', 'research_advances', 'experimentation_advances', 'process_started_on'])->all() + [
-                'manual_phases_id' => $phase->id, 'is_active' => true, 'is_published' => false,
+        $entryPhase = $data['entry_phase'] ?? 'planning';
+        $this->authorize('createInPhase', [Manual::class, $entryPhase]);
+        $manual = DB::transaction(function () use ($data, $workflow, $entryPhase) {
+            $phase = ManualPhase::where('slug', $entryPhase === 'published' ? 'cgft' : $entryPhase)->firstOrFail();
+            $published = $entryPhase === 'published';
+            $manual = Manual::create(collect($data)->only(['manual_name', 'manual_types_id', 'observations', 'classification', 'research_advances', 'experimentation_advances', 'process_started_on'])->all() + [
+                'manual_phases_id' => $phase->id, 'is_active' => true, 'is_published' => $published,
+                'published_on' => $published ? $data['published_on'] : null,
+                'research_started_on' => $entryPhase === 'research' ? ($data['phase_started_on'] ?? null) : null,
             ]);
-            $workflow->configure($manual);
-            ManualPhaseState::where('manual_id', $manual->id)->where('manual_phase_id', $phase->id)->update(['started_on' => $data['process_started_on']]);
-            $workflow->event($manual, 'created', [], $manual->toArray(), 'Creación en Planificación');
+            if (! $published) {
+                $workflow->configure($manual, true);
+                ManualPhaseState::where('manual_id', $manual->id)->where('manual_phase_id', $phase->id)->update(['started_on' => $data['phase_started_on'] ?? ($entryPhase === 'planning' ? ($data['process_started_on'] ?? null) : null)]);
+                $this->syncAssignments($manual, $data);
+                $manual->load(ManualWorkflow::RELATIONS);
+                $workflow->synchronizeSubstates($manual);
+            } else {
+                abort_if(! empty($data['members']) || ! empty($data['units']), 422, 'El alta de publicados no crea comités anteriores.');
+            }
+            $workflow->event($manual, 'created', [], $manual->toArray(), $published ? 'Incorporación directa de publicado; antecedentes no acreditados.' : 'Incorporación en '.$phase->phase_name.'; antecedentes previos no acreditados.');
+
+            return $manual;
         });
 
-        return redirect()->route('manuals.index', ['phase' => 'planning'])->with('success', 'Manual creado en Planificación, con 0 % de avance.');
+        return redirect()->route('manuals.index', ['phase' => $manual->manualPhase->slug, 'published' => $manual->is_published ? 1 : 0])->with('success', $manual->is_published ? 'Manual publicado incorporado.' : 'Manual creado con 0 % en su fase de incorporación.');
     }
 
     public function update(ManualRequest $request, int $id, ManualWorkflow $workflow)
     {
         $data = $request->validated();
         $manual = DB::transaction(function () use ($data, $id, $workflow) {
-            $manual = $workflow->lock($id, $data['version']);
+            $manual = $workflow->lock($id, $data['version'], 'updateMetadata');
             $before = $manual->toArray();
             foreach (['research' => 'research_advances', 'experimentation' => 'experimentation_advances'] as $slug => $field) {
                 $workflow->resize($manual, $slug, (int) $data[$field]);
             }
-            $manual->fill(collect($data)->only(['manual_name', 'manual_types_id', 'observations'])->all());
-            $slug = $manual->manualPhase->slug;
-            $allowed = match ($slug) {
-                'research' => [1, 2], 'experimentation' => [3, 4], default => []
-            };
-            foreach (['members' => [ManualCommitteeMember::class, 'committee_members_id'], 'units' => [ManualMilitaryUnit::class, 'military_units_id']] as $key => [$class, $foreign]) {
-                foreach ($data[$key] ?? [] as $type => $ids) {
-                    abort_unless(in_array((int) $type, $allowed, true), 422, 'Los comités solo se editan en su fase correspondiente.');
-                    $query = $class::where('manuals_id', $manual->id)->where('committee_type_id', $type);
-                    $current = (clone $query)->pluck($foreign)->all();
-                    $query->whereNotIn($foreign, $ids)->delete();
-                    foreach (array_diff($ids, $current) as $member) {
-                        $class::create(['manuals_id' => $manual->id, 'committee_type_id' => $type, $foreign => $member]);
-                    }
-                }
+            $manual->fill(collect($data)->only(['manual_name', 'manual_types_id', 'observations', 'classification'])->all());
+            if ($manual->is_published && array_key_exists('published_on', $data)) {
+                $manual->published_on = $data['published_on'];
             }
+            $this->syncAssignments($manual, $data);
             $manual->lock_version++;
             $manual->save();
             $workflow->event($manual, 'edited', $before, $manual->fresh()->load(['manualCommitteeMembers', 'manualMilitaryUnits'])->toArray(), 'Edición de datos y comités');
@@ -196,6 +228,24 @@ class ManualController extends Controller
         });
 
         return redirect($this->returnTo($manual))->with('success', 'Manual actualizado. Se conservó el historial de cumplimiento.');
+    }
+
+    private function syncAssignments(Manual $manual, array $data): void
+    {
+        $allowed = $manual->is_published ? [] : match ($manual->manualPhase->slug) {
+            'research' => [1, 2], 'experimentation' => [3, 4], default => []
+        };
+        foreach (['members' => [ManualCommitteeMember::class, 'committee_members_id'], 'units' => [ManualMilitaryUnit::class, 'military_units_id']] as $key => [$class, $foreign]) {
+            foreach ($data[$key] ?? [] as $type => $ids) {
+                abort_unless(in_array((int) $type, $allowed, true), 422, 'Los comités solo se editan en su fase correspondiente.');
+                $query = $class::where('manuals_id', $manual->id)->where('committee_type_id', $type);
+                $current = (clone $query)->pluck($foreign)->all();
+                $query->whereNotIn($foreign, $ids)->delete();
+                foreach (array_diff($ids, $current) as $member) {
+                    $class::create(['manuals_id' => $manual->id, 'committee_type_id' => $type, $foreign => $member]);
+                }
+            }
+        }
     }
 
     public function activity(Request $request, int $id, ManualWorkflow $workflow)
@@ -211,6 +261,7 @@ class ManualController extends Controller
             'due_on' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'responsible_user_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
             'reason' => ['nullable', 'string', 'max:255'],
+            'published_on' => ['sometimes', 'date_format:Y-m-d'],
             'confirmed' => ['exclude_unless:action,retreat,advance', 'required', 'accepted'],
         ]);
         $manual = $workflow->change($id, $data);

@@ -25,12 +25,14 @@
         row.dataset.confirming = '1';
         const title = row.querySelector('.manual-title').textContent.trim();
         const published = table.dataset.phase === 'cgft';
+        const publicationDate = row.querySelector('.publication-date');
+        if (published && (!publicationDate?.value || !publicationDate.checkValidity())) { row.dataset.confirming = ''; notice('Registra una fecha de publicación válida.', true); return; }
         try {
             if (await window.ArtemisAlerts.confirm(published
                 ? `Se publicará el manual «${title}». ¿Deseas continuar?`
                 : `El manual «${title}» pasará de ${table.dataset.phaseName} a ${table.dataset.nextPhase}. ¿Deseas continuar?`,
                 published ? 'Confirmar publicación' : 'Confirmar cambio de fase', published ? 'Publicar manual' : 'Cambiar fase')) {
-                save(row, {action:'advance', confirmed:true});
+                save(row, {action:'advance', confirmed:true, ...(published ? {published_on:publicationDate.value} : {})});
             }
         } finally { row.dataset.confirming = ''; }
     };
@@ -104,6 +106,7 @@
                     row.querySelector('.total-days').textContent = data.timing.total_days + ' días';
                     row.querySelector('.timing-cell').classList.toggle('overdue', !!data.timing.phase_overdue);
                     row.querySelector('.phase-alert').hidden = !data.timing.phase_overdue;
+                    if (data.timing.phase_duration_months) row.querySelector('.phase-alert').textContent = `Más de ${data.timing.phase_duration_months} meses en la fase`;
                     row.querySelector('.research-alert').hidden = !data.timing.research_overdue;
                     row.querySelector('.advance').disabled = data.progress < 100 || data.published;
                     if (!cell) notice('Cambios guardados.');

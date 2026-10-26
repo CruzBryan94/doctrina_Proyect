@@ -4,7 +4,7 @@
 
 @section('content_header')
     <div class="artemis-page-title">
-        <span class="artemis-page-kicker">ARTEMIS COMMAND NEXUS · ADMINISTRACIÓN</span>
+        <span class="artemis-page-kicker">ARTEMIS · ADMINISTRACIÓN</span>
         <h1>Miembros de comités</h1>
     </div>
 
@@ -22,17 +22,23 @@
 
 
 @section('content')
-    @php
-        $ord = 1;
-    @endphp
     <div class="card artemis-data-list mt-1">
         <div class="card-body">
             <div class="artemis-list-toolbar">
                 <p class="artemis-list-summary">Consulta los integrantes registrados y su participación en manuales.</p>
+                <a href="{{ route('members.import') }}" class="btn btn-outline-secondary btn-sm">Importar CSV</a>
                 <a href="{{ route('members.newMember') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus-circle" aria-hidden="true"></i> Crear miembro
                 </a>
             </div>
+            <form method="GET" action="{{ route('members.index') }}" class="form-row align-items-end mb-3">
+                <div class="form-group col-md-7 mb-0">
+                    <label for="member-search">Buscar por cédula, apellidos o nombres</label>
+                    <input id="member-search" class="form-control" type="search" name="q" maxlength="100" value="{{ request('q') }}">
+                </div>
+                <div class="col-auto"><button class="btn btn-primary" type="submit">Buscar</button> <a href="{{ route('members.index') }}" class="btn btn-outline-secondary">Limpiar</a></div>
+            </form>
+            <p role="status">{{ $committeeMembers->total() }} integrantes encontrados. Se muestran hasta 25 por página.</p>
             <div class="table-responsive">
             <table id="usersTable" class="table table-bordered table-hover table-sm artemis-data-table">
                 <caption class="sr-only">Miembros de comités registrados, grado, datos de contacto y acciones disponibles.</caption>
@@ -49,10 +55,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($committeeMembers as $i => $dato)
+                    @forelse ($committeeMembers as $i => $dato)
                         <tr>
                             <td class="text-center align-middle">
-                                {{ $i + 1 }}
+                                {{ $committeeMembers->firstItem() + $i }}
                             </td>
                             <td class="text-center align-middle">
                                 {{ $dato->grade }}
@@ -79,42 +85,14 @@
                             </td>
 
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr><td colspan="7" class="text-center">No se encontraron integrantes con estos criterios.</td></tr>
+                    @endforelse
                 </tbody>
             </table>
             </div>
+            {{ $committeeMembers->links('pagination::bootstrap-4') }}
         </div>
     </div>
 
-@stop
-
-@section('js')
-    <script>
-        $(document).ready(function() {
-            // Inicialización de DataTables
-            $('#manualsTable').DataTable({
-                responsive: true,
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json' // Español
-                },
-                ordering: true,
-                paging: true,
-                searching: true
-            });
-        });
-
-        $("#usersTable").dataTable({
-            "paging": true,
-            "ordering": false,
-            "language": {
-                url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/es_es.json'
-            },
-            "searching": true
-        });
-
-        //ELIMINAR MENSAJE DE ERROR
-        setTimeout(function() {
-            $('.alert').alert('close');
-        }, 3000);
-    </script>
 @stop

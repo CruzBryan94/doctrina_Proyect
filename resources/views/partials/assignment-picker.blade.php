@@ -1,5 +1,5 @@
 @php($pickerId=$kind.'-'.$committee->id)
-<div class="assignment-picker" data-kind="{{ $kind }}" data-field="{{ $kind }}[{{ $committee->id }}][]" data-url="{{ route('manuals.assignmentOptions',$manual->id) }}">
+<div class="assignment-picker" data-kind="{{ $kind }}" data-field="{{ $kind }}[{{ $committee->id }}][]" data-url="{{ $manual->exists ? route('manuals.assignmentOptions',$manual->id) : route('manuals.newAssignmentOptions',['entry_phase'=>$entryPhase]) }}">
     <label class="visually-hidden" for="search-{{ $pickerId }}">{{ $kind === 'members' ? 'Buscar integrantes' : 'Buscar unidades' }} de {{ $committee->name }}</label>
     <div class="assignment-search">
         <i class="fas fa-search" aria-hidden="true"></i>

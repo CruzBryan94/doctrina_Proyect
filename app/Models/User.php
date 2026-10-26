@@ -21,6 +21,11 @@ class User extends Authenticatable
         return $this->hasRole('admin') ? array_keys(ManualPhase::ROLES) : array_keys(array_filter(ManualPhase::ROLES, fn ($role) => $this->hasRole($role)));
     }
 
+    public function canConsultManuals(): bool
+    {
+        return $this->is_active && $this->hasAnyRole(array_merge(['admin', 'supervisor', 'publicados'], array_values(ManualPhase::ROLES)));
+    }
+
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     /**
@@ -54,6 +59,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'is_active' => 'boolean',
+        'must_change_password' => 'boolean',
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];

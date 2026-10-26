@@ -23,6 +23,7 @@ class RoleSeeder extends Seeder
         Role::findOrCreate('admin', 'web')->syncPermissions($permissions);
         Role::findOrCreate('none', 'web')->syncPermissions([]);
         Role::findOrCreate('supervisor', 'web')->syncPermissions(['dashboard.view', 'reports.view']);
+        Role::findOrCreate('publicados', 'web')->syncPermissions(['dashboard.view', 'reports.view']);
         foreach (ManualPhase::ROLES as $slug => $role) {
             $grants = ['dashboard.view', 'reports.view', 'manuals.'.$slug];
             if ($slug === 'planning') {

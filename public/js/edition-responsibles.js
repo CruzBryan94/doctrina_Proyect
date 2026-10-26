@@ -1,5 +1,6 @@
 (() => {
     document.querySelectorAll('.responsible-query').forEach(input => {
+        if (input.disabled) return;
         const cell = input.closest('.edition-cell');
         const select = cell.querySelector('.responsible-select');
         const status = cell.querySelector('.responsible-state');
