@@ -29,6 +29,7 @@
     const setMobileOpen = (open, returnFocus = false) => {
         mobileOpen = open;
         body.classList.toggle('app-sidebar-open', open);
+        sidebar.classList.toggle('app-sidebar-mobile-open', open);
         sidebar.inert = !open;
         sidebar.setAttribute('aria-hidden', String(!open));
         backdrop.hidden = !open;
@@ -54,6 +55,7 @@
 
         mobileOpen = false;
         body.classList.remove('app-sidebar-open');
+        sidebar.classList.remove('app-sidebar-mobile-open');
         backdrop.hidden = true;
         sidebar.inert = false;
         sidebar.setAttribute('aria-hidden', 'false');
