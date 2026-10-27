@@ -2,6 +2,8 @@
 
 Fecha de análisis: 26 de octubre de 2026, America/Guayaquil.
 
+**Verificación posterior del 27/10:** se corrigieron las pruebas heredadas con autorización, sin modificar lógica ni MySQL. Suite completa local: **169 pruebas, 1.419 aserciones, sin fallos/errores y 1 benchmark opt-in omitido**, salida 0. Cambios sin commit/push; falta confirmar CI remoto en el commit que se publique. Las referencias posteriores a 162 pruebas fallidas describen el antecedente inicial. Evidencia y límites: [CI_PRUEBAS_VERIFICACION.md](docs/CI_PRUEBAS_VERIFICACION.md).
+
 Actualización del 27/10/2026: el usuario creó la rama `produccion` y servicios Railway. Autorizó adaptar la validación de arranque, CI y documentación a **`produccion`** y generar el commit local `to-prod1120`, sin push ni despliegue desde Codex. `APP_ENV=production` se conserva como entorno Laravel. La corrección no cambia lógica, datos ni esquema; los estados de preparación del 26/10 siguientes son antecedentes y no certifican la configuración remota actual.
 
 **Estado actualizado: infraestructura y CI preparados localmente; activación externa y despliegue pendientes.** La primera entrega fue exclusivamente de análisis. En la segunda fase autorizada se añadieron Docker, CI y documentación; se ejecutaron pruebas únicamente sobre SQLite aislado, validación de cachés en directorios aislados y compilación frontend en una copia temporal. No se modificaron lógica de negocio, dependencias/lockfiles, tablas ni datos existentes. No se crearon ramas, commits, servicios o despliegues. La suite completa presenta fallos heredados que bloquean CI; no se considera aprobada.

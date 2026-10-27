@@ -2,13 +2,15 @@
 
 Actualización: 27 de octubre de 2026. Flujo objetivo: **`dev → Pull Request → produccion → Railway`**.
 
+**Verificación posterior del 27/10:** las pruebas heredadas se actualizaron con autorización, sin modificar aplicación ni MySQL. La suite completa local ahora pasa: **169 pruebas, 1.419 aserciones, sin fallos/errores y 1 benchmark opt-in omitido** (salida 0). Cambios sin commit/push; GitHub Actions debe volver a pasar en el commit que se publique. Ver [CI_PRUEBAS_VERIFICACION.md](docs/CI_PRUEBAS_VERIFICACION.md). Las cifras de 162 pruebas fallidas que siguen en esta guía son el antecedente de la preparación inicial, no el resultado actual.
+
 ## Estado y límites actuales
 
 La rama **`produccion` ya existe** localmente y en las referencias de origin; también existen `devDoctrina` y `main`, mientras `dev` sigue pendiente. El repositorio de origen es `CruzBryan94/doctrina_Proyect`; su raíz contiene `artisan`. El 27/10 el usuario autorizó adaptar infraestructura/documentación al nombre `produccion` y generar en esa rama el commit local `to-prod1120`, sin push ni despliegue desde Codex. Esta excepción explícita no cambia el flujo ordinario de PR ni autoriza publicaciones futuras.
 
 El usuario ya creó servicios Railway. En las capturas MySQL informa `ready for connections` y el servicio web rechaza el arranque porque antes exigía la rama literal `production`. El script y el workflow se ajustaron para exigir `produccion`; **`APP_ENV=production` conserva su valor Laravel**, independiente del nombre Git. En Railway se debe comprobar que la rama vinculada sea `produccion` y que no se haya definido manualmente `RAILWAY_GIT_BRANCH`. No se cambiaron ajustes remotos durante esta corrección.
 
-La suite completa tiene incidencias heredadas: **162 tests, 1.326 aserciones, 16 fallos, 2 errores y 1 omisión**. No puede aprobarse aún una liberación. El CI mantiene esos fallos visibles y bloqueantes; no excluye clases para dar verde. Las expectativas de email/perfil/confirmación/reset scaffold requieren mantenimiento revisado contra las rutas actuales, sin habilitar funcionalidades retiradas solo para pasar tests. Este trabajo no modificó esas pruebas ni la lógica del sistema. El benchmark opt-in de 30.000 personas permanece omitido por defecto y no equivale a una prueba fallida.
+La preparación inicial tuvo incidencias heredadas: **162 tests, 1.326 aserciones, 16 fallos, 2 errores y 1 omisión**. Se corrigieron las expectativas de email/perfil/confirmación/reset scaffold en la verificación posterior indicada arriba, sin habilitar funcionalidades retiradas ni excluir clases. El benchmark opt-in de 30.000 personas permanece omitido por defecto y no equivale a una prueba fallida. La aprobación remota de CI y los requisitos operativos de liberación continúan siendo necesarios.
 
 La imagen Linux tampoco pudo verificarse: se inició temporalmente Docker Desktop, pero el build falló antes de descargar imágenes por un error DNS del motor al resolver `registry-1.docker.io`. No se cambió la configuración de red del equipo. Los jobs remotos, reglas de GitHub y ajustes Railway están pendientes. Usar esta guía junto con [RAILWAY_DEPLOYMENT_PLAN.md](RAILWAY_DEPLOYMENT_PLAN.md); no activar Autodeploy antes de completar los pendientes.
 
