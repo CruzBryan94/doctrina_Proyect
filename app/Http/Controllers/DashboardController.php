@@ -15,7 +15,7 @@ class DashboardController extends Controller
         $request->validate([
             'q' => ['nullable', 'string', 'max:250'], 'map' => ['nullable', 'integer'],
             'type' => ['nullable', 'integer'],
-            'phase' => ['nullable', 'in:planning,research,experimentation,edition,cgft,published'],
+            'phase' => ['nullable', 'in:planning,research,experimentation,edition,cgft,published,process'],
             'classification' => ['nullable', 'in:generated,update,unknown'],
         ]);
         $source = app(DashboardQuery::class);

@@ -15,3 +15,7 @@ php -d extension=C:\Users\Bryan\scoop\apps\php8.3\current\ext\php_pdo_sqlite.dll
 ```
 
 La migración no debe probarse contra datos reales en esta verificación.
+
+## Actualización de integración — 26/10/2026
+
+La concurrencia que quedó pendiente en esta nota se repitió en el esquema MySQL QA separado: dos demociones simultáneas devolvieron una respuesta302 y otra422, con exactamente un administrador activo conservado. La firma de identidad/credencial/estado/roles del administrador habitual coincide con la línea base guardada; ver `INTEGRACION_VERIFICACION.md`. No se ejecutaron cambios de cuenta durante esta comprobación.

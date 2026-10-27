@@ -30,6 +30,8 @@ class DashboardQuery
 
         if ($request->query('phase') === 'published') {
             $query->where('is_published', true);
+        } elseif ($request->query('phase') === 'process') {
+            $query->where('is_published', false);
         } elseif ($request->filled('phase')) {
             $query->where('is_published', false)
                 ->whereHas('manualPhase', fn ($q) => $q->where('slug', $request->query('phase')));

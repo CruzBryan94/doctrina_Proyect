@@ -24,6 +24,7 @@ class HistoricalDashboardController extends Controller
         $source = app(ManualProductivity::class);
         $period = $source->periods($filters);
         $summary = $source->summary($filters, $period['from'], $period['to']);
+        $monthlySeries = $source->monthlySeries($filters, $period['from'], $period['to']);
         $comparison = $source->summary($filters, $period['previous_from'], $period['previous_to']);
         $coverage = $source->coverage($filters);
         $metric = $filters['metric'] ?? 'publications';
@@ -33,7 +34,7 @@ class HistoricalDashboardController extends Controller
         $maps = DoctrinalMap::with('manualTypes')->get();
         $phases = ManualPhase::orderBy('position')->get();
 
-        return compact('filters', 'period', 'summary', 'comparison', 'coverage', 'metric', 'selectedPhase', 'manuals', 'maps', 'phases');
+        return compact('filters', 'period', 'summary', 'monthlySeries', 'comparison', 'coverage', 'metric', 'selectedPhase', 'manuals', 'maps', 'phases');
     }
 
     public function index(Request $request)

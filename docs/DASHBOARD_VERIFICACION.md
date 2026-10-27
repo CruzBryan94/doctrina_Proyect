@@ -30,6 +30,6 @@ Pendiente de integración por el agente principal: comprobación visual de naveg
 
 No se inventan permanencias históricas, productividad anual, referencia institucional ni proyecciones. Las tareas 29/31/32/33–36 permanecen fuera de este bloque. La clasificación requiere la migración aditiva preparada por el agente principal; no se ejecuta sobre datos existentes desde esta tarea. No se afirma rendimiento de PDF con exportaciones masivas ni verificación visual final mientras no exista evidencia correspondiente.
 
-## Aclaración vigente — 25/10/2026
+## Aclaración histórica — 25/10/2026 (superada el26/10/2026)
 
-Las migraciones, comprobaciones visuales y otros módulos descritos como pendientes en la evidencia inicial se completaron posteriormente; consultar PLAN_IMPLEMENTACION.md. No obstante, el dashboard analítico NO está cerrado: hay tarjetas y barras simples por mapa, pero faltan pasteles/donas, barras comparativas completas y series históricas gráficas. La tarea28 queda parcial en este aspecto. El trabajo futuro está registrado en TAREAS_PENDIENTES.md, G01–G08. Esta actualización es documental, sin cambios de código ni ejecución de pruebas.
+Al cierre del25/10/2026, las donas, barras comparativas y series gráficas aún se consideraban pendientes; esa observación fue correcta para esa fecha, pero no es el estado vigente. Las ocho tareas G01–G08 se implementaron y verificaron el26/10/2026 según la sección10 de `PLAN_IMPLEMENTACION.md` y la matriz integrada en `INTEGRACION_VERIFICACION.md`.

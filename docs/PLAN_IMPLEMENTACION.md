@@ -121,7 +121,7 @@ Delegar después de autorizar implementación, con entradas/salidas, archivos as
 
 | ID | Tarea | Reglas | Pr. | Dep. | Nivel | Criterio de aceptación |
 | --- | --- | --- | --- | --- | --- | --- |
-| 37 | Validar integración y actualizar evidencia documental. | R01–R18 | P1 | 10,14,17,19,20,23,26,28,30,32,36 | A | Matriz de roles/URL/concurrencia, conteos, historia, reset, proyección y preservación de datos verificada; sin notas filtradas; migraciones probadas en copia; pruebas fallidas heredadas diferenciadas; estados E/P/N actualizados solo con evidencia. |
+| 37 | **Completada (26/10/2026)** — Validar integración y actualizar evidencia documental. | R01–R18 | P1 | 10,14,17,19,20,23,26,28,30,32,36 | Matriz representativa de roles/URL/concurrencia, conteos, historia, reset, proyección y preservación verificada; notas excluidas; migraciones verificadas por módulo/aislamiento; pruebas heredadas fallidas diferenciadas; estados E/P/N respaldados por evidencia. Ver INTEGRACION_VERIFICACION.md. |
 
 ## 4. Casos transversales de aceptación
 
@@ -201,4 +201,24 @@ Los pendientes visuales24/25 anteriores quedan sustituidos por este cierre; perm
 
 ## 9. Pendientes registrados a solicitud del usuario
 
-Ver TAREAS_PENDIENTES.md como índice de próximas sesiones. Aclaración de estado: la base funcional del dashboard está implementada y la identidad visual24/25 cerrada, pero la tarea28 permanece PARCIAL respecto de gráficos analíticos. Se registraron G01–G08: donas/pasteles de situación y clasificación, barras por fase/mapa, series históricas, interacción con filtros/listado, secciones del dashboard, accesibilidad/offline y validación/exportación. No están implementados y no se inicia código por documentarlos. Se conservan las comprobaciones manuales CSV y publicaciónCGFT y el cierre integrado37.
+Ver TAREAS_PENDIENTES.md como índice vigente. En esta fecha se registraron G01–G08; ya se implementaron y verificaron según sección10. Permanecen recorridos manuales CSV/publicaciónCGFT y cierre integrado37.
+
+## 10. Gráficos interactivos del dashboard — 26/10/2026
+
+G01–G08 implementados: donas de situación/clasificación, barras por fase/mapa, serie mensual de publicaciones y envíos CGFT con fecha contractual, enlaces a listados filtrados y navegación común de cuatro secciones. Filtro `phase=process` permite consultar toda la población en proceso. Los gráficos son SVG/HTML locales, con tabla alternativa mensual, foco/teclado, cifras y estados cero; no añaden dependencias ni CDN. No se añadieron gráficos al PDF.
+
+Validación completada: 19 pruebas dirigidas/113 aserciones; `php -l`, `node --check`, build Vite y `git diff --check` correctos. Recorrido live con27 manuales activos: donas22/5, distribución por clasificación/fase/mapa, combinación de filtros y reinicio de página, clic mensual Abril2026 que abre1 publicación; selección anual2026 y2027. Navegación Proyección/Consistencia correcta. Inspección visual1280×900 y390×844; enlaces SVG activados por teclado, leyendas por clic, cero resultados y consola sin errores. No se alteró la base. Como no había publicación futura live, esa marca se validó en fixture aislada. La tarea28 se considera implementada; la verificación37 sigue parcial por los recorridos restantes.
+
+## 11. Recorridos manuales CSV y publicación CGFT — 26/10/2026
+
+- CSV completado en navegador sobre copia SQLite desechable: revisión de cinco filas (una nueva, una existente, una duplicada y dos con error); la importación insertó solo la nueva y el resumen concordó. Copia habitual y MySQL intactos; base y cuenta temporal retiradas.
+- Publicación CGFT completada en navegador sobre copia SQLite desechable: manual QA aislado 04 publicado con fecha declarada pasada (25/10/2026) y QA Manual aislado 09 con fecha futura (26/10/2027), mediante botón y confirmación explícitos. Ficha, dashboard, consultas históricas 2026/2027 y PDF de consolidado e histórico revisados. La fecha futura permanece señalada en todos los informes aplicables; ambas exportaciones A4 horizontales de una página se renderizaron sin defectos visibles.
+- Las dos copias de QA y la cuenta temporal se retiraron tras la revisión. MySQL y la copia original de QA no se modificaron. En ese momento la tarea37 aún permanecía pendiente; su cierre posterior está documentado en la sección12.
+
+## 12. Cierre de verificación integrada 37 — 26/10/2026
+
+Tarea37 completada con alcance delimitado y estados actuales E/P/N consolidados en `INTEGRACION_VERIFICACION.md`. La suite Feature amplia (161 pruebas) produjo142 correctas,16 fallidas,2 errores y1 omitida. Las18 incidencias se atribuyeron a pruebas scaffold de email verification, password confirmation/reset/update, profile y raíz que esperan rutas desconectadas del ARTEMIS vigente; no se habilitaron esas rutas para ajustar fixtures. La suite ARTEMIS pertinente (137 pruebas) pasó con1 omisión opt-in del benchmark; 1.283 aserciones.
+
+En solo lectura, `migrate:status` confirmó31 migraciones `Ran`; ocho rutas principales autenticadas devolvieron200 y se comparó la firma del único administrador activo con la línea base sin imprimir credenciales: correo, nombre, hash, estado y roles coinciden. Se observaron13 integrantes,12 cuentas y28 manuales (la fotografía anterior del25/10 registraba26). Las pruebas PHPUnit forzaron SQLite en memoria; no se ejecutaron escrituras MySQL, migraciones nuevas, seeders ni benchmark en esta tarea.
+
+La matriz de roles y URLs se respalda con pruebas directas para invitados, none, supervisor, roles funcionales, responsable, administrador inactivo, permiso directo sin rol y cuenta de cambio obligatorio. La concurrencia CSV y de último administrador ya se había reproducido en esquemas MySQL QA separados. Notas excluidas de ficha/historial general/dashboard/PDF. R09 y R17 quedan marcados P por las lagunas históricas y la cobertura física no exhaustiva; no quedan tareas funcionales aprobadas N dentro del alcance acordado. Las 18 pruebas scaffold y los límites históricos se mantienen documentados, sin ocultarlos ni convertirlos en regresiones de rutas activas.

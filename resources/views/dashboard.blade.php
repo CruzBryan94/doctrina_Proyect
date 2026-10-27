@@ -2,6 +2,7 @@
 @section('title', 'Panel general')
 @section('content')
 <div class="page-heading"><div><div class="eyebrow">Situación actual</div><h1>Control de generación de doctrina</h1><p class="page-subtitle">Manuales activos por fase y mapa. Los publicados se cuentan por separado.</p></div><a class="btn btn-outline-success" href="{{ route('reports.manuals',request()->except('page')) }}"><i class="fas fa-download" aria-hidden="true"></i> Exportar selección a PDF</a></div>
+@include('partials.dashboard-tabs')
 <div class="panel">
 @include('partials.filters',['action'=>route('dashboard'),'matrix'=>false])
 </div>
@@ -13,14 +14,46 @@
 <a class="metric text-decoration-none" href="{{ route('dashboard',array_merge(request()->except('page'),['phase'=>'published'])) }}" aria-label="Consultar publicados con los filtros actuales"><div class="label">PUBLICADOS</div><div class="value">{{ $published }}</div><span>{{ $total ? number_format(100*$published/$total,1,',','.') : '0,0' }} % de la selección</span></a>
 </div>
 @if($overdue)<div class="status-banner"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> <strong>{{ $overdue }} manuales de esta selección requieren atención.</strong> Superaron la duración global configurada de su fase o un año calendario desde el inicio de Investigación. Planificación no genera alertas de plazo.</div>@endif
-<div class="panel"><div class="panel-heading"><h2>Clasificación de procesos</h2><span class="badge-soft">Mismo alcance de la selección</span></div><div class="panel-body d-flex gap-3 flex-wrap">
-@foreach(App\Models\Manual::CLASSIFICATIONS + ['unknown'=>'Sin información'] as $value=>$label)<a href="{{ route('dashboard',array_merge(request()->except('page'),['classification'=>$value])) }}">{{ $label }}: <strong>{{ $classificationCounts[$value] ?? 0 }}</strong></a>@endforeach
-</div></div>
-<div class="panel"><div class="panel-heading"><h2>Distribución por mapa</h2><span class="badge-soft">Porcentaje del total filtrado: {{ $total }}</span></div><div class="panel-body">
-@foreach($maps as $map)@php($quantity=(int)($mapCounts[$map->id] ?? 0))
-<div class="mb-3"><a href="{{ route('dashboard',array_merge(request()->except('page'),['map'=>$map->id,'type'=>''])) }}">{{ $map->name }} · <strong>{{ $quantity }}</strong> ({{ $total ? number_format(100*$quantity/$total,1,',','.') : '0,0' }} %)</a><div class="progress-track" role="progressbar" aria-label="{{ $map->name }}" aria-valuemin="0" aria-valuemax="{{ $total ?: 1 }}" aria-valuenow="{{ $quantity }}"><span style="width:{{ $total ? 100*$quantity/$total : 0 }}%"></span></div></div>
-@endforeach
-</div></div>
+@php
+    $baseFilters = request()->except('page');
+    $chartRows = [
+        'situation' => [
+            ['key' => 'process', 'label' => 'En proceso', 'value' => (int) $inProcess, 'color' => '#29445C', 'url' => route('dashboard', array_merge($baseFilters, ['phase' => 'process']))],
+            ['key' => 'published', 'label' => 'Publicados', 'value' => (int) $published, 'color' => '#00A7B5', 'url' => route('dashboard', array_merge($baseFilters, ['phase' => 'published']))],
+        ],
+        'classification' => collect(App\Models\Manual::CLASSIFICATIONS + ['unknown' => 'Sin información'])->map(fn ($label, $key) => [
+            'key' => $key, 'label' => $label, 'value' => (int) ($classificationCounts[$key] ?? 0),
+            'color' => ['generated' => '#29445C', 'update' => '#00A7B5', 'unknown' => '#D8A64B'][$key],
+            'url' => route('dashboard', array_merge($baseFilters, ['classification' => $key])),
+        ])->values()->all(),
+        'phases' => $phases->map(fn ($phase, $index) => [
+            'key' => $phase->slug, 'label' => $phase->phase_name, 'value' => (int) ($counts[$phase->slug] ?? 0),
+            'color' => ['#29445C', '#00A7B5', '#D8A64B', '#B52C39', '#152438'][$index % 5],
+            'url' => route('dashboard', array_merge($baseFilters, ['phase' => $phase->slug])),
+        ])->push(['key' => 'published', 'label' => 'Publicados', 'value' => (int) $published, 'color' => '#697B8C', 'url' => route('dashboard', array_merge($baseFilters, ['phase' => 'published']))])->values()->all(),
+        'maps' => $maps->map(fn ($map, $index) => [
+            'key' => (string) $map->id, 'label' => $map->name, 'value' => (int) ($mapCounts[$map->id] ?? 0),
+            'color' => ['#29445C', '#00A7B5', '#D8A64B', '#B52C39', '#697B8C'][$index % 5],
+            'url' => route('dashboard', array_merge($baseFilters, ['map' => $map->id, 'type' => ''])),
+        ])->values()->all(),
+    ];
+@endphp
+<section class="dashboard-analytics" aria-label="Gráficos de situación actual">
+    <div class="analytics-grid">
+        <article class="panel chart-panel"><div class="panel-heading"><div><h2>Situación actual</h2><p>En proceso frente a publicados</p></div><span class="badge-soft">{{ $total }} en la selección</span></div><div class="chart-content"><div class="donut-chart" data-donut="situation" aria-label="Gráfico de situación actual"></div><ul class="chart-legend">@foreach($chartRows['situation'] as $item)<li><a href="{{ $item['url'] }}"><span class="legend-swatch" style="--chart-color:{{ $item['color'] }}"></span><span>{{ $item['label'] }}</span><strong>{{ $item['value'] }}</strong><small>{{ $total ? number_format(100*$item['value']/$total,1,',','.') : '0,0' }} %</small></a></li>@endforeach</ul></div><p class="chart-note">Denominador: {{ $total }} manuales activos; las publicaciones futuras se cuentan una sola vez.</p></article>
+        <article class="panel chart-panel"><div class="panel-heading"><div><h2>Clasificación</h2><p>Incluye registros sin información</p></div><span class="badge-soft">{{ $total }} en la selección</span></div><div class="chart-content"><div class="donut-chart" data-donut="classification" aria-label="Gráfico de clasificación"></div><ul class="chart-legend">@foreach($chartRows['classification'] as $item)<li><a href="{{ $item['url'] }}"><span class="legend-swatch" style="--chart-color:{{ $item['color'] }}"></span><span>{{ $item['label'] }}</span><strong>{{ $item['value'] }}</strong><small>{{ $total ? number_format(100*$item['value']/$total,1,',','.') : '0,0' }} %</small></a></li>@endforeach</ul></div><p class="chart-note">La clasificación desconocida permanece visible y no se completa automáticamente.</p></article>
+    </div>
+    <div class="analytics-grid analytics-grid-wide">
+        @foreach(['phases' => 'Manuales por fase', 'maps' => 'Manuales por mapa'] as $series => $heading)
+        <article class="panel chart-panel"><div class="panel-heading"><div><h2>{{ $heading }}</h2><p>{{ $series === 'phases' ? 'Publicados se muestran como categoría independiente' : 'Selecciona una barra para filtrar el mapa' }}</p></div><span class="badge-soft">{{ $total }} en la selección</span></div><div class="bar-chart" role="list" aria-label="{{ $heading }}">
+        @foreach($chartRows[$series] as $item)@php($percent=$total ? 100*$item['value']/$total : 0)
+        <a class="chart-bar-row" role="listitem" href="{{ $item['url'] }}" aria-label="{{ $item['label'] }}: {{ $item['value'] }} de {{ $total }} ({{ number_format($percent,1,',','.') }} por ciento)"><span class="chart-bar-label">{{ $item['label'] }}</span><span class="chart-bar-track"><span class="chart-bar-fill" style="--bar-width:{{ $percent }}%;--chart-color:{{ $item['color'] }}"></span></span><strong>{{ $item['value'] }}</strong><small>{{ number_format($percent,1,',','.') }} %</small></a>
+        @endforeach
+        </div><p class="chart-note">Barras y valores son enlaces accesibles; al filtrar se conservan los demás criterios.</p></article>
+        @endforeach
+    </div>
+    <script type="application/json" id="dashboard-chart-data">@json($chartRows, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT)</script>
+</section>
 <div class="panel"><div class="panel-heading"><h2>Consolidado de manuales</h2><span class="badge-soft">{{ $total }} activos en la selección · {{ now()->format('d/m/Y') }}</span></div>
 <div class="table-responsive"><table class="data-table"><thead><tr><th>Manual / mapa</th><th>Tipo</th><th>Fase</th><th>Actividad pendiente</th><th>Avance de fase</th><th>Tiempo total</th><th>Tiempo en fase</th></tr></thead><tbody>
 @forelse($manuals as $manual)@php($time=$manual->timing())
@@ -37,3 +70,4 @@
 @empty<tr><td colspan="7" class="empty-state">No hay manuales para estos filtros.</td></tr>@endforelse
 </tbody></table></div><div class="panel-body">{{ $manuals->links() }}</div></div>
 @endsection
+@push('scripts')<script src="{{ asset('js/dashboard-charts.js') }}?v={{ filemtime(public_path('js/dashboard-charts.js')) }}" defer></script>@endpush

@@ -46,3 +46,7 @@ El nuevo listado evita la hidratación completa. Las cifras dependen del motor/e
 - Validación visual en navegador a cargo de integración; las vistas ya fueron renderizadas mediante peticiones HTTP en pruebas.
 - Prueba de inserciones simultáneas en dos conexiones MySQL y medición en el volumen real pendientes. Se verificaron el índice único existente, la transacción/rollback y el caso de cambio de base entre revisión y confirmación; no se presenta ese caso como simultaneidad física.
 - No se ejecutaron migraciones en la base existente ni se importaron integrantes reales durante esta implementación.
+
+## Actualización de integración — 26/10/2026
+
+La concurrencia física CSV que esta nota dejaba pendiente se probó después en dos procesos MySQL sobre el esquema QA dedicado: una incorporación insertó1 fila y la otra omitió el duplicado, sin duplicar la persona. El ensayo manual de previsualización/importación se completó en una copia SQLite desechable; la cuenta/copia temporal fue retirada. El benchmark de volumen se conserva opt-in y no se repitió en la tarea37. Ver `INTEGRACION_VERIFICACION.md`.

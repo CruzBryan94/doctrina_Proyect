@@ -5,6 +5,7 @@
     <div><div class="eyebrow">Control estadístico</div><h1>Conciliación institucional</h1>
         <p class="page-subtitle">Compara la referencia registrada con todos los manuales activos del mapa: cinco fases en proceso y publicaciones, incluidas las futuras. Se incluyen Generados y Actualizaciones.</p></div>
 </div>
+@include('partials.dashboard-tabs')
 @foreach($maps as $map)
     @php
         $reference = $references->get($map->id);

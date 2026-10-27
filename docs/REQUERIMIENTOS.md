@@ -1,10 +1,10 @@
 # ARTEMIS — requerimientos confirmados
 
-Versión: 24 de octubre de 2026. Fuente: diagnóstico selectivo, entrevista y propuesta documental aprobada. **Autorización actual: documentación únicamente; implementación pendiente de autorización expresa.**
+Versión base: 24 de octubre de 2026. Fuente: diagnóstico selectivo, entrevista y propuesta documental aprobada. La autorización inicial de solo documentación fue sustituida por la autorización de implementación del24/10/2026; el estado integrado vigente se registra en [INTEGRACION_VERIFICACION.md](INTEGRACION_VERIFICACION.md).
 
 ## 1. Estados y fuentes
 
-**E: existente**, verificado en código/diagnóstico; **P: parcial**, base reutilizable que requiere cambios; **N: nuevo aprobado pendiente**. No certifican ejecución actual de pruebas, cobertura de datos ni esquema físico de MySQL.
+**E: existente**, verificado en código/diagnóstico; **P: parcial**, base reutilizable que requiere cambios; **N: nuevo aprobado pendiente**. La matriz de brechas siguiente es la fotografía de línea base del24/10/2026 y no representa el cierre actual. No certificaba ejecución de pruebas, cobertura de datos ni esquema físico de MySQL; consultar el estado y sus límites en [INTEGRACION_VERIFICACION.md](INTEGRACION_VERIFICACION.md).
 
 [AGENTS.MD](../AGENTS.MD) contiene instrucciones permanentes y [PLAN_IMPLEMENTACION](PLAN_IMPLEMENTACION.md) las tareas. Los IDs R01–R18 enlazan reglas y aceptación. El relato de la entrevista prevalece sobre reglas antiguas; no presentar el objetivo como funcionalidad implementada.
 
@@ -265,8 +265,8 @@ Nombre de manual abre ficha: datos generales/mapa/tipo/clasificación, fase/acti
 - En este equipo pdo_sqlite puede cargarse por proceso con php -d extension=C:\Users\Bryan\scoop\apps\php8.3\current\ext\php_pdo_sqlite.dll vendor/phpunit/phpunit/phpunit. En implementación, checks pertinentes y git diff --check; build solo si corresponde. No se ejecutan en esta etapa.
 - Delegación posterior según PLAN_IMPLEMENTACION; ninguna tarea delegada ni iniciada por documentarla. Código, .gitignore, dependencias/configuración y datos fuera del alcance actual.
 
-## 19. Evidencia y límites
+## 19. Evidencia y límites del diagnóstico original — 24/10/2026
 
 Fuentes adicionales: database/seeders/ManualPhasesSeeder.php, CatalogSubphasesSeeder.php, ManualTypesSeeder.php, RoleSeeder.php; database/migrations; resources/views/manuals, dashboard.blade.php, report/dashboardPDF.blade.php, layouts.artemis/legacy/app; public/js/matrix.js, assignment-picker.js, edition-responsibles.js, alerts.js; config/adminlte.php; MembersController, MilitaryUnitController y UserController.
 
-No certificados aquí: esquema físico/cobertura histórica de MySQL, tiempos con volumen, ejecución actual de pruebas, presentación de nuevas pantallas y restauración de respaldos. Mantener evidencia verificable por entrega; diagnóstico de código no garantiza esos resultados.
+La lista anterior refleja límites al elaborar el diagnóstico original, no el estado actual. Desde entonces se aplicaron/inspeccionaron migraciones en MySQL, se ejecutaron pruebas aisladas y dirigidas, y se verificaron pantallas/PDF; ver resultados, cobertura concreta y límites remanentes en `PLAN_IMPLEMENTACION.md`, `TAREAS_PENDIENTES.md` e `INTEGRACION_VERIFICACION.md`. No se certifican restauraciones de respaldo ni rendimiento del PDF en volúmenes masivos.

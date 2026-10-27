@@ -79,6 +79,22 @@ class DashboardQueryTest extends TestCase
         $this->assertSame(0, $data['counts']->sum());
     }
 
+    public function test_process_filter_and_dashboard_graphs_open_the_matching_active_population(): void
+    {
+        $process = $this->manual('research', ['manual_name' => 'Proceso visible']);
+        $published = $this->manual('cgft', ['manual_name' => 'Publicado futuro', 'is_published' => true, 'published_on' => today()->addYear()]);
+
+        $data = app(DashboardController::class)->data(Request::create('/dashboard', 'GET', ['phase' => 'process']));
+        $this->assertSame([$process->id], $data['manuals']->pluck('id')->all());
+        $this->assertSame(1, $data['total']);
+
+        $this->get(route('dashboard'))
+            ->assertOk()->assertSee('Situación actual')->assertSee('Clasificación')
+            ->assertSee('Manuales por fase')->assertSee('Manuales por mapa')
+            ->assertSee('Publicado futuro')->assertSee('application/json');
+        $this->assertNotSame($process->id, $published->id);
+    }
+
     public function test_name_map_type_filters_are_shared_and_exclude_inactive_rows(): void
     {
         $types = ManualType::get();

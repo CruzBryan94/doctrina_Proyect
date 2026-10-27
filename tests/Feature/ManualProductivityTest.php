@@ -91,6 +91,10 @@ class ManualProductivityTest extends TestCase
         $this->assertSame('2026-03-10', $row->effective_on);
         $this->assertEquals(2, $row->matching_visits);
         $this->assertSame(0, $this->source()->summary([], '2026-03-16', '2026-03-25')['cgft']);
+
+        $series = $this->source()->monthlySeries([], '2026-03-01', '2026-04-30');
+        $this->assertSame(1, $series[0]['cgft']);
+        $this->assertSame(0, $series[1]['cgft']);
     }
 
     public function test_unknown_boundaries_are_not_invented_and_coverage_exposes_gaps(): void
@@ -122,6 +126,10 @@ class ManualProductivityTest extends TestCase
         $this->assertSame(1, $summary['publications']);
         $this->assertEquals(0, $summary['phases']->sum());
         $this->assertSame([$future->id], $this->source()->listing([], '2027-01-01', '2027-12-31', 'publications', null)->pluck('manual_id')->all());
+        $series = $this->source()->monthlySeries([], '2027-01-01', '2027-12-31');
+        $this->assertSame(1, $series[3]['publications']);
+        $this->assertSame(1, $series[3]['future_publications']);
+        $this->get(route('dashboard.history', ['year' => 2027]))->assertOk()->assertSee('con fecha futura');
     }
 
     public function test_scope_filters_apply_equally_to_period_comparison_coverage_and_list(): void

@@ -74,6 +74,36 @@ class ManualProductivity
         ];
     }
 
+    public function monthlySeries(array $filters, string $from, string $to): array
+    {
+        $publicationQuery = $this->publications($filters, $from, $to);
+        $publicationRows = (clone $publicationQuery)
+            ->selectRaw('SUBSTR(manuals.published_on, 1, 7) as month_key, COUNT(*) as quantity')
+            ->groupBy('month_key')->pluck('quantity', 'month_key');
+        $futurePublicationRows = (clone $publicationQuery)->whereDate('manuals.published_on', '>', today()->toDateString())
+            ->selectRaw('SUBSTR(manuals.published_on, 1, 7) as month_key, COUNT(*) as quantity')
+            ->groupBy('month_key')->pluck('quantity', 'month_key');
+        $transferRows = $this->cgftTransfers($filters, $from, $to)
+            ->selectRaw('SUBSTR(productivity_visit.entered_on, 1, 7) as month_key, COUNT(DISTINCT manuals.id) as quantity')
+            ->groupBy('month_key')->pluck('quantity', 'month_key');
+
+        $months = [];
+        $cursor = CarbonImmutable::parse($from)->startOfMonth();
+        $last = CarbonImmutable::parse($to)->startOfMonth();
+        while ($cursor <= $last) {
+            $key = $cursor->format('Y-m');
+            $months[] = [
+                'key' => $key, 'label' => $cursor->locale('es')->translatedFormat('M Y'),
+                'publications' => (int) ($publicationRows[$key] ?? 0),
+                'future_publications' => (int) ($futurePublicationRows[$key] ?? 0), 'cgft' => (int) ($transferRows[$key] ?? 0),
+                'from' => $cursor->toDateString(), 'to' => $cursor->endOfMonth()->toDateString(),
+            ];
+            $cursor = $cursor->addMonth();
+        }
+
+        return $months;
+    }
+
     public function coverage(array $filters): array
     {
         $total = $this->manuals($filters)->count('manuals.id');
