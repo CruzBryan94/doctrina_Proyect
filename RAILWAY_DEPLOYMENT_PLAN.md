@@ -2,6 +2,8 @@
 
 Fecha de análisis: 26 de octubre de 2026, America/Guayaquil.
 
+**Inicialización posterior del 27/10 completada:** por autorización expresa se cargaron estructura/relaciones, catálogos y un único admin local activo en la base Railway previamente verificada vacía. Se excluyeron datos operativos, integrantes y auditorías. Se verificaron 33 tablas, 39 referencias de columna FK, coincidencia de filas y permisos administrativos; `/login` responde 200. No se ejecutaron migraciones/seeders, cambios de lógica ni despliegues de código. Evidencia y límites: [RAILWAY_INICIALIZACION_MINIMA.md](docs/RAILWAY_INICIALIZACION_MINIMA.md). Este alcance mínimo sustituye la propuesta previa de transferencia completa; futuras modificaciones siguen requiriendo procedimiento separado.
+
 **Verificación posterior del 27/10:** se corrigieron las pruebas heredadas con autorización, sin modificar lógica ni MySQL. Suite completa local: **169 pruebas, 1.419 aserciones, sin fallos/errores y 1 benchmark opt-in omitido**, salida 0. Cambios sin commit/push; falta confirmar CI remoto en el commit que se publique. Las referencias posteriores a 162 pruebas fallidas describen el antecedente inicial. Evidencia y límites: [CI_PRUEBAS_VERIFICACION.md](docs/CI_PRUEBAS_VERIFICACION.md).
 
 Actualización del 27/10/2026: el usuario creó la rama `produccion` y servicios Railway. Autorizó adaptar la validación de arranque, CI y documentación a **`produccion`** y generar el commit local `to-prod1120`, sin push ni despliegue desde Codex. `APP_ENV=production` se conserva como entorno Laravel. La corrección no cambia lógica, datos ni esquema; los estados de preparación del 26/10 siguientes son antecedentes y no certifican la configuración remota actual.

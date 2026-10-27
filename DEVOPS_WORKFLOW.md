@@ -2,6 +2,8 @@
 
 Actualización: 27 de octubre de 2026. Flujo objetivo: **`dev → Pull Request → produccion → Railway`**.
 
+**Inicialización mínima ejecutada el 27/10 con autorización posterior:** Railway tiene 33 tablas con sus relaciones, catálogos y una sola cuenta administradora existente; no se transfirieron manuales, integrantes ni historia. Se conservaron las credenciales del admin. La aplicación salió de mantenimiento y `/login` responde 200. Ver [RAILWAY_INICIALIZACION_MINIMA.md](docs/RAILWAY_INICIALIZACION_MINIMA.md). La transferencia completa mencionada en la preparación inicial quedó sustituida por este alcance mínimo; no se habilitaron migraciones automáticas.
+
 **Verificación posterior del 27/10:** las pruebas heredadas se actualizaron con autorización, sin modificar aplicación ni MySQL. La suite completa local ahora pasa: **169 pruebas, 1.419 aserciones, sin fallos/errores y 1 benchmark opt-in omitido** (salida 0). Cambios sin commit/push; GitHub Actions debe volver a pasar en el commit que se publique. Ver [CI_PRUEBAS_VERIFICACION.md](docs/CI_PRUEBAS_VERIFICACION.md). Las cifras de 162 pruebas fallidas que siguen en esta guía son el antecedente de la preparación inicial, no el resultado actual.
 
 ## Estado y límites actuales
