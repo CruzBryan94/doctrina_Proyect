@@ -164,7 +164,7 @@ class MemberDirectoryImportTest extends TestCase
             ->assertRedirect(route('members.import'))->assertSessionHasErrors('csv');
         $this->assertNull(session('member_csv_preview'));
         $this->post(route('members.import.preview'), ['csv' => $this->csv("0012345678,Nuevo,77,\n")])->assertSessionHasNoErrors();
-        $this->post(route('members.import.preview'), ['csv' => UploadedFile::fake()->create('big.csv', 2049)])
+        $this->post(route('members.import.preview'), ['csv' => UploadedFile::fake()->create('big.csv', 8193)])
             ->assertSessionHasErrors('csv');
         $this->assertNull(session('member_csv_preview'));
         $this->assertDatabaseCount('committee_members', 0);
@@ -172,7 +172,7 @@ class MemberDirectoryImportTest extends TestCase
 
     public function test_invalid_encoding_and_excessive_rows_are_rejected(): void
     {
-        foreach ([$this->csv("0012345678,Pe\xF1a,77,\n"), $this->csv(str_repeat("0012345678,Nuevo,77,\n", 5001))] as $file) {
+        foreach ([$this->csv("0012345678,Pe\xF1a,77,\n"), $this->csv(str_repeat("0012345678,Nuevo,77,\n", 30001))] as $file) {
             try {
                 app(MemberCsvImport::class)->preview($file);
                 $this->fail('Expected encoding or row-limit failure');
@@ -181,6 +181,26 @@ class MemberDirectoryImportTest extends TestCase
             }
         }
         $this->assertDatabaseCount('committee_members', 0);
+    }
+
+    public function test_http_import_accepts_and_commits_30000_rows(): void
+    {
+        $lines = [];
+        for ($i = 0; $i < 30000; $i++) {
+            $lines[] = sprintf('%010d,Persona %05d,77,', 2000000000 + $i, $i);
+        }
+
+        $this->post(route('members.import.preview'), ['csv' => $this->csv(implode("\n", $lines))])
+            ->assertRedirect(route('members.import'))->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('committee_members', 0);
+        $preview = session('member_csv_preview');
+        $this->assertSame(30000, $preview['summary']['new']);
+
+        $this->get(route('members.import'))->assertOk()->assertSee('Máximo 8 MB y 30.000 filas por archivo.');
+        $this->post(route('members.import.commit'), ['token' => $preview['token']])
+            ->assertRedirect(route('members.import'))
+            ->assertSessionHas('import_result', ['inserted' => 30000, 'omitted' => 0, 'errors' => 0]);
+        $this->assertDatabaseCount('committee_members', 30000);
     }
 
     public function test_directory_with_30000_people_uses_bounded_queries(): void

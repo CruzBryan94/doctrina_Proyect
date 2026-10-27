@@ -80,7 +80,7 @@ class MembersController extends Controller
     public function previewImport(Request $request, MemberCsvImport $import)
     {
         $request->session()->forget('member_csv_preview');
-        $request->validate(['csv' => ['required', 'file', 'max:2048', 'extensions:csv,txt']]);
+        $request->validate(['csv' => ['required', 'file', 'max:8192', 'extensions:csv,txt']]);
         $preview = $import->preview($request->file('csv'));
         $preview['token'] = Str::random(40);
         $preview['created_at'] = time();

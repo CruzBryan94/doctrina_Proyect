@@ -18,7 +18,7 @@
         </div>
     @endif
     <div class="card"><div class="card-body">
-        <p>Archivo UTF-8 con cabecera <code>cedula,nombre,grado_codigo,celular</code>. Se admite coma o punto y coma. Celular es opcional; conserve su columna. Máximo 2 MB y 5.000 filas por archivo.</p>
+        <p>Archivo UTF-8 con cabecera <code>cedula,nombre,grado_codigo,celular</code>. Se admite coma o punto y coma. Celular es opcional; conserve su columna. Máximo 8 MB y 30.000 filas por archivo.</p>
         <p>La cédula debe contener 10 dígitos y se conserva como texto, incluidos los ceros iniciales. Los integrantes existentes no se modifican. Las filas con errores y repetidas se omiten. La importación no crea cuentas de acceso.</p>
         <details class="mb-3"><summary>Códigos de grado disponibles</summary>
             <ul>@foreach ($grades as $grade)<li>{{ $grade->code }}: {{ $grade->grade_name }}</li>@endforeach</ul>

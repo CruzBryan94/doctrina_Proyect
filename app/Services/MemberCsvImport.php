@@ -11,12 +11,13 @@ use Illuminate\Validation\ValidationException;
 
 class MemberCsvImport
 {
-    public const MAX_ROWS = 5000;
+    public const MAX_ROWS = 30000;
+    public const MAX_FILE_BYTES = 8 * 1024 * 1024;
 
     public function preview(UploadedFile $file): array
     {
-        if ($file->getSize() > 2 * 1024 * 1024) {
-            throw ValidationException::withMessages(['csv' => 'El archivo no debe superar 2 MB.']);
+        if ($file->getSize() > self::MAX_FILE_BYTES) {
+            throw ValidationException::withMessages(['csv' => 'El archivo no debe superar 8 MB.']);
         }
         $stream = fopen($file->getRealPath(), 'rb');
         if ($stream === false) {
@@ -110,11 +111,15 @@ class MemberCsvImport
 
     public function commit(array $preview): array
     {
-        // An unexpected database error rolls back the whole batch. firstOrCreate
-        // handles concurrent insertion through the existing unique cédula index.
+        // Batch inserts keep 30,000-row imports within the request budget. The
+        // unique identification index makes concurrent imports safe; duplicate
+        // keys are ignored and counted as omitted without updating existing rows.
         return DB::transaction(function () use ($preview) {
             $summary = ['inserted' => 0, 'omitted' => 0, 'errors' => 0];
             $gradeIds = Grade::pluck('id')->all();
+            $pending = [];
+            $timestamp = now();
+
             foreach ($preview['rows'] as $row) {
                 if ($row['status'] === 'error') {
                     $summary['errors']++;
@@ -128,17 +133,15 @@ class MemberCsvImport
                 if (! in_array($data['grades_id'], $gradeIds, true)) {
                     throw ValidationException::withMessages(['csv' => 'Cambió el catálogo de grados. Revise nuevamente el archivo.']);
                 }
-                $identification = $data['identification'];
-                unset($data['identification']);
-                // Current locking read also sees a competing committed import under
-                // MySQL's repeatable-read isolation. Deadlocks retry the whole batch.
-                $member = CommitteeMember::where('identification', $identification)->lockForUpdate()->first();
-                if ($member) {
-                    $summary['omitted']++;
-                    continue;
-                }
-                $member = CommitteeMember::createOrFirst(['identification' => $identification], $data);
-                $summary[$member->wasRecentlyCreated ? 'inserted' : 'omitted']++;
+                $data['created_at'] = $timestamp;
+                $data['updated_at'] = $timestamp;
+                $pending[] = $data;
+            }
+
+            foreach (array_chunk($pending, 500) as $batch) {
+                $inserted = DB::table('committee_members')->insertOrIgnore($batch);
+                $summary['inserted'] += $inserted;
+                $summary['omitted'] += count($batch) - $inserted;
             }
 
             return $summary;
