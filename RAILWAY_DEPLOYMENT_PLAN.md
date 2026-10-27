@@ -2,6 +2,8 @@
 
 Fecha de análisis: 26 de octubre de 2026, America/Guayaquil.
 
+Actualización del 27/10/2026: el usuario creó la rama `produccion` y servicios Railway. Autorizó adaptar la validación de arranque, CI y documentación a **`produccion`** y generar el commit local `to-prod1120`, sin push ni despliegue desde Codex. `APP_ENV=production` se conserva como entorno Laravel. La corrección no cambia lógica, datos ni esquema; los estados de preparación del 26/10 siguientes son antecedentes y no certifican la configuración remota actual.
+
 **Estado actualizado: infraestructura y CI preparados localmente; activación externa y despliegue pendientes.** La primera entrega fue exclusivamente de análisis. En la segunda fase autorizada se añadieron Docker, CI y documentación; se ejecutaron pruebas únicamente sobre SQLite aislado, validación de cachés en directorios aislados y compilación frontend en una copia temporal. No se modificaron lógica de negocio, dependencias/lockfiles, tablas ni datos existentes. No se crearon ramas, commits, servicios o despliegues. La suite completa presenta fallos heredados que bloquean CI; no se considera aprobada.
 
 La guía operativa vigente es [DEVOPS_WORKFLOW.md](DEVOPS_WORKFLOW.md). Los fragmentos orientativos de este plan deben contrastarse con los archivos reales de `docker/`, `Dockerfile`, `railway.json` y `.github/workflows/ci.yml`. Su preparación no activa opciones en GitHub o Railway.
@@ -337,7 +339,7 @@ Rollback: conservar imagen anterior, configuración segura y backups verificados
 
 ## 15. Decisiones de CI/CD y estado de preparación
 
-Flujo objetivo: `dev → PR revisado → production → CI de push correcto → Railway`. La inspección local y `git ls-remote --heads origin` encontraron únicamente `devDoctrina` y `main`; no se crearon, eliminaron ni renombraron ramas. La elección del SHA inicial de `dev` y `production` queda al usuario. Se conservaron todos los cambios locales previos.
+Flujo objetivo: `dev → PR revisado → produccion → CI de push correcto → Railway`. En la inspección inicial del 26/10 solo existían `devDoctrina` y `main`; el 27/10 se confirmó además `produccion` local y `origin/produccion`. No se creó, eliminó ni renombró ninguna rama desde Codex. `dev` sigue pendiente de creación autorizada; conservar `produccion` existente. El ajuste de nombre no elimina los requisitos de revisión y CI.
 
 | Opción | Ventajas | Límites para ARTEMIS | Decisión |
 | --- | --- | --- | --- |
@@ -348,11 +350,11 @@ Referencia de comparación: [Railpack PHP](https://railpack.com/languages/php/).
 
 ### Controles preparados
 
-- CI se ejecuta en PR a `production` y push a `dev`, `production` y temporalmente `devDoctrina`. No usa secretos de producción ni tokens Railway ni publica imágenes. Actions de terceros están fijadas por SHA.
+- CI se ejecuta en PR a `produccion` y push a `dev`, `produccion` y temporalmente `devDoctrina`. No usa secretos de producción ni tokens Railway ni publica imágenes. Actions de terceros están fijadas por SHA.
 - Jobs de aplicación y contenedor desembocan en **`ARTEMIS CI required`**. Fallo/cancelación/omisión de cualquiera bloquea el gate. Para PR, el gate también exige origen `dev` del mismo repositorio. No hay `continue-on-error`, exclusiones de tests ni auto-merge.
 - `phpunit.ci.xml` incluye Unit y Feature completos; bootstrap previo a `RefreshDatabase` fuerza SQLite `:memory:` y redirige storage y todas las cachés a un directorio nuevo ignorado en `storage/framework/testing/ci-*`. Comprueba configuración efectiva antes de ejecutar tests. Las migraciones/fixtures internas de PHPUnit solo se aplican a esa SQLite efímera, nunca a MySQL existente.
 - Docker instala Composer con `--no-dev --no-scripts`. El arranque ejecuta únicamente descubrimiento de paquetes y cachés de configuración/rutas/vistas/permisos, luego FPM y Caddy. No genera APP_KEY ni ejecuta migraciones, seeders o reconstrucción histórica.
-- Como defensa adicional contra la rama equivocada, el arranque en contexto Railway exige `RAILWAY_GIT_BRANCH=production` provista por su trigger GitHub; rechaza ramas de desarrollo o metadata ausente. No definir esa variable manualmente para saltar la validación ni usar CLI como ruta alternativa de publicación.
+- Como defensa adicional contra la rama equivocada, el arranque en contexto Railway exige `RAILWAY_GIT_BRANCH=produccion` provista por su trigger GitHub; rechaza ramas de desarrollo o metadata ausente. No definir esa variable manualmente para saltar la validación ni usar CLI como ruta alternativa de publicación.
 - `railway.json` fija Docker, una réplica, volumen obligatorio `/app/storage`, pre-deploy vacío, healthcheck `/login`, drenaje de 150 s y tres reintentos por fallo. La rama vinculada, Autodeploy, Wait for CI, credenciales, volumen DB y desactivación de previews se configuran manualmente; no están garantizados por ese JSON.
 - Caddy envía `HTTPS=on`/`SERVER_PORT=443` a PHP porque esta imagen está destinada a Railway Edge con HTTPS externo. Esto permite URLs HTTPS sin modificar `TrustProxies.php`; todavía hay que comprobar IP del cliente/throttling y uso exclusivo del Edge. No es una configuración genérica para publicar HTTP directamente.
 - Persistencia web conserva sesión, caché de archivos, fuentes y archivos; solo se invalida caché de permisos al desplegar. Errores se envían a stderr y tienen la retención de Railway; auditorías de negocio siguen en MySQL. Para retención de logs más larga, definir exportación/retención separadamente.

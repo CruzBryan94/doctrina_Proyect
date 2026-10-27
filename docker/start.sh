@@ -6,8 +6,8 @@ umask 0027
 # Defense against linking this Railway service to a development branch by mistake.
 # Git metadata must come from Railway's GitHub trigger, not a manually spoofed variable.
 if [[ -n "${RAILWAY_PROJECT_ID:-}" || -n "${RAILWAY_GIT_BRANCH:-}" ]]; then
-    [[ "${RAILWAY_GIT_BRANCH:-}" == production ]] || {
-        echo 'Railway startup requires the production GitHub branch' >&2
+    [[ "${RAILWAY_GIT_BRANCH:-}" == produccion ]] || {
+        echo 'Railway startup requires the produccion GitHub branch' >&2
         exit 1
     }
 fi

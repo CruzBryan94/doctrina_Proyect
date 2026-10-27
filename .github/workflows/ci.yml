@@ -2,9 +2,9 @@ name: ARTEMIS CI
 
 on:
   pull_request:
-    branches: [production]
+    branches: [produccion]
   push:
-    branches: [dev, production, devDoctrina]
+    branches: [dev, produccion, devDoctrina]
 
 permissions:
   contents: read
@@ -92,7 +92,7 @@ jobs:
           result=$?
           set -e
           test "$result" = 1
-          printf '%s\n' "$output" | grep -F 'Railway startup requires the production GitHub branch'
+          printf '%s\n' "$output" | grep -F 'Railway startup requires the produccion GitHub branch'
       - name: Start web with disposable storage and no database service
         run: |
           docker volume create artemis-ci-storage

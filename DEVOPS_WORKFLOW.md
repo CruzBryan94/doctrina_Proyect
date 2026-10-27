@@ -1,10 +1,12 @@
 # Flujo de desarrollo, CI y despliegue de ARTEMIS
 
-Fecha: 26 de octubre de 2026. Flujo objetivo: **`dev → Pull Request → production → Railway`**.
+Actualización: 27 de octubre de 2026. Flujo objetivo: **`dev → Pull Request → produccion → Railway`**.
 
 ## Estado y límites actuales
 
-Los archivos están preparados localmente. No se hizo commit, push, creación/cambio de ramas, merge ni despliegue; no se creó infraestructura en Railway. Las ramas observadas localmente y en el remoto son `devDoctrina` y `main`; **`dev` y `production` todavía no existen**. El repositorio de origen es `CruzBryan94/doctrina_Proyect`; su raíz contiene `artisan`.
+La rama **`produccion` ya existe** localmente y en las referencias de origin; también existen `devDoctrina` y `main`, mientras `dev` sigue pendiente. El repositorio de origen es `CruzBryan94/doctrina_Proyect`; su raíz contiene `artisan`. El 27/10 el usuario autorizó adaptar infraestructura/documentación al nombre `produccion` y generar en esa rama el commit local `to-prod1120`, sin push ni despliegue desde Codex. Esta excepción explícita no cambia el flujo ordinario de PR ni autoriza publicaciones futuras.
+
+El usuario ya creó servicios Railway. En las capturas MySQL informa `ready for connections` y el servicio web rechaza el arranque porque antes exigía la rama literal `production`. El script y el workflow se ajustaron para exigir `produccion`; **`APP_ENV=production` conserva su valor Laravel**, independiente del nombre Git. En Railway se debe comprobar que la rama vinculada sea `produccion` y que no se haya definido manualmente `RAILWAY_GIT_BRANCH`. No se cambiaron ajustes remotos durante esta corrección.
 
 La suite completa tiene incidencias heredadas: **162 tests, 1.326 aserciones, 16 fallos, 2 errores y 1 omisión**. No puede aprobarse aún una liberación. El CI mantiene esos fallos visibles y bloqueantes; no excluye clases para dar verde. Las expectativas de email/perfil/confirmación/reset scaffold requieren mantenimiento revisado contra las rutas actuales, sin habilitar funcionalidades retiradas solo para pasar tests. Este trabajo no modificó esas pruebas ni la lógica del sistema. El benchmark opt-in de 30.000 personas permanece omitido por defecto y no equivale a una prueba fallida.
 
@@ -12,24 +14,24 @@ La imagen Linux tampoco pudo verificarse: se inició temporalmente Docker Deskto
 
 ## 1. Preparación manual inicial de ramas
 
-Esta sección es un procedimiento para el propietario; no se ejecutó. Crear ramas necesita autorización separada del usuario. No eliminar/recrear `main`, `devDoctrina` ni ninguna rama ya existente.
+Esta sección describe la preparación inicial: reutilizar la rama `produccion` ya creada y completar únicamente lo pendiente. Crear otras ramas necesita autorización separada del usuario. No eliminar/recrear `main`, `devDoctrina`, `produccion` ni ninguna rama ya existente.
 
 1. Revisar `git status` y el diff: existen cambios de aplicación previos a esta tarea. Decidir cuáles pertenecen a cada versión; no usar `git add .` ni publicar todo indiscriminadamente. No mover un árbol sucio entre ramas sin decidir cómo conservarlo.
-2. Elegir explícitamente el commit inicial de `dev` y el **commit aprobado** inicial de `production`. No asumir que la punta de `devDoctrina` o `main` es una versión aprobada. Si ya aparecen esas ramas, reutilizarlas, comparar su historia y no sobrescribirlas.
+2. Elegir explícitamente el commit inicial de `dev` y el **commit aprobado** inicial de `produccion`. No asumir que la punta de `devDoctrina` o `main` es una versión aprobada. Si ya aparecen esas ramas, reutilizarlas, comparar su historia y no sobrescribirlas.
 3. Una vez autorizado, crear las ramas que falten desde los SHA elegidos mediante GitHub/Git, conservando las existentes. Incorporar los archivos preparados a `dev` mediante commit humano revisado. Si se necesita trasladar trabajo aún no confirmado, hacerlo con un procedimiento acordado que preserve el árbol; no hacer reset, clean ni stash automáticos.
 4. Subir `dev` y ejecutar CI. Resolver los tests heredados en un trabajo revisado de pruebas antes de promover la versión. El disparador temporal de push en `devDoctrina` permite validar antes de completar la transición; no despliega y puede retirarse mediante PR cuando deje de usarse.
-5. Configurar protecciones de `production` y registrar el check obligatorio tras tener una ejecución correcta disponible. La primera promoción también requiere PR/revisión. No conectar Railway aún si ello dispara un primer despliegue inmediato.
+5. Configurar protecciones de `produccion` y registrar el check obligatorio tras tener una ejecución correcta disponible. La primera promoción también requiere PR/revisión. No conectar Railway aún si ello dispara un primer despliegue inmediato.
 
-No hay workflow que cree ramas, haga commits, fusione o publique a `production`. Las instrucciones siguientes suponen que `dev` y `production` ya existen y que el usuario está autorizado a operar sobre ellas.
+No hay workflow que cree ramas, haga commits, fusione o publique a `produccion`. Las instrucciones siguientes suponen que `dev` y `produccion` ya existen y que el usuario está autorizado a operar sobre ellas.
 
 ## 2. Protección obligatoria en GitHub
 
-En **Settings → Rules → Rulesets** o **Branches → Branch protection**, crear regla para el nombre exacto `production`:
+En **Settings → Rules → Rulesets** o **Branches → Branch protection**, crear regla para el nombre exacto `produccion`:
 
 - Requerir Pull Request y al menos una aprobación humana de un revisor distinto del autor. Un autor único no puede aprobar su propio PR: necesita incorporar un revisor autorizado para cumplir esta regla, no eludirla.
 - Requerir resolución de conversaciones y descartar aprobaciones obsoletas cuando se agregan cambios; requerir aprobación del último push revisable si está disponible.
 - Exigir el check **`ARTEMIS CI required`**, proveniente de GitHub Actions. Seleccionar el nombre realmente mostrado por GitHub tras la primera ejecución; no otro job con nombre parecido.
-- Requerir que la rama esté actualizada con `production` antes del merge. No activar merge queue con este workflow: si se desea en el futuro, habrá que añadir y validar `merge_group`.
+- Requerir que la rama esté actualizada con `produccion` antes del merge. No activar merge queue con este workflow: si se desea en el futuro, habrá que añadir y validar `merge_group`.
 - Aplicar también a administradores; no configurar bypass ordinario de PR/checks. Bloquear force push y borrado. Revisar permisos de escritura y reglas superpuestas.
 - Desactivar auto-merge del repositorio y hacer los merges manualmente. Desactivar borrado automático de head branches o proteger también `dev` contra borrado, porque es una rama permanente.
 
@@ -59,13 +61,13 @@ git commit -m "Describe el cambio aprobado"
 git push origin dev
 ```
 
-No incluir `.env`, datos de pruebas, dumps, SQLite, credenciales o backups. No ejecutar push a `production` ni usar force push. La política de publicación depende de la protección de GitHub y de la rama vinculada en Railway; el nombre de una rama local por sí solo no impide errores de configuración.
+No incluir `.env`, datos de pruebas, dumps, SQLite, credenciales o backups. No ejecutar push a `produccion` ni usar force push. La política de publicación depende de la protección de GitHub y de la rama vinculada en Railway; el nombre de una rama local por sí solo no impide errores de configuración.
 
 Los push a `dev` ejecutan GitHub Actions, pero **no deben crear ningún deployment Railway**. Comprobarlo al activar la integración.
 
 ## 4. Qué ejecuta GitHub Actions
 
-Archivo: `.github/workflows/ci.yml`. Se dispara en PR con destino `production` y en push a `dev`, `production` y transitoriamente `devDoctrina`. No hay filtros por archivos ni condiciones que omitan la suite cuando cambia solo documentación. No usar `[skip ci]` o equivalentes en versiones destinadas a producción.
+Archivo: `.github/workflows/ci.yml`. Se dispara en PR con destino `produccion` y en push a `dev`, `produccion` y transitoriamente `devDoctrina`. No hay filtros por archivos ni condiciones que omitan la suite cuando cambia solo documentación. No usar `[skip ci]` o equivalentes en versiones destinadas a producción.
 
 | Job | Qué verifica | Qué no hace |
 | --- | --- | --- |
@@ -98,12 +100,12 @@ No sustituir la configuración por una conexión MySQL real si falta SQLite: deb
 
 ## 5. Crear, revisar y fusionar un PR
 
-1. En GitHub → Pull requests → New pull request, seleccionar **base `production` / compare `dev`**. Revisar el diff completo y el template preparado en `.github/PULL_REQUEST_TEMPLATE.md`.
+1. En GitHub → Pull requests → New pull request, seleccionar **base `produccion` / compare `dev`**. Revisar el diff completo y el template preparado en `.github/PULL_REQUEST_TEMPLATE.md`.
 2. Esperar la ejecución del último commit. En Checks/Actions abrir cada job: una cruz roja exige corregir y volver a hacer push a `dev`. No fusionar con check pendiente, cancelado u omitido. El check obligatorio no se puede sustituir por el éxito de un test dirigido local.
 3. Si la suite falla por las rutas scaffold ya identificadas, mantener bloqueado el PR. Mantener/actualizar las expectativas de prueba mediante trabajo revisado; no excluir tests, usar `continue-on-error` ni reconectar rutas retiradas para obtener aprobación artificial.
 4. Verificar que no hay cambios de esquema implícitos, secretos, borrados de archivos persistentes ni nuevas tareas residentes. Revisar también cambios en workflow, Dockerfile y scripts, pues podrían quitar controles en un PR futuro.
-5. Un revisor autorizado aprueba el contenido y la persona responsable pulsa Merge manualmente. No usar auto-merge. Resolver conflictos en `dev` con revisión y volver a ejecutar CI; no forzar `production`.
-6. El merge crea un nuevo commit en `production`. **Ese push ejecuta CI otra vez**: es indispensable para Wait for CI, aunque el PR ya haya pasado. El artefacto final lo construye Railway a partir de ese commit, no desde tu árbol local.
+5. Un revisor autorizado aprueba el contenido y la persona responsable pulsa Merge manualmente. No usar auto-merge. Resolver conflictos en `dev` con revisión y volver a ejecutar CI; no forzar `produccion`.
+6. El merge crea un nuevo commit en `produccion`. **Ese push ejecuta CI otra vez**: es indispensable para Wait for CI, aunque el PR ya haya pasado. El artefacto final lo construye Railway a partir de ese commit, no desde tu árbol local.
 
 Un cambio que agregue migraciones no queda autorizado a aplicarlas por tener CI verde. Si la versión exige esquema nuevo, no promoverla hasta completar el procedimiento separado de aprobación/respaldo/compatibilidad de la sección 9.
 
@@ -111,8 +113,8 @@ Un cambio que agregue migraciones no queda autorizado a aplicarlas por tener CI 
 
 `railway.json` controla configuración del contenedor, no crea ni vincula servicios ni configura la rama GitHub. Las opciones siguientes quedan pendientes y deben completarse cuando el usuario autorice activar despliegues:
 
-1. Revisar el estado inicial de `production`, CI y protecciones. Si la creación/conexión de un servicio dispara un despliegue, **no realizarla todavía**. Al activarla en otra fase, no seleccionar por defecto `main` o `devDoctrina`.
-2. Conectar el repositorio correcto y fijar explícitamente **trigger branch `production`**. Root Directory `/` en este repositorio. Elegir Dockerfile y config `/railway.json`.
+1. Revisar el estado inicial de `produccion`, CI y protecciones. Si la creación/conexión de un servicio dispara un despliegue, **no realizarla todavía**. Al activarla en otra fase, no seleccionar por defecto `main` o `devDoctrina`.
+2. Conectar el repositorio correcto y fijar explícitamente **trigger branch `produccion`**. Root Directory `/` en este repositorio. Elegir Dockerfile y config `/railway.json`.
 3. Una vez autorizado el primer despliegue y completados secretos/volúmenes, habilitar **Autodeploy** y **Wait for CI** en Settings del servicio. Autorizar en GitHub los permisos de la app Railway para leer Actions. Confirmar que producción tiene el workflow con evento `push`.
 4. Desactivar **PR environments/previews** y no enlazar `dev`, `devDoctrina` o `main` a ningún servicio de publicación. No crear staging permanente ni plantillas que añadan workers, cron o Redis. Inspeccionar todos los servicios/entornos para evitar una segunda integración olvidada.
 5. Web: una réplica y una región, volumen montado en `/app/storage`, ruta de salud `/login`. MySQL: servicio independiente y privado en la misma región, imagen/versionado compatible, volumen en su ruta de datos. `railway.json` es solo para web: no aplicarlo al servicio de DB.
@@ -122,13 +124,13 @@ Un cambio que agregue migraciones no queda autorizado a aplicarlas por tener CI 
 
 La rama, Autodeploy, Wait for CI, PR previews, variables, volumen, región y protecciones **no están activados por los archivos preparados**. Son intervención manual obligatoria. El JSON exige montaje `/app/storage`, pre-deploy vacío, réplica única, healthcheck y drenaje de 150 segundos; verificar que Railway refleja esos valores.
 
-Como defensa adicional ante una vinculación equivocada, el arranque rechaza cualquier contexto Railway cuya `RAILWAY_GIT_BRANCH` no sea `production`, también si no llega esa metadata. Esa variable debe provenir del trigger GitHub; no definirla manualmente para eludir el control. Una publicación por CLI o imagen sin metadata GitHub queda bloqueada deliberadamente. No sustituye protecciones/Wait for CI ni impide que un administrador cambie el propio mecanismo. Referencia: [variables provistas por Railway](https://docs.railway.com/variables/reference).
+Como defensa adicional ante una vinculación equivocada, el arranque rechaza cualquier contexto Railway cuya `RAILWAY_GIT_BRANCH` no sea `produccion`, también si no llega esa metadata. Esa variable debe provenir del trigger GitHub; no definirla manualmente para eludir el control. Una publicación por CLI o imagen sin metadata GitHub queda bloqueada deliberadamente. No sustituye protecciones/Wait for CI ni impide que un administrador cambie el propio mecanismo. Referencia: [variables provistas por Railway](https://docs.railway.com/variables/reference).
 
 ### Alcance de Wait for CI
 
 Railway requiere un workflow con evento push en la rama vinculada. Espera la conclusión de los workflows de GitHub Actions del commit; un fallo bloquea. Los workflows omitidos/neutrales no bloquean, y hay matices en cancelaciones cuando otro workflow tuvo éxito. Por ello el flujo no cancela ejecuciones automáticamente, no aplica filtros de paths y mantiene la protección GitHub como barrera previa. Revisar cualquier workflow adicional antes de añadirlo; no saltar CI ni considerar Wait for CI un control absoluto contra acciones manuales de un administrador. Fuente: [Autodeploy y Wait for CI](https://docs.railway.com/deployments/github-autodeploys).
 
-Al activar la integración, validar con evidencia: push a `dev` produce solo CI; PR no produce preview; merge aprobado en `production` queda WAITING hasta terminar CI de ese SHA; un fallo de CI no publica; únicamente el SHA aprobado llega al deployment. Esta prueba externa no se ejecutó en la preparación.
+Al activar la integración, validar con evidencia: push a `dev` produce solo CI; PR no produce preview; merge aprobado en `produccion` queda WAITING hasta terminar CI de ese SHA; un fallo de CI no publica; únicamente el SHA aprobado llega al deployment. Esta prueba externa no se ejecutó en la preparación.
 
 ## 7. Qué sucede al arrancar la imagen
 
@@ -152,10 +154,10 @@ En Railway → servicio web → Deployments, comprobar rama y SHA, estado WAITIN
 
 Rollback, siempre operado por una persona autorizada:
 
-1. Identificar el último deployment exitoso de **un commit aprobado de `production`** y confirmar compatibilidad con la DB actual. No desplegar desde `dev` para corregir rápido.
+1. Identificar el último deployment exitoso de **un commit aprobado de `produccion`** y confirmar compatibilidad con la DB actual. No desplegar desde `dev` para corregir rápido.
 2. Si hay incidentes de datos, detener escrituras y preservar evidencia antes de restaurar. Si solo falla aplicación/configuración, seleccionar Rollback del deployment previo en Railway cuando esté disponible, y revisar las variables actuales: rollback de imagen no garantiza revertir cambios de variables.
 3. Confirmar salud, login, sesión, lecturas y un flujo autorizado. MySQL/volumen no retroceden al cambiar imagen. No ejecutar `migrate:rollback`, `fresh`, seeders ni restaurar backups sobre escrituras recientes sin un plan separado.
-4. Para que la recuperación quede en Git, preparar revert de los commits defectuosos en `dev`, revisar el diff y abrir nuevo PR a `production`; corregir antes de promover cualquier otro cambio pendiente de `dev`. El revert debe retirar también los commits defectuosos de la rama de desarrollo, no solo revertir un merge exclusivo de `production`. CI y revisión normales siguen siendo obligatorios.
+4. Para que la recuperación quede en Git, preparar revert de los commits defectuosos en `dev`, revisar el diff y abrir nuevo PR a `produccion`; corregir antes de promover cualquier otro cambio pendiente de `dev`. El revert debe retirar también los commits defectuosos de la rama de desarrollo, no solo revertir un merge exclusivo de `produccion`. CI y revisión normales siguen siendo obligatorios.
 5. Si Autodeploy está pausado durante la incidencia, verificar el SHA de recuperación y reactivarlo conscientemente. Evitar que un merge pendiente vuelva a publicar la versión defectuosa.
 
 ## 9. Seguridad de MySQL y cambios de esquema
@@ -193,11 +195,12 @@ MySQL será probablemente el principal costo ocioso. FPM ondemand elimina hijos 
 Antes de activar, completar manualmente:
 
 - [ ] Revisar/publicar archivos con commit humano autorizado y conservar cambios previos.
-- [ ] Elegir/crear `dev` y `production` sin sobrescribir ramas existentes.
+- [x] Confirmar que `produccion` existe; conservarla sin recrearla.
+- [ ] Elegir/crear `dev` sin sobrescribir ramas existentes.
 - [ ] Mantener los tests heredados mediante trabajo revisado y obtener suite completa correcta.
 - [ ] Ejecutar los dos jobs en GitHub y verificar imagen Linux y Node 22.
 - [ ] Aplicar reglas de PR/aprobación/check obligatorio sin bypass y confirmar su disponibilidad en el plan GitHub.
-- [ ] Autorizar y configurar Railway solo desde `production`, Autodeploy + Wait for CI y previews desactivados.
+- [ ] Autorizar y configurar Railway solo desde `produccion`, Autodeploy + Wait for CI y previews desactivados.
 - [ ] Preparar secretos, volúmenes, backup/restauración e importación inicial autorizada; sin migraciones automáticas.
 - [ ] Verificar proxy/IP, acceso restringido o público, PDF/CSV, memoria, drenaje, sesión/redeploy y costos.
 - [ ] Probar controles de rama/CI/Wait for CI y registrar SHA desplegado cuando se autorice el primer release.

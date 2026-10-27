@@ -1,6 +1,6 @@
 ## Versión propuesta
 
-Origen: `dev`. Destino: `production`.
+Origen: `dev`. Destino: `produccion`.
 
 Problema y comportamiento resultante:
 
@@ -20,4 +20,4 @@ Revisor humano:
 
 Pruebas pendientes/riesgos conocidos:
 
-Al fusionar manualmente, Railway podrá desplegar este commit si está conectado a `production`, con Autodeploy y Wait for CI habilitados. No fusionar mientras existan verificaciones fallidas o pendientes.
+Al fusionar manualmente, Railway podrá desplegar este commit si está conectado a `produccion`, con Autodeploy y Wait for CI habilitados. No fusionar mientras existan verificaciones fallidas o pendientes.
