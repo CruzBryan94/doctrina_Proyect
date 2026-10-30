@@ -1,10 +1,11 @@
-@extends('adminlte::page')
+@extends('layouts.legacy')
 
 @section('title', 'ADMIN MIEMBROS')
 
 @section('content_header')
-    <div class="title-container mb-0">
-        <h1 class="dashboard-title">ADMINISTRACIÓN DE MIEMBROS DE COMITÉS</h1>
+    <div class="artemis-page-title">
+        <span class="artemis-page-kicker">ARTEMIS · ADMINISTRACIÓN</span>
+        <h1>Miembros de comités</h1>
     </div>
 
     @if (session('success'))
@@ -21,34 +22,43 @@
 
 
 @section('content')
-    @php
-        $ord = 1;
-    @endphp
-    <!-- Botón para crear un nuevo manual -->
-    <div class="d-flex justify-content-center mt-0 mb-3">
-        <a href="{{ route('members.newMember') }}" class="btn btn-info btn-sm shadow-sm px-3 py-1">
-            <i class="fas fa-plus-circle"></i> Crear Nuevo Miembro
-        </a>
-    </div>
-    <div class="card mt-1">
-        <div class="card-body p-2">
-            <table id="usersTable" class="table table-bordered table-hover table-sm">
+    <div class="card artemis-data-list mt-1">
+        <div class="card-body">
+            <div class="artemis-list-toolbar">
+                <p class="artemis-list-summary">Consulta los integrantes registrados y su participación en manuales.</p>
+                <a href="{{ route('members.import') }}" class="btn btn-outline-secondary btn-sm">Importar CSV</a>
+                <a href="{{ route('members.newMember') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus-circle" aria-hidden="true"></i> Crear miembro
+                </a>
+            </div>
+            <form method="GET" action="{{ route('members.index') }}" class="form-row align-items-end mb-3">
+                <div class="form-group col-md-7 mb-0">
+                    <label for="member-search">Buscar por cédula, apellidos o nombres</label>
+                    <input id="member-search" class="form-control" type="search" name="q" maxlength="100" value="{{ request('q') }}">
+                </div>
+                <div class="col-auto"><button class="btn btn-primary" type="submit">Buscar</button> <a href="{{ route('members.index') }}" class="btn btn-outline-secondary">Limpiar</a></div>
+            </form>
+            <p role="status">{{ $committeeMembers->total() }} integrantes encontrados. Se muestran hasta 25 por página.</p>
+            <div class="table-responsive">
+            <table id="usersTable" class="table table-bordered table-hover table-sm artemis-data-table">
+                <caption class="sr-only">Miembros de comités registrados, grado, datos de contacto y acciones disponibles.</caption>
                 <thead>
                     <tr>
-                        <th class="text-center">ORD</th>
-                        <th class="text-center">GRADO</th>
-                        <th class="text-center">APELLIDOS Y NOMBRES</th>
-                        <th class="text-center">CÉDULA DE IDENTIDAD</th>
-                        <th class="text-center">CANTIDAD DE MANUALES</th>>
-                        <th class="text-center">ACCIONES</th>
+                        <th scope="col" class="text-center">Ord</th>
+                        <th scope="col" class="text-center">Grado</th>
+                        <th scope="col">Apellidos y nombres</th>
+                        <th scope="col" class="text-center">Cédula de identidad</th>
+                        <th scope="col" class="text-center">Celular</th>
+                        <th scope="col" class="text-center">Cantidad de manuales</th>
+                        <th scope="col" class="text-center">Acciones</th>
 
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($committeeMembers as $i => $dato)
+                    @forelse ($committeeMembers as $i => $dato)
                         <tr>
                             <td class="text-center align-middle">
-                                {{ $i + 1 }}
+                                {{ $committeeMembers->firstItem() + $i }}
                             </td>
                             <td class="text-center align-middle">
                                 {{ $dato->grade }}
@@ -60,101 +70,29 @@
                                 {{ $dato->identification }}
                             </td>
                             <td class="align-middle text-center">
+                                {{ $dato->cellphone ?? 'Sin registrar' }}
+                            </td>
+                            <td class="align-middle text-center">
                                 {{ $dato->manuals }}
+                            </td>
                             <td class="text-center align-middle">
                                 <form action="{{ route('members.edit', $dato->id) }}" method="POST">
                                     @csrf
-                                    <button class="btn btn-secondary btn-sm" data-toggle="modal">
-                                        <span class="fas fa-user-edit"></span>
+                                    <button class="btn btn-outline-secondary btn-sm" aria-label="Editar a {{ $dato->full_name }}">
+                                        <span class="fas fa-user-edit" aria-hidden="true"></span>
                                     </button>
                                 </form>
                             </td>
 
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr><td colspan="7" class="text-center">No se encontraron integrantes con estos criterios.</td></tr>
+                    @endforelse
                 </tbody>
             </table>
+            </div>
+            {{ $committeeMembers->links('pagination::bootstrap-4') }}
         </div>
     </div>
 
-@stop
-
-@section('css')
-    <style>
-        /* Estilo del contenedor del título */
-        .title-container {
-            text-align: center;
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        /* Título principal */
-        .dashboard-title {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #343a40;
-            /* Gris oscuro (puedes usar el color de tu sistema) */
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-        }
-
-        /* Decoración debajo del título */
-        .dashboard-title::after {
-            content: "";
-            display: block;
-            width: 100px;
-            height: 4px;
-            background: #a71111;
-            /* Color primario */
-            margin: 10px auto 0;
-            border-radius: 2px;
-        }
-
-        /* Personalización de la tabla */
-        .table th {
-            text-align: center;
-            background-color: #f8f9fa;
-        }
-
-        .table td,
-        .table th {
-            font-size: 0.95rem;
-            vertical-align: middle;
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: #e8f5e9;
-        }
-    </style>
-@stop
-
-@section('js')
-    <script>
-        $(document).ready(function() {
-            // Inicialización de DataTables
-            $('#manualsTable').DataTable({
-                responsive: true,
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json' // Español
-                },
-                ordering: true,
-                paging: true,
-                searching: true
-            });
-        });
-
-        $("#usersTable").dataTable({
-            "paging": true,
-            "ordering": false,
-            "language": {
-                url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/es_es.json'
-            },
-            "searching": true
-        });
-
-        //ELIMINAR MENSAJE DE ERROR
-        setTimeout(function() {
-            $('.alert').alert('close');
-        }, 3000);
-    </script>
 @stop

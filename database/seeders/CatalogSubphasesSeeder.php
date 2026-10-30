@@ -2,59 +2,79 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\CatalogSubphase;
+use App\Models\ManualPhase;
 use Illuminate\Database\Seeder;
-
-use Illuminate\Support\Facades\DB;
 
 class CatalogSubphasesSeeder extends Seeder
 {
-
     public function run(): void
     {
-        $subphases = [
-           // Subfases de Investigación
-           ['suphase_name' => 'CONFORMAR LOS COMITES DE INVESTIGACIÓN', 'manual_phases_id' => 1],
-           ['suphase_name' => 'INDUCCIÓN Y LINEAMIENTOS', 'manual_phases_id' => 1],
-           ['suphase_name' => 'ENTREGA DEL PERFIL DEL PROYECTO Y CRONOGRAMA', 'manual_phases_id' => 1],
-           ['suphase_name' => 'PRIMER AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-           ['suphase_name' => 'SEGUNDO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-           ['suphase_name' => 'TERCER AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-           ['suphase_name' => 'CUARTO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-           ['suphase_name' => 'QUINTO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-           ['suphase_name' => 'SEXTO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-           ['suphase_name' => 'SEPTIMO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-           ['suphase_name' => 'OCTAVO AVANCE DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-           ['suphase_name' => 'ENTREGA DE LA CARPETA DE INVESTIGACIÓN', 'manual_phases_id' => 1],
-           ['suphase_name' => 'VALIDACIÓN DE LA INVESTIGACIÓN', 'manual_phases_id' => 1],
-           ['suphase_name' => 'ENTREGA DEL PROYECTO DOCTRINARIO CON TODAS LAS OBSERVACIONES', 'manual_phases_id' => 1],
-
-            // Subfases de Experimentación
-            ['suphase_name' => 'DISPONER LA EXPERIMENTACIÓN', 'manual_phases_id' => 2],
-            ['suphase_name' => 'INDUCCIÓN Y LINEAMIENTOS AL COMITÉ DE EXPERIMENTACIÓN', 'manual_phases_id' => 2],
-            ['suphase_name' => 'ENTREGA DEL CRONOGRAMA DE ACTIVIDADES', 'manual_phases_id' => 2],
-            ['suphase_name' => 'PRIMER AVANCE DE LA EXPERIMENTACIÓN', 'manual_phases_id' => 2],
-            ['suphase_name' => 'SEGUNDO AVANCE DE LA EXPERIMENTACIÓN', 'manual_phases_id' => 2],
-            ['suphase_name' => 'TERCER AVANCE DE LA EXPERIMENTACIÓN', 'manual_phases_id' => 2],
-            ['suphase_name' => 'CUARTO AVANCE DE LA EXPERIMENTACIÓN', 'manual_phases_id' => 2],
-            ['suphase_name' => 'QUINTO AVANCE DE LA EXPERIMENTACIÓN', 'manual_phases_id' => 2],
-            ['suphase_name' => 'SEXTO AVANCE DE LA EXPERIMENTACIÓN', 'manual_phases_id' => 2],
-            ['suphase_name' => 'SÉPTIMO AVANCE DE LA EXPERIMENTACIÓN', 'manual_phases_id' => 2],
-            ['suphase_name' => 'INFORME FINAL DE LA EXPERIMENTACIÓN', 'manual_phases_id' => 2],
-            ['suphase_name' => 'VALIDACIÓN DE LA EXPERIMENTACIÓN DEL PROYECTO DOCTRINARIO', 'manual_phases_id' => 2],
-            ['suphase_name' => 'ENTREGA DEL PROYECTO DOCTRINARIO CON TODAS LAS OBSERVACIONES', 'manual_phases_id' => 2],
-
-
-
-            // Subfases de Edición
-            ['suphase_name' => 'CORRECCIÓN IDIOMATICA', 'manual_phases_id' => 3],
-            ['suphase_name' => 'CORRECCIÓN GRAFICA', 'manual_phases_id' => 3],
-            ['suphase_name' => 'CORRECCIONES FINALES ARTE DISEÑO EDITORIAL', 'manual_phases_id' => 3],
-            ['suphase_name' => 'TRÁMITE DE LEGALIZACION', 'manual_phases_id' => 3],
-            ['suphase_name' => 'ENVIADO GRUPO ASESOR', 'manual_phases_id' => 3],
-            ['suphase_name' => 'PUBLICACIÓN EL EL SIFTE', 'manual_phases_id' => 3],
+        $ordinals = ['PRIMER', 'SEGUNDO', 'TERCER', 'CUARTO', 'QUINTO'];
+        $definitions = [
+            'planning' => ['ANÁLISIS', 'FACTIBILIDAD'],
+            'research' => [],
+            'experimentation' => ['DISPONER LA EXPERIMENTACIÓN', 'INDUCCIÓN Y LINEAMIENTOS AL COMITÉ DE EXPERIMENTACIÓN', 'ENTREGA DEL CRONOGRAMA DE ACTIVIDADES'],
+            'edition' => [],
+            'cgft' => ['PENDIENTE', 'LEGALIZADO'],
         ];
+        foreach ($definitions as $slug => $names) {
+            $phase = ManualPhase::where('slug', $slug)->firstOrFail();
+            if ($slug === 'edition') {
+                foreach (\App\Services\EditionActivity::NAMES as $key => $name) {
+                    CatalogSubphase::updateOrCreate(['activity_key' => $key], ['suphase_name' => $name, 'manual_phases_id' => $phase->id, 'position' => array_search($key, array_keys(\App\Services\EditionActivity::NAMES), true) + 1]);
+                }
 
-        DB::table('catalog_subphases')->insert($subphases);
+                continue;
+            }
+            if ($slug === 'research') {
+                foreach (self::researchDefinitions() as $index => [$key, $name, $advance]) {
+                    CatalogSubphase::updateOrCreate(['activity_key' => $key], [
+                        'suphase_name' => $name, 'manual_phases_id' => $phase->id,
+                        'position' => $index + 1, 'advance_number' => $advance,
+                    ]);
+                }
+
+                continue;
+            }
+            if ($slug === 'experimentation') {
+                CatalogSubphase::where('manual_phases_id', $phase->id)->where('advance_number', '>', 5)->update(['is_active' => false]);
+                foreach ($ordinals as $index => $ordinal) {
+                    $names[] = $ordinal.' AVANCE DE LA EXPERIMENTACIÓN';
+                }
+                $names = array_merge($names, ['INFORME FINAL DE LA EXPERIMENTACIÓN', 'VALIDACIÓN DE LA EXPERIMENTACIÓN DEL PROYECTO DOCTRINARIO', 'ENTREGA DEL PROYECTO DOCTRINARIO CON TODAS LAS OBSERVACIONES']);
+            }
+            foreach ($names as $index => $name) {
+                $advance = $slug === 'experimentation' && $index >= 3 && $index <= 7 ? $index - 2 : null;
+                // The final three keys remain .12, .13 and .14 after retiring advances 6–8.
+                $keyNumber = $slug === 'experimentation' && $index >= 8 ? $index + 4 : $index + 1;
+                CatalogSubphase::updateOrCreate(['activity_key' => $slug.'.'.$keyNumber], [
+                    'suphase_name' => $name, 'manual_phases_id' => $phase->id, 'position' => $index + 1, 'advance_number' => $advance, 'is_active' => true,
+                ]);
+            }
+        }
+    }
+
+    public static function researchDefinitions(): array
+    {
+        return [
+            ['research.1', 'CONFORMAR LOS COMITES DE INVESTIGACIÓN', null],
+            ['research.2', 'INDUCCIÓN Y LINEAMIENTOS', null],
+            ['research.3', 'ENTREGA DEL PERFIL Y CRONOGRAMA', null],
+            ['research.three-months', 'TRES MES DE INVESTIGACIÓN', null],
+            ['research.4', '1. AVANCE DE LA INVESTIGACIÓN', 1],
+            ['research.5', '2. AVANCE DE LA INVESTIGACIÓN', 2],
+            ['research.6', '3. AVANCE DE LA INVESTIGACIÓN', 3],
+            ['research.7', '4. AVANCE DE LA INVESTIGACIÓN', 4],
+            ['research.8', '5. AVANCE DE LA INVESTIGACIÓN', 5],
+            ['research.9', '6. AVANCE DE LA INVESTIGACIÓN', 6],
+            ['research.12', 'ENTREGA DE LA CARPETA DE INVESTIGACIÓN', null],
+            ['research.13', 'VALIDACIÓN DE LA INVESTIGACIÓN', null],
+            ['research.validation-meeting.1', '1. REUNIÓN DE VALIDACIÓN', null],
+            ['research.validation-meeting.2', '2. REUNIÓN DE VALIDACIÓN', null],
+            ['research.validation-meeting.3', '3. REUNIÓN DE VALIDACIÓN', null],
+            ['research.validation-meeting.4', '4. REUNIÓN DE VALIDACIÓN', null],
+            ['research.14', 'ENTREGA DEL PROYECTO DOCTRINARIO CORREGIDO Y FINALIZADO', null],
+        ];
     }
 }

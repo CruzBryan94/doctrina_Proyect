@@ -3,71 +3,59 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class PasswordResetTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_reset_password_link_screen_can_be_rendered(): void
+    public function test_public_email_reset_request_screen_is_not_exposed(): void
     {
-        $response = $this->get('/forgot-password');
-
-        $response->assertStatus(200);
+        $this->get('/forgot-password')->assertNotFound();
+        $this->assertFalse(Route::has('password.request'));
+        $this->assertFalse(Route::has('password.email'));
     }
 
-    public function test_reset_password_link_can_be_requested(): void
+    public function test_legacy_request_does_not_send_mail_create_tokens_or_enable_reset(): void
     {
         Notification::fake();
-
-        $user = User::factory()->create();
-
-        $this->post('/forgot-password', ['email' => $user->email]);
-
-        Notification::assertSentTo($user, ResetPassword::class);
+        $user = User::factory()->create()->refresh();
+        $passwordHash = $user->password;
+        $this->post('/forgot-password', ['email' => $user->email])->assertNotFound();
+        Notification::assertNothingSent();
+        $this->assertDatabaseCount(config('auth.passwords.users.table'), 0);
+        $this->assertSame($passwordHash, $user->fresh()->password);
+        $this->assertFalse($user->must_change_password);
+        $this->assertGuest();
     }
 
-    public function test_reset_password_screen_can_be_rendered(): void
+    public function test_legacy_token_reset_screen_is_not_exposed(): void
     {
-        Notification::fake();
-
-        $user = User::factory()->create();
-
-        $this->post('/forgot-password', ['email' => $user->email]);
-
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-            $response = $this->get('/reset-password/'.$notification->token);
-
-            $response->assertStatus(200);
-
-            return true;
-        });
+        $this->get('/reset-password/test-token')->assertNotFound();
+        $this->assertFalse(Route::has('password.reset'));
+        $this->assertFalse(Route::has('password.store'));
     }
 
-    public function test_password_can_be_reset_with_valid_token(): void
+    public function test_even_a_valid_broker_token_cannot_change_password_via_legacy_endpoint(): void
     {
         Notification::fake();
-
-        $user = User::factory()->create();
-
-        $this->post('/forgot-password', ['email' => $user->email]);
-
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
-            $response = $this->post('/reset-password', [
-                'token' => $notification->token,
-                'email' => $user->email,
-                'password' => 'password',
-                'password_confirmation' => 'password',
-            ]);
-
-            $response
-                ->assertSessionHasNoErrors()
-                ->assertRedirect(route('login'));
-
-            return true;
-        });
+        $user = User::factory()->create()->refresh();
+        $passwordHash = $user->password;
+        // This token and its table exist only in the isolated SQLite test database.
+        $token = Password::broker()->createToken($user);
+        $this->assertTrue(Password::broker()->tokenExists($user, $token));
+        $this->post('/reset-password', [
+            'token' => $token, 'email' => $user->email,
+            'password' => 'new-password', 'password_confirmation' => 'new-password',
+        ])->assertNotFound();
+        $this->assertSame($passwordHash, $user->fresh()->password);
+        $this->assertFalse($user->must_change_password);
+        $this->assertTrue(Password::broker()->tokenExists($user, $token));
+        Notification::assertNothingSent();
+        $this->assertGuest();
     }
 }

@@ -1,92 +1,22 @@
-@extends('adminlte::page')
-
-@section('title', 'EDITAR USUARIO')
-
-@section('content_header')
-    <div class="row justify-content-center align-item-center">
-        <div class="col text-center">
-            <h1>EDITAR DE USUARIO</h1>
-        </div>
-    </div>
-
-@stop
-
+@extends('layouts.artemis')
+@section('title','Editar usuario')
 @section('content')
-
-    <div class="" id="">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">EDITAR USUARIO</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="container">
-                    {{-- <form id="forNewVehicle" class ="row" action="{{ route('users.update') }}" method="POST"
-                        enctype="multipart/form-data"> --}}
-                        <form id="editUserForm" class ="row" action="{{ route('users.update') }}" method="POST">
-                         @csrf
-
-                        <input type="hidden" name="id" value="{{ $user->id }}">
-
-                        <div class="form-group col-6">
-                            <label for="last_names">Apellidos y Nombres:</label>
-                            <input type="text" name="last_names" class="form-control" value="{{ $user->name }}"
-                                required disabled>
-                        </div>
-
-                        <div class="form-group col-6">
-                            <label for="email">Correo:</label>
-                            <input type="mail" name="email" class="form-control" value="{{ $user->email }}" required disabled>
-                        </div>
-
-                        <div class="form-group col-3">
-                            <label for="grade">Grado:</label>
-                            <select name="grade" class="form-control" required>
-                                @foreach ($grades as $grade)
-                                    <option value="{{ $grade->code }}" @if ($grade->code == $user->grade) selected @endif>
-                                        {{ $grade->grade_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="form-group col-3">
-                            <label for="role_id">Rol:</label>
-                            <select name="role_id" class="form-control" required>
-                                @foreach ($roles as $role)
-                                    <option value="{{ $role->id }}" @if ($role->id == $roleId) selected @endif>
-                                        {{ $role->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="form-group col-3">
-                            <label for="is_active">Estado:</label>
-                            <select name="is_active" class="form-control" required>
-                                <option value="1" @if ($user->is_active == 1) selected @endif>Activo</option>
-                                <option value="0" @if ($user->is_active == 0) selected @endif>Inactivo</option>
-                            </select>
-                        </div>
-
-
-                        <div class="p-4 bg-white rounded shadow-sm mx-auto" style="max-width: 400px;">
-                            <div class="form-group d-flex justify-content-between">
-                                <a href="{{ route('users.index') }}" class="btn btn-danger m-2">Regresar</a>
-                                <button class="btn btn-success m-2">Guardar Cambios</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-    @stop
-
-    @section('css')
-        <link rel="stylesheet" href="/css/admin_custom.css">
-    @stop
-
-    @section('js')
-        <script></script>
-    @stop
+<div class="page-heading"><div><div class="eyebrow">Administración de accesos</div><h1>{{ $user->name }}</h1><p class="page-subtitle">{{ $user->email }}</p></div><a class="btn btn-light" href="{{ route('users.index') }}">Volver</a></div>
+@if(auth()->user()?->is_active && auth()->user()?->hasRole('admin'))
+<div class="panel mb-3"><div class="panel-body d-flex justify-content-between align-items-center"><span>{{ $user->must_change_password ? 'La cuenta debe elegir una nueva contraseña al iniciar sesión.' : 'La contraseña actual está vigente.' }}</span><form id="reset-password-form" method="POST" action="{{ route('users.resetPassword',$user->id) }}">@csrf<button type="button" class="btn btn-outline-danger" id="reset-password-button" @disabled(!$user->is_active)>Restablecer contraseña</button></form></div></div>
+@endif
+<form method="POST" action="{{ route('users.update',$user->id) }}">@csrf @method('PUT')
+<div class="form-grid"><div class="panel"><div class="panel-heading"><h2>Roles y funciones</h2></div><div class="panel-body"><input type="hidden" name="roles" value=""><div class="check-list" style="max-height:none">
+@foreach($roles as $role)<label><input type="checkbox" name="roles[]" value="{{ $role->name }}" @checked(in_array($role->name,old('roles',$user->getRoleNames()->all()) ?: []))><span><strong>{{ ucfirst($role->name) }}</strong><span class="form-text d-block">{{ ['admin'=>'Control completo del sistema y usuarios.','none'=>'Sin acceso a módulos. Se retira al asignar otro rol.','supervisor'=>'Dashboard y reportes, sin operación de manuales.','planificador'=>'Operación de manuales en Planificación.','investigador'=>'Operación de manuales en Investigación.','experimentador'=>'Operación de manuales en Experimentación.','edición'=>'Operación de manuales en Edición.','cgft'=>'Operación de manuales en CGFT.','publicados'=>'Incorporar y editar metadatos de publicados.'][$role->name] ?? '' }}</span></span></label>@endforeach</div></div></div>
+<div class="panel"><div class="panel-heading"><h2>Datos administrativos</h2></div><div class="panel-body"><label for="name" class="form-label">Nombre</label><input id="name" name="name" value="{{ old('name',$user->name) }}" class="form-control mb-3" required maxlength="255"><label for="email" class="form-label">Correo</label><input id="email" name="email" type="email" value="{{ old('email',$user->email) }}" class="form-control mb-3" required maxlength="255"><label for="grade" class="form-label">Grado</label><select name="grade" id="grade" class="form-select mb-3"><option value="">Sin grado</option>@foreach($grades as $grade)<option value="{{ $grade->id }}" @selected(old('grade',$user->grade)==$grade->id)>{{ $grade->grade_name }}</option>@endforeach</select><label class="form-label" for="is_active">Estado de la cuenta</label><select name="is_active" id="is_active" class="form-select mb-4"><option value="1" @selected(old('is_active',$user->is_active)==1)>Activo</option><option value="0" @selected(old('is_active',$user->is_active)==0)>Inactivo</option></select><button class="btn btn-primary w-100">Guardar accesos</button></div></div></div></form>
+@push('scripts')
+<script>
+document.getElementById('reset-password-button')?.addEventListener('click', async function () {
+    if (await window.ArtemisAlerts.confirm('La contraseña actual se reemplazará por una provisional. La persona deberá elegir una nueva antes de usar los módulos.', 'Restablecer contraseña', 'Restablecer')) {
+        document.getElementById('reset-password-form').requestSubmit();
+    }
+});
+</script>
+@endpush
+@include('partials.alert-modal')
+@endsection

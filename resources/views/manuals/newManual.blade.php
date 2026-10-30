@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends('layouts.legacy')
 
 @section('title', 'NUEVO MANUAL')
 
@@ -466,7 +466,7 @@
                 // Mostrar alertas si no es válido
                 if (!isValid) {
                     e.preventDefault(); // Evitar que el formulario se envíe
-                    alert(messages.join('\n'));
+                    window.ArtemisAlerts.error(messages.join('\n'));
                 }
             });
         });

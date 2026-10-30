@@ -2,24 +2,16 @@
 
 namespace Database\Seeders;
 
+use App\Models\ManualPhase;
 use Illuminate\Database\Seeder;
-
-use Illuminate\Support\Facades\DB;
 
 class ManualPhasesSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $phases = [
-            ['code' => 1, 'phase_name' => 'Investigación'],
-            ['code' => 2, 'phase_name' => 'Experimentación'],
-            ['code' => 3, 'phase_name' => 'Edición'],
-            ['code' => 4, 'phase_name' => 'Nota de Aula'],
-        ];
-
-        DB::table('manual_phases')->insert($phases);
+        foreach (['planning' => 'Planificación', 'research' => 'Investigación', 'experimentation' => 'Experimentación', 'edition' => 'Edición', 'cgft' => 'CGFT'] as $slug => $name) {
+            $position = array_search($slug, array_keys(ManualPhase::ROLES), true) + 1;
+            ManualPhase::updateOrCreate(['slug' => $slug], ['code' => $position, 'position' => $position, 'phase_name' => $name, 'is_active' => true]);
+        }
     }
 }

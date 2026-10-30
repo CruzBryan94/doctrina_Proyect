@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends('layouts.legacy')
 
 @section('title', 'SEGUIMIENTO MANUAL')
 
@@ -546,7 +546,7 @@
             });
 
             // Validar fecha de cumplimiento antes de enviar el formulario
-            $('#manualForm').on('submit', function(e) {
+            $('#manualForm').on('submit', async function(e) {
                 let isValid = true;
                 let allUnchecked = true;
 
@@ -569,16 +569,18 @@
                 });
 
                 if (allUnchecked) {
-                    if (!confirm(
+                    e.preventDefault();
+                    if (!await window.ArtemisAlerts.confirm(
                             'Ha desmarcado todas las subfases de esta fase. Esto provocará un retroceso de fase. ¿Desea continuar?'
                         )) {
-                        e.preventDefault();
+                        return;
                     }
+                    if (isValid) this.submit();
                 }
 
                 if (!isValid) {
                     e.preventDefault();
-                    alert(
+                    window.ArtemisAlerts.error(
                         'Por favor, asegúrese de que todas las fases cumplidas tengan una fecha de cumplimiento.'
                     );
                 }

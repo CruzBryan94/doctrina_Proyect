@@ -1,80 +1,36 @@
 <!doctype html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="es">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <title>{{ config('app.name', 'Laravel') }}</title>
-
-    <!-- Fonts -->
-    <link rel="dns-prefetch" href="//fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-
-    <!-- Scripts -->
+    <title>@yield('title', 'ARTEMIS · Acceso al sistema')</title>
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{ asset('vendor/fontawesome-free/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/artemis.css') }}?v={{ filemtime(public_path('css/artemis.css')) }}">
 </head>
-<body>
-    <div id="app">
-        <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
-            <div class="container">
-                <a class="navbar-brand" href="{{ url('/') }}">
-                    {{ config('app.name', 'Laravel') }}
+<body class="artemis-ui auth-page">
+    <div class="auth-shell">
+        <section class="auth-intro" aria-labelledby="auth-title">
+            <div class="auth-brand-surface">
+                <a class="auth-brand" href="{{ route('login') }}" aria-label="ARTEMIS, inicio de sesión">
+                    <img src="{{ asset('imagenes/Logo_pequeño.png') }}" alt="ARTEMIS">
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <!-- Left Side Of Navbar -->
-                    <ul class="navbar-nav me-auto">
-
-                    </ul>
-
-                    <!-- Right Side Of Navbar -->
-                    <ul class="navbar-nav ms-auto">
-                        <!-- Authentication Links -->
-                        @guest
-                            @if (Route::has('login'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
-                                </li>
-                            @endif
-
-                            @if (Route::has('register'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
-                                </li>
-                            @endif
-                        @else
-                            <li class="nav-item dropdown">
-                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    {{ Auth::user()->name }}
-                                </a>
-
-                                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                    <a class="dropdown-item" href="{{ route('logout') }}"
-                                       onclick="event.preventDefault();
-                                                     document.getElementById('logout-form').submit();">
-                                        {{ __('Logout') }}
-                                    </a>
-
-                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                        @csrf
-                                    </form>
-                                </div>
-                            </li>
-                        @endguest
-                    </ul>
-                </div>
             </div>
-        </nav>
-
-        <main class="py-4">
-            @yield('content')
+            <div class="auth-intro-copy">
+                <p class="auth-eyebrow">Sistema de control de generación de doctrina</p>
+                <h1 id="auth-title">Seguimiento institucional de manuales y publicaciones militares</h1>
+                <p class="auth-description">Planifica, coordina y consulta el avance de cada fase del proceso doctrinario.</p>
+                <img class="auth-cover" src="{{ asset('imagenes/Logo de portada.png') }}" alt="Identidad institucional ARTEMIS con mapa y escena militar">
+                <ul class="auth-phases" aria-label="Fases del proceso">
+                    <li>Planificación</li><li>Investigación</li><li>Experimentación</li><li>Edición</li><li>CGFT</li>
+                </ul>
+            </div>
+        </section>
+        <main class="auth-content">
+            <div class="auth-form-wrap">@yield('content')</div>
         </main>
     </div>
+    @include('partials.alert-modal')
 </body>
 </html>

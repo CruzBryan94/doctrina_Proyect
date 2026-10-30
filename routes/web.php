@@ -1,125 +1,84 @@
 <?php
 
-use Laravel\Socialite\Facades\Socialite;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\PasswordUpdateController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ManualController;
+use App\Http\Controllers\ManualDossierController;
+use App\Http\Controllers\ManualDeletionController;
+use App\Http\Controllers\ManualPhaseNoteController;
+use App\Http\Controllers\PhaseDurationController;
+use App\Http\Controllers\ProjectionController;
+use App\Http\Controllers\InstitutionalReferenceController;
+use App\Http\Controllers\HistoricalDashboardController;
+use App\Http\Controllers\MembersController;
+use App\Http\Controllers\MilitaryUnitController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
+Route::pattern('id', '[0-9]+');
 
-
-// Ruta para mostrar la vista de login
-Route::get('/login', function () {
-    return view('auth.login');
-})->name('login');
-
-// RUTAS PARA LOGIN CON GOOGLE
-Route::prefix('google-auth')->group(function () {
-    // Redirige al proveedor de Google
-    Route::get('/redirect', function () {
-        return Socialite::driver('google')->redirect();
-    })->name('google.redirect');
-
-    // Callback después de autenticarse en Google
-    Route::get('/callback', function () {
-        $user_google = Socialite::driver('google')->stateless()->user();
-
-        // Verifica si el usuario es nuevo o existente
-        $user = User::firstOrNew(['google_id' => $user_google->id]);
-
-        if (!$user->exists) {
-            // Usuario nuevo: asigna valores predeterminados
-            $user->fill([
-                'name' => $user_google->name,
-                'email' => $user_google->email,
-                'is_active' => true,
-                'grade' => 17,
-            ]);
-
-            $user->save();
-
-            // Asigna el role_id = 3 en la tabla 'model_has_roles'
-            DB::table('model_has_roles')->updateOrInsert(
-                ['model_id' => $user->id, 'model_type' => User::class],
-                ['role_id' => 3]
-            );
-        } else {
-            // Usuario existente: solo actualiza datos básicos
-            $user->fill([
-                'name' => $user_google->name,
-                'email' => $user_google->email,
-            ]);
-
-            // Guarda el usuario (actualiza o crea)
-            $user->save();
-        }
-
-
-
-        // Inicia sesión con el usuario autenticado
-        Auth::login($user);
-
-        return redirect('/'); // Redirige al dashboard
-    })->name('google.callback');
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+    Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
+    Route::post('/register', [RegisteredUserController::class, 'store'])->middleware('throttle:10,1');
 });
+Route::middleware(['auth', \App\Http\Middleware\EnsureActiveAccount::class, \App\Http\Middleware\EnsurePasswordUpdated::class])->group(function () {
+    Route::get('/password/change', [PasswordUpdateController::class, 'show'])->name('password.change.show');
+    Route::put('/password/change', [PasswordUpdateController::class, 'update'])->name('password.change.update');
+    Route::get('/', fn () => auth()->user()->can('dashboard.view') ? redirect()->route('dashboard') : view('welcome'))->name('welcome');
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('can:dashboard.view')->name('dashboard');
+    Route::get('/dashboard/history', [HistoricalDashboardController::class, 'index'])->middleware('can:dashboard.view')->name('dashboard.history');
+    Route::get('/dashboard/schedule', [ProjectionController::class, 'index'])->middleware('can:dashboard.view')->name('dashboard.schedule');
+    Route::get('/references/institutional', [InstitutionalReferenceController::class, 'index'])->middleware('can:users.manage')->name('references.index');
+    Route::put('/admin/references/institutional/{doctrinalMap}', [InstitutionalReferenceController::class, 'update'])->whereNumber('doctrinalMap')->middleware('can:users.manage')->name('references.update');
+    Route::get('/admin/phase-durations', [PhaseDurationController::class, 'index'])->middleware('can:users.manage')->name('phase-durations.index');
+    Route::put('/admin/phase-durations/{manualPhase}', [PhaseDurationController::class, 'update'])->whereNumber('manualPhase')->middleware('can:users.manage')->name('phase-durations.update');
+    Route::get('/reports/history', [HistoricalDashboardController::class, 'report'])->middleware('can:reports.view')->name('reports.history');
+    Route::get('/reports/manuals', [DashboardController::class, 'report'])->middleware('can:reports.view')->name('reports.manuals');
+    Route::get('/generatePDFManual', fn () => redirect()->route('reports.manuals'))->middleware('can:reports.view')->name('dashboard.generatePDFManual');
 
-// RUTA PROTEGIDA PARA EL DASHBOARD
-Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->middleware('can:home')->name('dashboard');
+    Route::get('/manuals', [ManualController::class, 'index'])->name('manuals.index');
+    Route::get('/manuals/deleted', [ManualDeletionController::class, 'index'])->name('manuals.deleted');
+    Route::post('/manuals/{id}/delete', [ManualDeletionController::class, 'destroy'])->name('manuals.delete');
+    Route::post('/manuals/{id}/restore', [ManualDeletionController::class, 'restore'])->name('manuals.restore');
+    Route::get('/manuals/newManual', [ManualController::class, 'create'])->name('manuals.newManual');
+    Route::get('/manuals/assignment-options', [ManualController::class, 'newAssignmentOptions'])->name('manuals.newAssignmentOptions');
+    Route::post('/manuals/store', [ManualController::class, 'store'])->name('manuals.store');
+    Route::get('/manuals/{id}/edit', [ManualController::class, 'edit'])->name('manuals.editOneManual');
+    Route::get('/manuals/{id}/assignment-options', [ManualController::class, 'assignmentOptions'])->name('manuals.assignmentOptions');
+    Route::get('/manuals/{id}/responsible-options', [ManualController::class, 'responsibleOptions'])->name('manuals.responsibleOptions');
+    Route::put('/manuals/{id}', [ManualController::class, 'update'])->name('manuals.updateOneManual');
+    Route::patch('/manuals/{id}/activity', [ManualController::class, 'activity'])->name('manuals.activity');
+    Route::get('/manuals/{id}/history', [ManualController::class, 'history'])->name('manuals.history');
+    Route::get('/manuals/{manualId}/phases/{phaseId}/note', [ManualPhaseNoteController::class, 'show'])->whereNumber(['manualId', 'phaseId'])->name('manuals.phase-notes.show');
+    Route::patch('/manuals/{manualId}/phases/{phaseId}/note', [ManualPhaseNoteController::class, 'update'])->whereNumber(['manualId', 'phaseId'])->name('manuals.phase-notes.update');
+    Route::get('/manuals/{id}', [ManualDossierController::class, 'show'])->name('manuals.show');
 
-    //RUTAS PARA GENERAR PDF
-    Route::get('/generatePDFPrubea', [App\Http\Controllers\DashboardController::class, 'generatePDFPrubea'])->name('generatePDFPrubea');
-    Route::get('/generatePDFManual', [App\Http\Controllers\DashboardController::class, 'generatePDFManual'])->name('dashboard.generatePDFManual');
-
-    //RUTAS PARA MANUALES
-    Route::get('/manuals', [App\Http\Controllers\ManualController::class, 'index'])->middleware('can:home')->name('manuals.index');
-    Route::get('/manuals/newManual', [App\Http\Controllers\ManualController::class, 'newManual'])->middleware('can:home')->name('manuals.newManual');
-    Route::get('/manuals/editOne/{id}', [App\Http\Controllers\ManualController::class, 'editOneManual'])->middleware('can:home')->name('manuals.editOneManual');
-    Route::post('/manuals/store', [App\Http\Controllers\ManualController::class, 'store'])->name('manuals.store');
-    Route::get('/manuals/editManual/{id}', [App\Http\Controllers\ManualController::class, 'editManual'])->middleware('can:home')->name('manuals.editManual');
-    Route::put('/manuals/update/{id}', [App\Http\Controllers\ManualController::class, 'update'])->name('manuals.update');
-    Route::put('/manuals/updateOneManual{id}', [App\Http\Controllers\ManualController::class, 'updateOneManual'])->name('manuals.updateOneManual');
-    //FIN RUTAS DE MANUALES
-
-
-    //RUTAS PARA USUARIOS
-    Route::get('/users', [App\Http\Controllers\UserController::class, 'index'])->middleware('can:admin')->name('users.index');
-    Route::post('/users/edit/{id}', [App\Http\Controllers\UserController::class, 'edit'])->middleware('can:admin')->name('users.edit');
-    Route::post('/users/update', [App\Http\Controllers\UserController::class, 'update'])->middleware('can:admin')->name('users.update');
-    //FIN RUTAS DE USUARIOS
-
-
-    //RUTAS PARA MIEMBROS DE COMITES
-    Route::get('/members', [App\Http\Controllers\MembersController::class, 'index'])->middleware('can:home')->name('members.index');
-    Route::post('/members/edit/{id}', [App\Http\Controllers\MembersController::class, 'edit'])->middleware('can:home')->name('members.edit');
-    Route::post('/members/update', [App\Http\Controllers\MembersController::class, 'update'])->middleware('can:home')->name('members.update');
-    Route::get('/members/newMember', [App\Http\Controllers\MembersController::class, 'newMember'])->middleware('can:home')->name('members.newMember');
-    Route::post('/members/store', [App\Http\Controllers\MembersController::class, 'store'])->name('members.store');
-    //FIN RUTAS DE MIEMBROS DE COMITES
-
-    //RUTAS PARA UNIDADES MILITARES
-    Route::get('/militaryUnits', [App\Http\Controllers\MilitaryUnitController::class, 'index'])->middleware('can:home')->name('militaryUnits.index');
-    Route::post('/militaryUnits/edit/{id}', [App\Http\Controllers\MilitaryUnitController::class, 'edit'])->middleware('can:home')->name('militaryUnits.edit');
-    Route::post('/militaryUnits/update', [App\Http\Controllers\MilitaryUnitController::class, 'update'])->middleware('can:home')->name('militaryUnits.update');
-    Route::get('/militaryUnits/newMilitaryUnit', [App\Http\Controllers\MilitaryUnitController::class, 'newMilitaryUnit'])->middleware('can:home')->name('militaryUnits.newMilitaryUnit');
-    Route::post('/militaryUnits/store', [App\Http\Controllers\MilitaryUnitController::class, 'store'])->name('militaryUnits.store');
-    //FIN RUTAS DE UNIDADES MILITARES
-
-
-
-
-    Route::get('/', function () {
-        return view('welcome');
-    })->name('welcome');
-
-    // Ruta para cerrar sesión
-    Route::post('/logout', function () {
-        Auth::logout();
-        return redirect('/login'); // Redirige a la página de login después de cerrar sesión
-    })->name('logout');
-});
-
-
-// Redirige a /login si el usuario no está autenticado
-Route::fallback(function () {
-    return redirect('/login');
+    Route::middleware('can:users.manage')->group(function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::post('/users/{id}/password-reset', [UserController::class, 'resetPassword'])->name('users.resetPassword');
+        Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
+    });
+    Route::middleware('can:catalogs.manage')->group(function () {
+        Route::get('/members/import', [MembersController::class, 'importForm'])->name('members.import');
+        Route::post('/members/import/preview', [MembersController::class, 'previewImport'])->name('members.import.preview');
+        Route::post('/members/import', [MembersController::class, 'commitImport'])->name('members.import.commit');
+        Route::get('/members', [MembersController::class, 'index'])->name('members.index');
+        Route::get('/members/newMember', [MembersController::class, 'newMember'])->name('members.newMember');
+        Route::post('/members/store', [MembersController::class, 'store'])->name('members.store');
+        Route::post('/members/edit/{id}', [MembersController::class, 'edit'])->name('members.edit');
+        Route::post('/members/update', [MembersController::class, 'update'])->name('members.update');
+        Route::get('/militaryUnits', [MilitaryUnitController::class, 'index'])->name('militaryUnits.index');
+        Route::get('/militaryUnits/newMilitaryUnit', [MilitaryUnitController::class, 'newMilitaryUnit'])->name('militaryUnits.newMilitaryUnit');
+        Route::post('/militaryUnits/store', [MilitaryUnitController::class, 'store'])->name('militaryUnits.store');
+        Route::post('/militaryUnits/edit/{id}', [MilitaryUnitController::class, 'edit'])->name('militaryUnits.edit');
+        Route::post('/militaryUnits/update', [MilitaryUnitController::class, 'update'])->name('militaryUnits.update');
+    });
 });

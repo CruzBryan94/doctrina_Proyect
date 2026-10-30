@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Providers\RouteServiceProvider;
+use App\Models\Grade;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -30,22 +33,33 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $request->merge(['email' => Str::lower(trim((string) $request->input('email')))]);
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+        $user = DB::transaction(function () use ($request) {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'is_active' => true,
+                'grade' => Grade::where('code', 17)->value('id'),
+            ]);
+
+            $user->assignRole(Role::findOrCreate('none', 'web'));
+
+            return $user;
+        });
 
         event(new Registered($user));
 
         Auth::login($user);
+        $request->session()->regenerate();
 
-        return redirect(RouteServiceProvider::HOME);
+        return redirect()->route('welcome')->with('status', 'Cuenta creada correctamente. Solicita al administrador el acceso a los módulos.');
     }
 }

@@ -15,7 +15,7 @@ return [
     */
 
     'title' => '',
-    'title_prefix' => 'CEDMT | ',
+    'title_prefix' => 'ARTEMIS | ',
     'title_postfix' => '',
 
     /*
@@ -48,7 +48,7 @@ return [
     */
 
     'google_fonts' => [
-        'allowed' => true,
+        'allowed' => false,
     ],
 
     /*
@@ -63,12 +63,12 @@ return [
     |
     */
 
-    'logo' => '<b>CEDMT</b> Doctrina',
-    'logo_img' => 'vendor/adminlte/dist/img/logo CDMT_fondoBlanco.png',
-    'logo_img_class' => 'brand-image img-circle elevation-3',
+    'logo' => '',
+    'logo_img' => 'imagenes/Logo_pequeño.png',
+    'logo_img_class' => 'brand-image',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'CEDMT Logo',
+    'logo_img_alt' => 'ARTEMIS',
 
     /*
     |--------------------------------------------------------------------------
@@ -86,8 +86,8 @@ return [
     'auth_logo' => [
         'enabled' => true,
         'img' => [
-            'path' => 'vendor/adminlte/dist/img/logo CDMT_fondoBlanco.png',
-            'alt' => 'Auth Logo',
+            'path' => 'imagenes/Logo_pequeño.png',
+            'alt' => 'ARTEMIS',
             'class' => '',
             'width' => 50,
             'height' => 50,
@@ -190,15 +190,15 @@ return [
     |
     */
 
-    'classes_body' => '',
+    'classes_body' => 'artemis-ui',
     'classes_brand' => '',
     'classes_brand_text' => '',
     'classes_content_wrapper' => '',
     'classes_content_header' => '',
     'classes_content' => '',
-    'classes_sidebar' => 'sidebar-dark-primary elevation-4',
+    'classes_sidebar' => 'sidebar-dark-primary elevation-4 artemis-legacy-sidebar',
     'classes_sidebar_nav' => '',
-    'classes_topnav' => 'navbar-white navbar-light',
+    'classes_topnav' => 'navbar-white navbar-light artemis-legacy-navbar',
     'classes_topnav_nav' => 'navbar-expand',
     'classes_topnav_container' => 'container',
 
@@ -215,7 +215,7 @@ return [
     */
 
     'sidebar_mini' => 'lg',
-    'sidebar_collapse' => true,
+    'sidebar_collapse' => false,
     'sidebar_collapse_auto_size' => true,
     'sidebar_collapse_remember' => false,
     'sidebar_collapse_remember_no_transition' => true,
@@ -299,46 +299,59 @@ return [
     */
 
     'menu' => [
-
-
-        ['header' => 'MENÚ DE OPCIONES'],
+        ['header' => 'TRABAJO DOCTRINARIO'],
         [
-            'text' => 'Dashboard',
+            'text' => 'Panel general',
             'url' => 'dashboard',
-            'icon' => 'fas fa-fw fa-home',
-            'can' => 'home',
+            'icon' => 'fas fa-fw fa-chart-pie',
+            'can' => 'dashboard.view',
         ],
-        // [
-        //     'text' => 'Manuales',
-        //     'url' => 'manuals',
-        //     'icon' => 'fas fa-fw fa-lock',
-        // ],
         [
-            'text' => 'ADMINISTRACIÓN',
-            'icon' => 'fas fa-fw fa-book',
-            'can' => 'home',
+            'text' => 'Productividad histórica',
+            'url' => 'dashboard/history',
+            'icon' => 'fas fa-fw fa-history',
+            'can' => 'dashboard.view',
+        ],
+        [
+            'text' => 'Cronograma',
+            'url' => 'dashboard/schedule',
+            'icon' => 'fas fa-fw fa-calendar-alt',
+            'can' => 'dashboard.view',
+        ],
+        [
+            'text' => 'Consistencia por mapa',
+            'url' => 'references/institutional',
+            'icon' => 'fas fa-fw fa-balance-scale',
+            'can' => 'viewAny',
+            'model' => \App\Models\Manual::class,
+        ],
+        [
+            'text' => 'Matriz de manuales',
+            'url' => 'manuals',
+            'icon' => 'fas fa-fw fa-th',
+            'can' => 'viewAny',
+            'model' => \App\Models\Manual::class,
+        ],
+        [
+            'text' => 'Reportes',
+            'icon' => 'fas fa-fw fa-file-pdf',
+            'can' => 'reports.view',
             'submenu' => [
-                [
-                    'text' => 'Manuales',
-                    'url' => 'manuals',
-                ],
-                [
-                    'text' => 'Usuarios',
-                    'url' => 'users',
-                    'can' => 'admin',
-                ],
-                [
-                    'text' => 'Miembros de Comités',
-                    'url' => 'members',
-                ],
-                [
-                    'text' => 'Unidades Militares',
-                    'url' => 'militaryUnits',
-                ],
-
+                ['text' => 'Consolidado de manuales', 'url' => 'reports/manuals'],
+                ['text' => 'Productividad histórica', 'url' => 'reports/history'],
             ],
-        ]
-
+        ],
+        ['header' => 'ADMINISTRACIÓN'],
+        [
+            'text' => 'Administración',
+            'icon' => 'fas fa-fw fa-cog',
+            'submenu' => [
+                ['text' => 'Usuarios y roles', 'url' => 'users', 'can' => 'users.manage'],
+                ['text' => 'Plazos por fase', 'url' => 'admin/phase-durations', 'can' => 'users.manage'],
+                ['text' => 'Miembros de comités', 'url' => 'members', 'can' => 'catalogs.manage'],
+                ['text' => 'Unidades militares', 'url' => 'militaryUnits', 'can' => 'catalogs.manage'],
+            ],
+        ],
     ],
 
     /*
@@ -381,18 +394,18 @@ return [
             'files' => [
                 [
                     'type' => 'js',
-                    'asset' => false,
-                    'location' => '//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js',
+                    'asset' => true,
+                    'location' => 'lib/datatables/1.10.19/jquery.dataTables.min.js',
                 ],
                 [
                     'type' => 'js',
-                    'asset' => false,
-                    'location' => '//cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js',
+                    'asset' => true,
+                    'location' => 'lib/datatables/1.10.19/dataTables.bootstrap4.min.js',
                 ],
                 [
                     'type' => 'css',
-                    'asset' => false,
-                    'location' => '//cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css',
+                    'asset' => true,
+                    'location' => 'lib/datatables/1.10.19/dataTables.bootstrap4.min.css',
                 ],
             ],
         ],

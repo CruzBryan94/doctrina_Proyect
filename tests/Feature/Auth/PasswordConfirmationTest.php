@@ -4,41 +4,35 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class PasswordConfirmationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_confirm_password_screen_can_be_rendered(): void
+    public function test_legacy_confirmation_screen_is_not_exposed(): void
     {
         $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->get('/confirm-password');
-
-        $response->assertStatus(200);
+        $this->actingAs($user)->get('/confirm-password')->assertNotFound();
+        $this->assertFalse(Route::has('password.confirm'));
     }
 
-    public function test_password_can_be_confirmed(): void
+    public function test_correct_password_does_not_enable_legacy_confirmation(): void
     {
         $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->post('/confirm-password', [
-            'password' => 'password',
-        ]);
-
-        $response->assertRedirect();
-        $response->assertSessionHasNoErrors();
+        $passwordHash = $user->password;
+        $this->actingAs($user)->post('/confirm-password', ['password' => 'password'])
+            ->assertNotFound()->assertSessionMissing('auth.password_confirmed_at');
+        $this->assertSame($passwordHash, $user->fresh()->password);
+        $this->assertAuthenticatedAs($user);
     }
 
-    public function test_password_is_not_confirmed_with_invalid_password(): void
+    public function test_wrong_password_does_not_enable_legacy_confirmation(): void
     {
         $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->post('/confirm-password', [
-            'password' => 'wrong-password',
-        ]);
-
-        $response->assertSessionHasErrors();
+        $this->actingAs($user)->post('/confirm-password', ['password' => 'wrong-password'])
+            ->assertNotFound()->assertSessionMissing('auth.password_confirmed_at');
+        $this->assertAuthenticatedAs($user);
     }
 }

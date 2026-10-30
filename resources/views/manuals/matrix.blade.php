@@ -1,0 +1,61 @@
+@extends('layouts.artemis')
+@section('title', 'Matriz de '.$phase->phase_name)
+@section('content')
+@php($nextPhaseName=App\Models\ManualPhase::where('position', '>', $phase->position)->orderBy('position')->value('phase_name'))
+@php($boundaryKey=App\Models\ManualPhaseState::VALIDATION_BOUNDARIES[$phase->slug] ?? null)
+@php($boundaryPosition=$boundaryKey ? $activities->firstWhere('activity_key',$boundaryKey)?->position : null)
+@php($activityGroups=$activities->mapWithKeys(fn($activity)=>[$activity->id=>$boundaryPosition ? ($activity->position <= $boundaryPosition ? 'activity-development' : 'activity-validation') : '']))
+
+<div class="page-heading artemis-page-title"><div><div class="eyebrow artemis-page-kicker">ARTEMIS · Control de avance</div><h1>Matriz de manuales</h1><p class="page-subtitle">Registra el cumplimiento y su fecha en cada actividad. El avance se guarda automáticamente.</p></div><div class="d-flex gap-2">@can('viewAny', App\Models\Manual::class)<a class="btn btn-outline-secondary" href="{{ route('manuals.deleted') }}"><i class="fas fa-trash-restore" aria-hidden="true"></i> Papelera</a>@endcan @can('create', App\Models\Manual::class)<a class="btn btn-primary" href="{{ route('manuals.newManual') }}"><i class="fas fa-plus" aria-hidden="true"></i> Nuevo manual</a>@endcan</div></div>
+<nav class="phase-tabs" aria-label="Fases">@foreach($phases as $item)<a href="{{ route('manuals.index', ['phase' => $item->slug]) }}" class="{{ $item->id === $phase->id && !request()->boolean('published') ? 'active' : '' }}">{{ $item->position }}. {{ $item->phase_name }}</a>@endforeach
+@if($phases->contains('slug','cgft'))<a class="{{ request()->boolean('published') ? 'active' : '' }}" href="{{ route('manuals.index', ['phase'=>'cgft','published'=>1]) }}"><i class="fas fa-check-circle" aria-hidden="true"></i> Publicados</a>@endif</nav>
+<div class="panel">
+<div class="matrix-heading">
+<div class="matrix-heading-title"><div class="eyebrow">{{ request()->boolean('published') ? 'Archivo de publicaciones' : 'Seguimiento por fase' }}</div><h2>{{ request()->boolean('published') ? 'Manuales publicados' : $phase->phase_name }}</h2><p>Resumen de todos los manuales que coinciden con los filtros.</p></div>
+<div class="matrix-summary" aria-label="Resumen de manuales" aria-live="polite">
+<div class="matrix-stat matrix-stat-total"><span class="matrix-stat-label">Total de manuales</span><strong data-matrix-count="total">{{ $summary->total }}</strong></div>
+@if(in_array($phase->slug,['research','experimentation']))
+<div class="matrix-stat matrix-stat-development"><span class="matrix-stat-label">En desarrollo</span><strong data-matrix-count="development">{{ $summary->development }}</strong></div>
+<div class="matrix-stat matrix-stat-validation"><span class="matrix-stat-label">En validación</span><strong data-matrix-count="validation">{{ $summary->validation }}</strong></div>
+@endif
+<div class="matrix-stat matrix-stat-ready"><span class="matrix-stat-label">{{ $phase->slug === 'cgft' ? 'Listos para publicar' : 'Listos para '.$nextPhaseName }}</span><strong data-matrix-count="ready">{{ $summary->ready }}</strong></div>
+</div></div>
+@include('partials.filters', ['action' => route('manuals.index'), 'matrix' => true])
+@if($phase->slug !== 'planning')<div class="px-4 py-2 small text-muted">Rojo: más de {{ app(\App\Services\PhaseDurationService::class)->forPhase($phase) }} meses en esta fase. Alerta adicional: más de un año calendario desde el inicio de Investigación. Registra el inicio antes de completar actividades.</div>@endif
+<div class="matrix-wrap">
+<table class="matrix" id="workflow-matrix" data-phase="{{ $phase->slug }}" data-phase-name="{{ $phase->phase_name }}" data-next-phase="{{ $nextPhaseName }}" data-previous-phase="{{ App\Models\ManualPhase::where('position', '<', $phase->position)->orderByDesc('position')->value('phase_name') }}">
+<thead><tr><th class="identity sticky-name" scope="col">MANUAL</th><th class="map-column" scope="col">MAPA DOCTRINARIO</th><th class="type-column" scope="col">TIPO</th>@foreach($activities as $activity)<th class="{{ $activityGroups[$activity->id] }} {{ $phase->slug === 'edition' ? 'edition-heading' : '' }}" scope="col" title="{{ $activity->suphase_name }}">{{ $activity->suphase_name }}@if($activityGroups[$activity->id])<small class="activity-group-label">{{ $activityGroups[$activity->id] === 'activity-development' ? 'Desarrollo' : 'Validación' }}</small>@endif</th>@endforeach<th scope="col">AVANCE DE FASE</th><th scope="col">INICIO Y TIEMPOS</th><th scope="col">ACCIONES</th></tr></thead>
+<tbody>
+@forelse($manuals as $manual)
+@php($canOperate=auth()->user()->can("update",$manual) && !($manual->is_published && $manual->manualPhaseSuphases->isEmpty()))
+@php($timing=$manual->timing())
+@php($substate=$manual->currentSubstate())
+<tr data-summary-substate="{{ $substate['code'] ?? '' }}" data-summary-ready="{{ !$manual->is_published && $manual->progress() >= 100 ? 1 : 0 }}" data-manual="{{ $manual->id }}" data-version="{{ $manual->lock_version }}" data-url="{{ route('manuals.activity',$manual->id) }}">
+<td class="sticky-name"><div class="manual-title"><a href="{{ route('manuals.show', $manual->id) }}">{{ $manual->manual_name }}</a></div><span class="manual-substate {{ $substate ? 'substate-'.$substate['code'] : '' }}" @if(!$substate) hidden @endif title="{{ $substate ? $substate['label'].' de '.$phase->phase_name.' · Desde '.$substate['started_on'] : '' }}">{{ $substate['label'] ?? '' }}</span><div class="manual-meta">ART-{{ str_pad($manual->id,4,'0',STR_PAD_LEFT) }} · {{ $manual->research_advances }} avances INV / {{ $manual->experimentation_advances }} EXP</div><div class="manual-meta row-activity mt-2">{{ $manual->currentActivity() }}</div></td>
+<td class="map-label map-column">{{ $manual->manualType->doctrinalMap->name }}</td>
+<td class="type-column"><span class="type-pill" title="{{ $manual->manualType->type_name }}">{{ $manual->manualType->code }}</span></td>
+@foreach($activities as $activity)
+@php($state=$manual->manualPhaseSuphases->firstWhere('catalog_subphases_id',$activity->id))
+@if(!$state)<td class="not-applicable {{ $activityGroups[$activity->id] }}">{{ $manual->is_published && $manual->manualPhaseSuphases->isEmpty() ? 'Sin antecedente' : 'No aplica' }}</td>@else
+<td class="matrix-cell {{ array_key_exists($activity->activity_key,App\Services\EditionActivity::NAMES) ? 'edition-cell' : '' }} {{ $activityGroups[$activity->id] }} {{ $state->is_completed ? 'done' : '' }}" data-activity="{{ $activity->id }}" data-saved="{{ $state->is_completed ? '1' : '0' }}" data-date="{{ $state->completation_date?->format('Y-m-d') }}">
+@if(array_key_exists($activity->activity_key,App\Services\EditionActivity::NAMES))@include('partials.edition-fields')@endif
+@if($phase->slug === 'edition')<span class="edition-label">Cumplimiento</span>@endif
+<input type="checkbox" class="completion-toggle" @disabled(!$canOperate) aria-label="{{ $manual->manual_name }}: {{ $activity->suphase_name }}" @checked($state->is_completed)>
+@if($phase->slug === 'edition')<span class="edition-label">Fecha de cumplimiento</span>@endif
+<input type="date" class="completion-date" aria-label="Fecha de {{ $activity->suphase_name }} para {{ $manual->manual_name }}" max="{{ today()->format('Y-m-d') }}" value="{{ $state->completation_date?->format('Y-m-d') }}" @disabled(!$canOperate || !$state->is_completed)>
+<span class="cell-state" aria-live="polite">{{ $state->is_completed ? 'Guardado' : 'Pendiente' }}</span>
+</td>@endif
+@endforeach
+<td>@if($manual->is_published && $manual->manualPhaseSuphases->isEmpty())<span>Sin seguimiento previo</span>@else<div class="progress-block"><span class="progress-label">{{ number_format($manual->progress(),2,',','.') }} %</span><div class="progress-track" role="progressbar" aria-label="Avance de {{ $manual->manual_name }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $manual->progress() }}"><span style="width:{{ $manual->progress() }}%"></span></div></div>@endif</td>
+<td class="timing-cell {{ $timing['phase_overdue'] ? 'overdue' : '' }}"><div class="phase-start-container"><label class="visually-hidden" for="start-{{ $manual->id }}">Inicio de fase</label><input id="start-{{ $manual->id }}" class="form-control phase-start" @disabled(!$canOperate) type="date" max="{{ today()->format('Y-m-d') }}" value="{{ $manual->currentStart()?->format('Y-m-d') }}"><button class="btn btn-sm btn-outline-secondary save-start" @disabled(!$canOperate) type="button" aria-label="Registrar inicio de fase" title="Registrar inicio de fase"><i class="fas fa-save" aria-hidden="true"></i></button></div><div class="timing mt-2"><div>Fase: <strong class="phase-days">{{ $timing['phase_days'] === null ? 'Sin iniciar' : $timing['phase_days'].' días' }}</strong></div><div>Total: <strong class="total-days">{{ $timing['total_days'] === null ? 'Sin inicio conocido' : $timing['total_days'].' días' }}</strong></div><span class="warning-label phase-alert" @if(!$timing['phase_overdue']) hidden @endif>Más de {{ $timing['phase_duration_months'] }} meses en la fase</span><span class="warning-label research-alert" @if(!$timing['research_overdue']) hidden @endif>Más de un año calendario desde Investigación</span>@if($manual->is_published)<span class="badge-soft">{{ $manual->published_on?->isFuture() ? 'Publicado · fecha futura declarada; tiempos hasta hoy' : 'Publicado · tiempos detenidos' }}</span>@endif</div></td>
+<td><div class="matrix-actions"><a class="btn btn-sm btn-light" href="{{ route('manuals.phase-notes.show', [$manual->id, $phase->id]) }}">Nota e historial de fase</a>@can('updateMetadata', $manual)<a class="btn btn-sm btn-outline-success" href="{{ route('manuals.editOneManual',['id'=>$manual->id,'return_to'=>request()->getRequestUri()]) }}"><i class="fas fa-edit" aria-hidden="true"></i> Editar</a>@endcan<a class="btn btn-sm btn-light" href="{{ route('manuals.history',$manual->id) }}">Historial</a>@if($canOperate && $phase->slug!=='planning')<button class="btn btn-sm btn-light retreat" type="button">Retroceder</button>@endif @if($canOperate) @if($phase->slug === 'cgft' && !$manual->is_published)<label for="publication-{{ $manual->id }}">Fecha de publicación declarada</label><input id="publication-{{ $manual->id }}" class="form-control publication-date" type="date" value="{{ today()->toDateString() }}" required>@endif <button class="btn btn-sm advance" type="button" @disabled($manual->progress()<100 || $manual->is_published) title="Completa todas las actividades y sus fechas para habilitar el cambio">{{ $manual->is_published ? 'Publicado' : ($phase->slug === 'cgft' ? 'Publicar manual' : ($phase->slug === 'edition' ? 'Enviar a CGFT' : 'Cambiar de fase')) }}</button>@endif @can('delete', $manual)<form method="POST" action="{{ route('manuals.delete', $manual->id) }}" data-confirm-action data-confirm-message="¿Enviar «{{ $manual->manual_name }}» a la papelera? Podrá recuperarse durante siete días; después solo administración podrá recuperarlo.">@csrf<input type="hidden" name="version" value="{{ $manual->lock_version }}"><button class="btn btn-sm btn-outline-danger" type="submit"><i class="fas fa-trash" aria-hidden="true"></i> Eliminar</button></form>@endcan</div></td>
+</tr>
+@empty<tr><td colspan="{{ $activities->count()+6 }}"><div class="empty-state"><i class="fas fa-layer-group" aria-hidden="true"></i><strong>No hay manuales en esta selección</strong><p>Cambia los filtros o elige otra fase.</p></div></td></tr>@endforelse
+</tbody></table>
+</div><div class="panel-body">{{ $manuals->links() }}</div>
+</div>
+@include('partials.transferred-phase-visits')
+<p class="page-subtitle"><i class="fas fa-info-circle" aria-hidden="true"></i> Cada actividad aplicable tiene el mismo peso. Las celdas «No aplica» no afectan el porcentaje.</p>
+@endsection
+@push('scripts')<script src="{{ asset('js/manual-deletion.js') }}?v={{ filemtime(public_path('js/manual-deletion.js')) }}" defer></script>@if($phase->slug === 'edition')<script src="{{ asset('js/edition-responsibles.js') }}?v={{ filemtime(public_path('js/edition-responsibles.js')) }}" defer></script>@endif<script src="{{ asset('js/matrix.js') }}?v={{ filemtime(public_path('js/matrix.js')) }}" defer></script>@endpush
+

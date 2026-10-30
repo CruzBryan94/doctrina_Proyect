@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends('layouts.legacy')
 
 @section('title', 'NUEVO UNIDAD MILITAR')
 
@@ -40,7 +40,7 @@
 
                         <div class="p-4 bg-white rounded shadow-sm mx-auto" style="max-width: 400px;">
                             <div class="form-group d-flex justify-content-between">
-                                <a href="{{ route('militaryUnits.index') }}" class="btn btn-danger m-2">Regresar</a>
+                                <a href="{{ route('militaryUnits.index') }}" class="btn btn-secondary m-2">Regresar</a>
                                 <button class="btn btn-success m-2" id="saveButton">Crear Unidad Militar</button>
                             </div>
                         </div>
@@ -48,10 +48,6 @@
                 </div>
             </div>
         </div>
-    @stop
-
-    @section('css')
-        <link rel="stylesheet" href="/css/admin_custom.css">
     @stop
 
     @section('js')

@@ -29,6 +29,14 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if ($request->user()->must_change_password) {
+            return redirect()->route('password.change.show');
+        }
+
+        if (! $request->user()->can('dashboard.view')) {
+            return redirect()->route('welcome');
+        }
+
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 

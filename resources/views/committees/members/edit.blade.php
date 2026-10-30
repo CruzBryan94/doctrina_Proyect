@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends('layouts.legacy')
 
 @section('title', 'EDITAR MIEMBRO')
 
@@ -12,6 +12,10 @@
 @stop
 
 @section('content')
+
+    @if ($errors->any())
+        <div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+    @endif
 
     <div class="" id="">
         <div class="modal-dialog modal-lg">
@@ -31,14 +35,14 @@
                         <div class="form-group col-6">
                             <label for="full_name">Apellidos y Nombres:</label>
                             <input type="text" name="full_name" class="form-control"
-                                value="{{ $committeeMember->full_name }}" maxlength="240" required>
+                                value="{{ old('full_name', $committeeMember->full_name) }}" maxlength="240" required>
                         </div>
 
                         <div class="form-group col-6">
                             <label for="identification">Cédula de identidad:</label>
-                            <input type="texxt" name="identification" class="form-control"
+                            <input type="text" name="identification" class="form-control"
                                 oninput="validateIdentification()" id="identification"
-                                value="{{ $committeeMember->identification }}" required>
+                                value="{{ old('identification', $committeeMember->identification) }}" required>
                             <small id="idError" class="text-danger" style="display: none;">
                                 Deben ser 10 dígitos numéricos.
                             </small>
@@ -48,15 +52,26 @@
                             <label for="grades_id">Grado:</label>
                             <select name="grades_id" class="form-control" required>
                                 @foreach ($grades as $grade)
-                                    <option value="{{ $grade->code }}" @if ($grade->id == $committeeMember->grade->code) selected @endif>
+                                    <option value="{{ $grade->id }}" @selected(old('grades_id', $committeeMember->grades_id) == $grade->id)>
                                         {{ $grade->grade_name }}</option>
                                 @endforeach
                             </select>
                         </div>
 
+                        <div class="form-group col-md-6">
+                            <label for="cellphone">Celular (opcional):</label>
+                            <input type="tel" id="cellphone" name="cellphone" maxlength="20" autocomplete="tel"
+                                class="form-control @error('cellphone') is-invalid @enderror"
+                                value="{{ old('cellphone', $committeeMember->cellphone) }}" aria-describedby="cellphone-help @error('cellphone') cellphone-error @enderror">
+                            <small id="cellphone-help" class="form-text text-muted">Ejemplo: 0991234567 o +593991234567.</small>
+                            @error('cellphone')
+                                <div id="cellphone-error" class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         <div class="p-4 bg-white rounded shadow-sm mx-auto" style="max-width: 400px;">
                             <div class="form-group d-flex justify-content-between">
-                                <a href="{{ route('members.index') }}" class="btn btn-danger m-2">Regresar</a>
+                                <a href="{{ route('members.index') }}" class="btn btn-secondary m-2">Regresar</a>
                                 <button class="btn btn-success m-2" id="saveButton">Guardar Cambios</button>
                             </div>
                         </div>
@@ -65,10 +80,6 @@
             </div>
         </div>
 
-    @stop
-
-    @section('css')
-        <link rel="stylesheet" href="/css/admin_custom.css">
     @stop
 
     @section('js')

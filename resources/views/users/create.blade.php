@@ -1,0 +1,15 @@
+@extends('layouts.artemis')
+@section('title','Crear cuenta')
+@section('content')
+<div class="page-heading"><div><div class="eyebrow">Administración de accesos</div><h1>Nueva cuenta</h1><p class="page-subtitle">Cuenta administrativa individual, separada del registro de integrantes.</p></div><a class="btn btn-light" href="{{ route('users.index') }}">Volver</a></div>
+<form method="POST" action="{{ route('users.store') }}">@csrf
+<div class="form-grid"><div class="panel"><div class="panel-heading"><h2>Datos de la cuenta</h2></div><div class="panel-body">
+<label class="form-label" for="name">Nombre</label><input class="form-control mb-3" id="name" name="name" value="{{ old('name') }}" required maxlength="255" autocomplete="name">
+<label class="form-label" for="email">Correo</label><input class="form-control mb-3" id="email" name="email" type="email" value="{{ old('email') }}" required maxlength="255" autocomplete="email">
+<label class="form-label" for="grade">Grado</label><select name="grade" id="grade" class="form-select mb-3"><option value="">Sin grado</option>@foreach($grades as $grade)<option value="{{ $grade->id }}" @selected(old('grade')==$grade->id)>{{ $grade->grade_name }}</option>@endforeach</select>
+<label class="form-label" for="is_active">Estado de la cuenta</label><select name="is_active" id="is_active" class="form-select mb-3"><option value="1" @selected(old('is_active','1')=='1')>Activo</option><option value="0" @selected(old('is_active')=='0')>Inactivo</option></select>
+<label class="form-label" for="password">Contraseña inicial</label><input class="form-control mb-3" id="password" name="password" type="password" required autocomplete="new-password">
+<label class="form-label" for="password_confirmation">Confirmar contraseña</label><input class="form-control" id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password">
+</div></div><div class="panel"><div class="panel-heading"><h2>Roles</h2></div><div class="panel-body"><input type="hidden" name="roles" value=""><div class="check-list" style="max-height:none">
+@foreach($roles as $role)<label><input type="checkbox" name="roles[]" value="{{ $role->name }}" @checked(in_array($role->name,old('roles',[]) ?: []))><span><strong>{{ ucfirst($role->name) }}</strong><span class="form-text d-block">{{ ['admin'=>'Control completo del sistema y usuarios.','supervisor'=>'Dashboard y reportes, sin operación de manuales.','planificador'=>'Operación de manuales en Planificación.','investigador'=>'Operación de manuales en Investigación.','experimentador'=>'Operación de manuales en Experimentación.','edición'=>'Operación de manuales en Edición.','cgft'=>'Operación de manuales en CGFT.','publicados'=>'Incorporar y editar metadatos de publicados.'][$role->name] ?? '' }}</span></span></label>@endforeach</div><p class="form-text">Sin roles seleccionados, la cuenta queda con «none» y sin acceso a módulos.</p><button class="btn btn-primary w-100">Crear cuenta</button></div></div></div></form>
+@endsection
