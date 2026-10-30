@@ -57,7 +57,7 @@ jobs:
       - name: Validate Laravel startup caches in isolation
         run: php scripts/ci/validate-laravel.php
       - name: Run full suite in isolated SQLite
-        run: php vendor/bin/phpunit --configuration phpunit.ci.xml
+        run: php -d memory_limit=256M vendor/bin/phpunit --configuration phpunit.ci.xml
 
   container:
     name: Docker build and configuration
