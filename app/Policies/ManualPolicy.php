@@ -40,6 +40,27 @@ class ManualPolicy
             : $this->update($user, $manual));
     }
 
+    public function delete(User $user, Manual $manual): bool
+    {
+        return $user->is_active && ($user->hasRole('admin')
+            || in_array($manual->manualPhase->slug, $user->accessiblePhaseSlugs(), true));
+    }
+
+    public function restore(User $user, Manual $manual): bool
+    {
+        if (! $user->is_active) {
+            return false;
+        }
+
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        return $manual->deleted_at !== null
+            && now()->lte($manual->deleted_at->copy()->addDays(7))
+            && in_array($manual->manualPhase->slug, $user->accessiblePhaseSlugs(), true);
+    }
+
     public function createPublished(User $user): bool
     {
         return $user->is_active && $user->hasAnyRole(['admin', 'publicados', 'cgft']);

@@ -77,7 +77,7 @@ class ManualWorkflow
     public function event(Manual $manual, string $action, array $before, array $after, ?string $reason = null): void
     {
         DB::transaction(function () use ($manual, $action, $before, $after, $reason) {
-            Manual::whereKey($manual->id)->lockForUpdate()->firstOrFail();
+            Manual::withTrashed()->whereKey($manual->id)->lockForUpdate()->firstOrFail();
             $event = ManualEvent::create(['manual_id' => $manual->id, 'user_id' => auth()->id(), 'action' => $action, 'before' => $before, 'after' => $after, 'reason' => $reason]);
             app(ManualPhaseHistory::class)->record($manual, $event);
         });

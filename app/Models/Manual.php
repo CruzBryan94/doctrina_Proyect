@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Manual extends Model
 {
+    use SoftDeletes;
+
     public const CLASSIFICATIONS = ['generated' => 'Generado', 'update' => 'Actualización'];
     protected $fillable = ['classification', 'manual_types_id', 'manual_name', 'manual_phases_id', 'code', 'observations', 'publication_year', 'is_published', 'is_active', 'research_advances', 'experimentation_advances', 'process_started_on', 'research_started_on', 'published_on'];
 
@@ -54,6 +57,11 @@ class Manual extends Model
     public function events()
     {
         return $this->hasMany(ManualEvent::class)->latest('id');
+    }
+
+    public function deletedBy()
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
     }
 
     public function progress(?int $phaseId = null): float

@@ -13,6 +13,7 @@ class ManualDossier
         'activity' => 'Seguimiento de actividad', 'start' => 'Inicio de fase',
         'advance' => 'Continuación de fase', 'retreat' => 'Retroceso de fase',
         'variable_catalog_reopened' => 'Reapertura con catálogo vigente',
+        'deleted' => 'Enviado a papelera', 'restored' => 'Recuperado de papelera',
     ];
 
     public const EVENT_FIELDS = [

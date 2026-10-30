@@ -6,7 +6,7 @@ El administrador activo se valida por rol `admin` dentro de la transacción. Las
 
 En el esquema aislado de concurrencia `artemis_qa_concurrency_20261025`, dos transacciones simultáneas llegaron a quitarse el rol admin y dejaron cero administradores activos; la base de la aplicación real se verificó intacta. Para serializar esa decisión, `lockActiveAdmins()` bloquea primero la fila estable del rol admin como mutex y después lee/bloquea el conjunto de usuarios administradores activos por ID ascendente. La repetición del caso concurrente en MySQL QA queda a cargo de la verificación del integrador.
 
-El reset reemplaza el hash y activa la obligación de cambio. La persona debe elegir una contraseña confirmada que cumpla `Password::defaults()` y no sea `132456`; esa contraseña provisional no se puede reutilizar una vez completado el cambio. La auditoría solo conserva actor, cuenta objetivo, acción y fecha.
+El reset reemplaza el hash y activa la obligación de cambio. La persona debe elegir una contraseña confirmada que cumpla `Password::defaults()` y no sea `123456`; esa contraseña provisional no se puede reutilizar una vez completado el cambio. La auditoría solo conserva actor, cuenta objetivo, acción y fecha.
 
 Comprobación dirigida prevista en SQLite en memoria:
 

@@ -109,7 +109,7 @@ class UserController extends Controller
             $actor = $this->lockAndAuthorizeAdmin($request);
             $user = User::lockForUpdate()->findOrFail($id);
             abort_unless($user->is_active, 422, 'No se puede habilitar una cuenta inactiva.');
-            $user->password = Hash::make('132456');
+            $user->password = Hash::make('123456');
             $user->must_change_password = true;
             $user->save();
             $this->audit($actor->id, $user->id, 'password_reset_enabled');

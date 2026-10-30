@@ -215,7 +215,7 @@ Flujo confirmado que reemplaza la propuesta anterior de correo:
 
 1. Usuario solicita personalmente, fuera de ARTEMIS; no nuevo trámite público de solicitud.
 2. Admin abre gestión/perfil del usuario y pulsa Restablecer contraseña.
-3. Invalida contraseña anterior y habilita provisional exacta **132456**, sin vencimiento/código adicional. No es 123456.
+3. Invalida contraseña anterior y habilita provisional exacta **123456**, sin vencimiento/código adicional. No es 123456.
 4. Usuario ingresa correo y provisional en Contraseña; no se agrega Cédula al login.
 5. Solo accede a guardar nueva contraseña con validación/confirmación antes de módulos.
 6. Al guardar deja de servir la provisional; conservar roles/permisos y no cerrar otras sesiones, decisión expresa del usuario.
