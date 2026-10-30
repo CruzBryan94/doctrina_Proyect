@@ -84,15 +84,17 @@ jobs:
             test -f /app/public/build/manifest.json
             test ! -d /app/vendor/phpunit
           '
-      - name: Reject accidental Railway deployment from dev
+      - name: Reject accidental Railway deployment from development branches
         run: |
           set +e
-          output=$(docker run --rm --env RAILWAY_PROJECT_ID=ci \
-            --env RAILWAY_GIT_BRANCH=dev artemis-ci:local 2>&1)
-          result=$?
+          for branch in dev devDoctrina; do
+            output=$(docker run --rm --env RAILWAY_PROJECT_ID=ci \
+              --env RAILWAY_GIT_BRANCH="$branch" artemis-ci:local 2>&1)
+            result=$?
+            test "$result" = 1 || exit 1
+            printf '%s\n' "$output" | grep -F 'Railway startup requires the produccion GitHub branch' || exit 1
+          done
           set -e
-          test "$result" = 1
-          printf '%s\n' "$output" | grep -F 'Railway startup requires the produccion GitHub branch'
       - name: Start web with disposable storage and no database service
         run: |
           docker volume create artemis-ci-storage
@@ -147,6 +149,9 @@ jobs:
           test "$APPLICATION_RESULT" = success
           test "$CONTAINER_RESULT" = success
           if [ "$EVENT_NAME" = pull_request ]; then
-            test "$SOURCE_BRANCH" = dev
+            case "$SOURCE_BRANCH" in
+              dev|devDoctrina) ;;
+              *) echo "Pull requests to produccion must come from dev or devDoctrina" >&2; exit 1 ;;
+            esac
             test "$SOURCE_REPOSITORY" = "$TARGET_REPOSITORY"
           fi

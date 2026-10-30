@@ -1,6 +1,6 @@
 # Flujo de desarrollo, CI y despliegue de ARTEMIS
 
-Actualización: 27 de octubre de 2026. Flujo objetivo: **`dev → Pull Request → produccion → Railway`**.
+Actualización: 30 de octubre de 2026. Flujo: **`devDoctrina → Pull Request → produccion → Railway`**. También se admitirá `dev` como origen si se crea en el futuro; ambas ramas solo ejecutan CI y nunca despliegan.
 
 **Inicialización mínima ejecutada el 27/10 con autorización posterior:** Railway tiene 33 tablas con sus relaciones, catálogos y una sola cuenta administradora existente; no se transfirieron manuales, integrantes ni historia. Se conservaron las credenciales del admin. La aplicación salió de mantenimiento y `/login` responde 200. Ver [RAILWAY_INICIALIZACION_MINIMA.md](docs/RAILWAY_INICIALIZACION_MINIMA.md). La transferencia completa mencionada en la preparación inicial quedó sustituida por este alcance mínimo; no se habilitaron migraciones automáticas.
 
@@ -8,7 +8,7 @@ Actualización: 27 de octubre de 2026. Flujo objetivo: **`dev → Pull Request �
 
 ## Estado y límites actuales
 
-La rama **`produccion` ya existe** localmente y en las referencias de origin; también existen `devDoctrina` y `main`, mientras `dev` sigue pendiente. El repositorio de origen es `CruzBryan94/doctrina_Proyect`; su raíz contiene `artisan`. El 27/10 el usuario autorizó adaptar infraestructura/documentación al nombre `produccion` y generar en esa rama el commit local `to-prod1120`, sin push ni despliegue desde Codex. Esta excepción explícita no cambia el flujo ordinario de PR ni autoriza publicaciones futuras.
+La rama **`produccion` ya existe** localmente y en las referencias de origin; las ramas de desarrollo existentes son `devDoctrina` y `main`. El flujo operativo actual usa `devDoctrina`; no es necesario crear una rama `dev`. El repositorio de origen es `CruzBryan94/doctrina_Proyect`; su raíz contiene `artisan`.
 
 El usuario ya creó servicios Railway. En las capturas MySQL informa `ready for connections` y el servicio web rechaza el arranque porque antes exigía la rama literal `production`. El script y el workflow se ajustaron para exigir `produccion`; **`APP_ENV=production` conserva su valor Laravel**, independiente del nombre Git. En Railway se debe comprobar que la rama vinculada sea `produccion` y que no se haya definido manualmente `RAILWAY_GIT_BRANCH`. No se cambiaron ajustes remotos durante esta corrección.
 
@@ -16,17 +16,16 @@ La preparación inicial tuvo incidencias heredadas: **162 tests, 1.326 asercione
 
 La imagen Linux tampoco pudo verificarse: se inició temporalmente Docker Desktop, pero el build falló antes de descargar imágenes por un error DNS del motor al resolver `registry-1.docker.io`. No se cambió la configuración de red del equipo. Los jobs remotos, reglas de GitHub y ajustes Railway están pendientes. Usar esta guía junto con [RAILWAY_DEPLOYMENT_PLAN.md](RAILWAY_DEPLOYMENT_PLAN.md); no activar Autodeploy antes de completar los pendientes.
 
-## 1. Preparación manual inicial de ramas
+## 1. Ramas existentes y flujo
 
-Esta sección describe la preparación inicial: reutilizar la rama `produccion` ya creada y completar únicamente lo pendiente. Crear otras ramas necesita autorización separada del usuario. No eliminar/recrear `main`, `devDoctrina`, `produccion` ni ninguna rama ya existente.
+Se conservan `devDoctrina`, `main` y `produccion`. Los cambios cotidianos se realizan en `devDoctrina`; `main` no es una rama de publicación en este flujo. Los PRs de `devDoctrina` a `produccion` pasan el mismo gate que un PR desde `dev`. Ninguna rama de desarrollo debe vincularse como fuente de Railway.
 
-1. Revisar `git status` y el diff: existen cambios de aplicación previos a esta tarea. Decidir cuáles pertenecen a cada versión; no usar `git add .` ni publicar todo indiscriminadamente. No mover un árbol sucio entre ramas sin decidir cómo conservarlo.
-2. Elegir explícitamente el commit inicial de `dev` y el **commit aprobado** inicial de `produccion`. No asumir que la punta de `devDoctrina` o `main` es una versión aprobada. Si ya aparecen esas ramas, reutilizarlas, comparar su historia y no sobrescribirlas.
-3. Una vez autorizado, crear las ramas que falten desde los SHA elegidos mediante GitHub/Git, conservando las existentes. Incorporar los archivos preparados a `dev` mediante commit humano revisado. Si se necesita trasladar trabajo aún no confirmado, hacerlo con un procedimiento acordado que preserve el árbol; no hacer reset, clean ni stash automáticos.
-4. Subir `dev` y ejecutar CI. Resolver los tests heredados en un trabajo revisado de pruebas antes de promover la versión. El disparador temporal de push en `devDoctrina` permite validar antes de completar la transición; no despliega y puede retirarse mediante PR cuando deje de usarse.
-5. Configurar protecciones de `produccion` y registrar el check obligatorio tras tener una ejecución correcta disponible. La primera promoción también requiere PR/revisión. No conectar Railway aún si ello dispara un primer despliegue inmediato.
+1. Revisar `git status` y el diff antes de subir cambios. No mover un árbol sucio entre ramas sin decidir cómo conservarlo.
+2. Trabajar en `devDoctrina`, ejecutar pruebas disponibles y subir la rama a GitHub.
+3. Abrir PR con base `produccion` y compare `devDoctrina`. Esperar CI, revisión y aprobación; no hay merge automático.
+4. La rama `main` no promueve ni despliega cambios en este proceso.
 
-No hay workflow que cree ramas, haga commits, fusione o publique a `produccion`. Las instrucciones siguientes suponen que `dev` y `produccion` ya existen y que el usuario está autorizado a operar sobre ellas.
+No hay workflow que cree ramas, haga commits, fusione o publique a `produccion`. Railway sigue configurado para que solo un cambio en `produccion` pueda generar un despliegue.
 
 ## 2. Protección obligatoria en GitHub
 
@@ -41,17 +40,17 @@ En **Settings → Rules → Rulesets** o **Branches → Branch protection**, cre
 
 Revisar disponibilidad según visibilidad/plan de GitHub: repositorios privados pueden necesitar un plan compatible para exigir protección. No considerar que una regla documentada ya está aplicada. Si GitHub no permite imponerla, **no activar publicación automática** hasta acordar una solución con protección equivalente. No usar un token con privilegios para saltarla.
 
-El gate adicional exige PR desde `dev` del mismo repositorio; un PR desde `main`, `devDoctrina` o un fork no podrá promoverse por este flujo. Mantener las mejoras y reverts aprobados en `dev`.
+El gate de CI exige PR desde `dev` o `devDoctrina` del mismo repositorio; un PR desde `main` o desde un fork no podrá promoverse. Mantener el desarrollo activo en `devDoctrina`.
 
 Fuentes: [protección de ramas](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches), [checks requeridos](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks).
 
 ## 3. Trabajo cotidiano en dev
 
-Con árbol limpio o cambios preservados conscientemente, y una vez creada la rama:
+Con árbol limpio o cambios preservados conscientemente:
 
 ```bash
-git switch dev
-git pull --ff-only origin dev
+git switch devDoctrina
+git pull --ff-only origin devDoctrina
 git status
 ```
 
@@ -62,22 +61,22 @@ git diff
 git add <archivos-revisados>
 git diff --cached
 git commit -m "Describe el cambio aprobado"
-git push origin dev
+git push origin devDoctrina
 ```
 
 No incluir `.env`, datos de pruebas, dumps, SQLite, credenciales o backups. No ejecutar push a `produccion` ni usar force push. La política de publicación depende de la protección de GitHub y de la rama vinculada en Railway; el nombre de una rama local por sí solo no impide errores de configuración.
 
-Los push a `dev` ejecutan GitHub Actions, pero **no deben crear ningún deployment Railway**. Comprobarlo al activar la integración.
+Los push a `devDoctrina` ejecutan GitHub Actions, pero **no deben crear ningún deployment Railway**. Comprobarlo al activar la integración.
 
 ## 4. Qué ejecuta GitHub Actions
 
-Archivo: `.github/workflows/ci.yml`. Se dispara en PR con destino `produccion` y en push a `dev`, `produccion` y transitoriamente `devDoctrina`. No hay filtros por archivos ni condiciones que omitan la suite cuando cambia solo documentación. No usar `[skip ci]` o equivalentes en versiones destinadas a producción.
+Archivo: `.github/workflows/ci.yml`. Se dispara en PR con destino `produccion` y en push a `dev`, `produccion` y `devDoctrina`. El gate acepta PRs del mismo repositorio desde `dev` o `devDoctrina`. No hay filtros por archivos ni condiciones que omitan la suite cuando cambia solo documentación. No usar `[skip ci]` o equivalentes en versiones destinadas a producción.
 
 | Job | Qué verifica | Qué no hace |
 | --- | --- | --- |
 | `PHP, Vite and full test suite` | PHP 8.3 y extensiones, Composer desde lock, requisitos de plataforma, npm ci, Vite, comandos de caché en aislamiento y Unit/Feature completos. | Sin credenciales productivas, MySQL de producción, actualizaciones de dependencias ni publicación. |
 | `Docker build and configuration` | Construye imagen, comprueba Bash/FPM/Caddy, ausencia de archivos de desarrollo, arranque `/login` sin servicio DB y conservación de un archivo en volumen desechable al reiniciar. | No sube imagen al registro, no crea Railway ni restaura datos. |
-| `ARTEMIS CI required` | Siempre evalúa los dos resultados; exige ambos `success` y PR desde `dev` del mismo repo. | No transforma un fallo, skip o cancelación de un job dependiente en aprobación. |
+| `ARTEMIS CI required` | Siempre evalúa los dos resultados; exige ambos `success` y PR desde `dev` o `devDoctrina` del mismo repo. | No transforma un fallo, skip o cancelación de un job dependiente en aprobación. |
 
 Se usa runner efímero GitHub alojado en Ubuntu 24.04, no self-hosted con acceso a la red/secretos de producción. El token integrado tiene solo lectura de contenido y checkout no conserva credenciales. No se usa `pull_request_target`, secrets de repositorio/entorno, PAT, token Railway ni claves MySQL reales. No añadir secretos productivos a Actions aunque el repositorio sea privado. Las acciones están fijadas por SHA y deben actualizarse mediante PR revisado.
 
@@ -104,7 +103,7 @@ No sustituir la configuración por una conexión MySQL real si falta SQLite: deb
 
 ## 5. Crear, revisar y fusionar un PR
 
-1. En GitHub → Pull requests → New pull request, seleccionar **base `produccion` / compare `dev`**. Revisar el diff completo y el template preparado en `.github/PULL_REQUEST_TEMPLATE.md`.
+1. En GitHub → Pull requests → New pull request, seleccionar **base `produccion` / compare `devDoctrina`**. Si en el futuro se utiliza `dev`, también está permitida como rama origen. Revisar el diff completo y el template preparado en `.github/PULL_REQUEST_TEMPLATE.md`.
 2. Esperar la ejecución del último commit. En Checks/Actions abrir cada job: una cruz roja exige corregir y volver a hacer push a `dev`. No fusionar con check pendiente, cancelado u omitido. El check obligatorio no se puede sustituir por el éxito de un test dirigido local.
 3. Si la suite falla por las rutas scaffold ya identificadas, mantener bloqueado el PR. Mantener/actualizar las expectativas de prueba mediante trabajo revisado; no excluir tests, usar `continue-on-error` ni reconectar rutas retiradas para obtener aprobación artificial.
 4. Verificar que no hay cambios de esquema implícitos, secretos, borrados de archivos persistentes ni nuevas tareas residentes. Revisar también cambios en workflow, Dockerfile y scripts, pues podrían quitar controles en un PR futuro.
@@ -158,7 +157,7 @@ En Railway → servicio web → Deployments, comprobar rama y SHA, estado WAITIN
 
 Rollback, siempre operado por una persona autorizada:
 
-1. Identificar el último deployment exitoso de **un commit aprobado de `produccion`** y confirmar compatibilidad con la DB actual. No desplegar desde `dev` para corregir rápido.
+1. Identificar el último deployment exitoso de **un commit aprobado de `produccion`** y confirmar compatibilidad con la DB actual. No desplegar desde `dev` ni `devDoctrina` para corregir rápido.
 2. Si hay incidentes de datos, detener escrituras y preservar evidencia antes de restaurar. Si solo falla aplicación/configuración, seleccionar Rollback del deployment previo en Railway cuando esté disponible, y revisar las variables actuales: rollback de imagen no garantiza revertir cambios de variables.
 3. Confirmar salud, login, sesión, lecturas y un flujo autorizado. MySQL/volumen no retroceden al cambiar imagen. No ejecutar `migrate:rollback`, `fresh`, seeders ni restaurar backups sobre escrituras recientes sin un plan separado.
 4. Para que la recuperación quede en Git, preparar revert de los commits defectuosos en `dev`, revisar el diff y abrir nuevo PR a `produccion`; corregir antes de promover cualquier otro cambio pendiente de `dev`. El revert debe retirar también los commits defectuosos de la rama de desarrollo, no solo revertir un merge exclusivo de `produccion`. CI y revisión normales siguen siendo obligatorios.
@@ -186,7 +185,7 @@ MySQL será probablemente el principal costo ocioso. FPM ondemand elimina hijos 
 
 | Verificación | Resultado local |
 | --- | --- |
-| Ramas/remoto | Inspeccionados, sin cambios; solo `devDoctrina` y `main`. |
+| Ramas/remoto | Se conservan `devDoctrina`, `main` y `produccion`; no se crearon ni eliminaron ramas. |
 | PHP y plataforma | PHP 8.3.29, `composer check-platform-reqs` correcto sobre vendor instalado. No se reinstaló ni actualizó vendor local. |
 | Aislamiento | Bootstrap confirma SQLite en memoria y storage/cachés únicos antes de pruebas; MySQL no consultado. |
 | Cachés de arranque | Descubrimiento, config/rutas/vistas y caché de permisos correctos en aislamiento. |
@@ -200,7 +199,7 @@ Antes de activar, completar manualmente:
 
 - [ ] Revisar/publicar archivos con commit humano autorizado y conservar cambios previos.
 - [x] Confirmar que `produccion` existe; conservarla sin recrearla.
-- [ ] Elegir/crear `dev` sin sobrescribir ramas existentes.
+- [x] Conservar ramas existentes y habilitar `devDoctrina` como origen válido de PR hacia `produccion`.
 - [ ] Mantener los tests heredados mediante trabajo revisado y obtener suite completa correcta.
 - [ ] Ejecutar los dos jobs en GitHub y verificar imagen Linux y Node 22.
 - [ ] Aplicar reglas de PR/aprobación/check obligatorio sin bypass y confirmar su disponibilidad en el plan GitHub.

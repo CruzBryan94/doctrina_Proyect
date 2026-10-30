@@ -343,7 +343,7 @@ Rollback: conservar imagen anterior, configuración segura y backups verificados
 
 ## 15. Decisiones de CI/CD y estado de preparación
 
-Flujo objetivo: `dev → PR revisado → produccion → CI de push correcto → Railway`. En la inspección inicial del 26/10 solo existían `devDoctrina` y `main`; el 27/10 se confirmó además `produccion` local y `origin/produccion`. No se creó, eliminó ni renombró ninguna rama desde Codex. `dev` sigue pendiente de creación autorizada; conservar `produccion` existente. El ajuste de nombre no elimina los requisitos de revisión y CI.
+Flujo objetivo: `devDoctrina → PR revisado → produccion → CI de push correcto → Railway`. Las ramas existentes son `devDoctrina`, `main` y `produccion`; no se requiere crear `dev`. No se creó, eliminó ni renombró ninguna rama. Se conserva `produccion` como única rama de despliegue.
 
 | Opción | Ventajas | Límites para ARTEMIS | Decisión |
 | --- | --- | --- | --- |
@@ -355,7 +355,7 @@ Referencia de comparación: [Railpack PHP](https://railpack.com/languages/php/).
 ### Controles preparados
 
 - CI se ejecuta en PR a `produccion` y push a `dev`, `produccion` y temporalmente `devDoctrina`. No usa secretos de producción ni tokens Railway ni publica imágenes. Actions de terceros están fijadas por SHA.
-- Jobs de aplicación y contenedor desembocan en **`ARTEMIS CI required`**. Fallo/cancelación/omisión de cualquiera bloquea el gate. Para PR, el gate también exige origen `dev` del mismo repositorio. No hay `continue-on-error`, exclusiones de tests ni auto-merge.
+- Jobs de aplicación y contenedor desembocan en **`ARTEMIS CI required`**. Fallo/cancelación/omisión de cualquiera bloquea el gate. Para PR, el gate exige origen `dev` o `devDoctrina` del mismo repositorio. No hay `continue-on-error`, exclusiones de tests ni auto-merge.
 - `phpunit.ci.xml` incluye Unit y Feature completos; bootstrap previo a `RefreshDatabase` fuerza SQLite `:memory:` y redirige storage y todas las cachés a un directorio nuevo ignorado en `storage/framework/testing/ci-*`. Comprueba configuración efectiva antes de ejecutar tests. Las migraciones/fixtures internas de PHPUnit solo se aplican a esa SQLite efímera, nunca a MySQL existente.
 - Docker instala Composer con `--no-dev --no-scripts`. El arranque ejecuta únicamente descubrimiento de paquetes y cachés de configuración/rutas/vistas/permisos, luego FPM y Caddy. No genera APP_KEY ni ejecuta migraciones, seeders o reconstrucción histórica.
 - Como defensa adicional contra la rama equivocada, el arranque en contexto Railway exige `RAILWAY_GIT_BRANCH=produccion` provista por su trigger GitHub; rechaza ramas de desarrollo o metadata ausente. No definir esa variable manualmente para saltar la validación ni usar CLI como ruta alternativa de publicación.
