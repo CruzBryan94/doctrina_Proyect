@@ -12,7 +12,8 @@ class ManualProductivity
     {
         $query = DB::table('manuals')->join('manual_types as productivity_type', 'productivity_type.id', '=', 'manuals.manual_types_id')
             ->leftJoin('doctrinal_maps as productivity_map', 'productivity_map.id', '=', 'productivity_type.doctrinal_map_id')
-            ->where('manuals.is_active', true);
+            ->where('manuals.is_active', true)
+            ->whereNull('manuals.deleted_at');
         if (! empty($filters['q'])) {
             $query->where('manuals.manual_name', 'like', '%'.$filters['q'].'%');
         }

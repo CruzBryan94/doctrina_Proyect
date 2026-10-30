@@ -12,7 +12,7 @@ class InstitutionalReferenceController extends Controller
 {
     public function index(Request $request, InstitutionalReferenceService $service)
     {
-        abort_unless($request->user()?->canConsultManuals(), 403);
+        abort_unless($request->user()?->is_active && $request->user()->hasRole('admin'), 403);
         $maps = DoctrinalMap::query()->orderBy('id')->get();
         $counts = $service->countsByMap();
         $references = InstitutionalReference::query()->get()->keyBy('doctrinal_map_id');

@@ -46,7 +46,7 @@ class InstitutionalReferenceTest extends TestCase
         $this->manual('research', ['classification' => 'update']);
         $this->manual('cgft', ['is_published' => true, 'published_on' => '2030-01-01', 'classification' => 'update']);
         $this->manual('edition', ['is_active' => false]);
-        $this->actingAs($this->actor(['supervisor']))
+        $this->actingAs($this->actor(['admin']))
             ->get(route('references.index'))
             ->assertOk()->assertSee('Sin configurar')->assertSee('Publicado')->assertSee('Ver registros de origen');
         $this->assertSame(3, app(\App\Services\InstitutionalReferenceService::class)->countsByMap()[$mapId]);

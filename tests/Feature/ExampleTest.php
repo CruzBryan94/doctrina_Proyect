@@ -33,7 +33,7 @@ class ExampleTest extends TestCase
 
     public function test_home_cannot_bypass_required_password_change(): void
     {
-        $user = User::factory()->create(['must_change_password' => true, 'password' => Hash::make('132456')]);
+        $user = User::factory()->create(['must_change_password' => true, 'password' => Hash::make('123456')]);
         $this->actingAs($user)->get('/')->assertRedirect(route('password.change.show'));
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\PasswordUpdateController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ManualController;
 use App\Http\Controllers\ManualDossierController;
+use App\Http\Controllers\ManualDeletionController;
 use App\Http\Controllers\ManualPhaseNoteController;
 use App\Http\Controllers\PhaseDurationController;
 use App\Http\Controllers\ProjectionController;
@@ -32,7 +33,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureActiveAccount::class, \App
     Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('can:dashboard.view')->name('dashboard');
     Route::get('/dashboard/history', [HistoricalDashboardController::class, 'index'])->middleware('can:dashboard.view')->name('dashboard.history');
     Route::get('/dashboard/schedule', [ProjectionController::class, 'index'])->middleware('can:dashboard.view')->name('dashboard.schedule');
-    Route::get('/references/institutional', [InstitutionalReferenceController::class, 'index'])->name('references.index');
+    Route::get('/references/institutional', [InstitutionalReferenceController::class, 'index'])->middleware('can:users.manage')->name('references.index');
     Route::put('/admin/references/institutional/{doctrinalMap}', [InstitutionalReferenceController::class, 'update'])->whereNumber('doctrinalMap')->middleware('can:users.manage')->name('references.update');
     Route::get('/admin/phase-durations', [PhaseDurationController::class, 'index'])->middleware('can:users.manage')->name('phase-durations.index');
     Route::put('/admin/phase-durations/{manualPhase}', [PhaseDurationController::class, 'update'])->whereNumber('manualPhase')->middleware('can:users.manage')->name('phase-durations.update');
@@ -41,6 +42,9 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureActiveAccount::class, \App
     Route::get('/generatePDFManual', fn () => redirect()->route('reports.manuals'))->middleware('can:reports.view')->name('dashboard.generatePDFManual');
 
     Route::get('/manuals', [ManualController::class, 'index'])->name('manuals.index');
+    Route::get('/manuals/deleted', [ManualDeletionController::class, 'index'])->name('manuals.deleted');
+    Route::post('/manuals/{id}/delete', [ManualDeletionController::class, 'destroy'])->name('manuals.delete');
+    Route::post('/manuals/{id}/restore', [ManualDeletionController::class, 'restore'])->name('manuals.restore');
     Route::get('/manuals/newManual', [ManualController::class, 'create'])->name('manuals.newManual');
     Route::get('/manuals/assignment-options', [ManualController::class, 'newAssignmentOptions'])->name('manuals.newAssignmentOptions');
     Route::post('/manuals/store', [ManualController::class, 'store'])->name('manuals.store');

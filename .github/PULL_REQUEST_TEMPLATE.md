@@ -1,6 +1,6 @@
 ## Versión propuesta
 
-Origen: `dev`. Destino: `produccion`.
+Origen: `dev` o `devDoctrina`. Destino: `produccion`.
 
 Problema y comportamiento resultante:
 

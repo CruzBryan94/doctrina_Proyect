@@ -33,15 +33,15 @@ class AccountAccessTest extends TestCase
         $target->refresh();
         $this->assertTrue($target->must_change_password);
         $this->assertSame('keep-token', $target->remember_token);
-        $this->assertTrue(Hash::check('132456', $target->password));
+        $this->assertTrue(Hash::check('123456', $target->password));
         $this->assertFalse(Hash::check('old-password', $target->password));
         $this->assertTrue($target->hasRole('none'));
 
         auth()->logout();
-        $this->withSession(['url.intended' => route('dashboard')])->post('/login', ['email' => $target->email, 'password' => '132456'])->assertRedirect(route('password.change.show'));
+        $this->withSession(['url.intended' => route('dashboard')])->post('/login', ['email' => $target->email, 'password' => '123456'])->assertRedirect(route('password.change.show'));
         $this->get(route('dashboard'))->assertRedirect(route('password.change.show'));
         $this->get(route('password.change.show'))->assertOk();
-        $this->put(route('password.change.update'), ['password' => '132456', 'password_confirmation' => '132456'])->assertSessionHasErrors('password');
+        $this->put(route('password.change.update'), ['password' => '123456', 'password_confirmation' => '123456'])->assertSessionHasErrors('password');
         $this->put(route('password.change.update'), ['password' => 'new-private-password', 'password_confirmation' => 'new-private-password'])->assertRedirect(route('welcome'));
 
         $target->refresh();
@@ -51,7 +51,7 @@ class AccountAccessTest extends TestCase
         $this->assertSame(2, \DB::table('account_access_audits')->where('target_user_id', $target->id)->count());
 
         $this->post('/logout')->assertRedirect('/');
-        $this->post('/login', ['email' => $target->email, 'password' => '132456'])->assertSessionHasErrors('email');
+        $this->post('/login', ['email' => $target->email, 'password' => '123456'])->assertSessionHasErrors('email');
         $this->post('/login', ['email' => $target->email, 'password' => 'new-private-password'])->assertRedirect(route('welcome'));
     }
 

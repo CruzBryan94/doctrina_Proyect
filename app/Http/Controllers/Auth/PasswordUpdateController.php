@@ -30,7 +30,7 @@ class PasswordUpdateController extends Controller
 
         $validated = $request->validate([
             'password' => ['required', 'string', Password::defaults(), 'confirmed', function ($attribute, $value, $fail) {
-                if ($value === '132456') $fail('Elija una contraseña distinta de la provisional.');
+                if ($value === '123456') $fail('Elija una contraseña distinta de la provisional.');
             }],
         ]);
 
